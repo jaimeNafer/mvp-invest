@@ -1,178 +1,201 @@
-# Lastro v2 — clareza para decidir
+# Lastro v3 — operações sob controle, carteira com clareza
 
-> Seu plano de um lado. O momento do mercado do outro.
+> Registre uma vez. Entenda custo, resultado e saúde da carteira sem reconstruir tudo em uma planilha.
 
-O Lastro é um protótipo de acompanhamento de investimentos em cripto. Seu objetivo é ajudar o investidor a entender **o que mudou, como isso afeta suas posições e quais premissas merecem revisão**.
+O MVP foi simplificado para priorizar a principal dor do usuário: **registrar operações e entender lucro, prejuízo, taxas, preço médio e patrimônio**, com uma base exportável para apoiar a organização fiscal.
 
-A v2 prioriza leitura visual, pouco texto na primeira camada e explicações sob demanda. A tese permanece no detalhe de cada posição, confrontada com os preços e o contexto do momento.
+A estratégia de cada ativo continua no detalhe da posição. O centro do produto agora é um livro manual que alimenta os consolidados automaticamente.
 
-**Todos os dados são fictícios.** Preços, movimentos macroeconômicos, gráficos e leituras técnicas são cenários demonstrativos. Não há consulta ao mercado, previsão de preços ou execução de ordens.
+**Protótipo local, com exemplos fictícios e preços de mercado simulados.** O motor calcula resultados gerenciais a partir dos lançamentos; não calcula imposto devido e não emite DARF. O plano atualizado está em [PLAN.md](PLAN.md).
 
-## O problema que queremos resolver
+## O que você consegue fazer
 
-Uma posição pode estar lucrativa enquanto o ambiente fica mais arriscado. Outra pode seguir dentro dos limites de preço, mas já exigir uma revisão das premissas.
+- Registrar compras, vendas, conversões e taxas, com quantidade e moeda originais.
+- Informar cotação histórica para converter cada operação em reais.
+- Manter saldos e custo de USDC, USD e outros ativos usados nas negociações.
+- Separar titulares e consolidar a família sem misturar suas bases de custo.
+- Registrar saldos iniciais, aportes, retiradas, transferências próprias e impostos pagos.
+- Ver preço médio, custo em aberto, resultado realizado e resultado não realizado.
+- Extrair negociações, vendas com lucro/prejuízo/neutras, taxas, impostos e base mensal.
+- Revisar tese, invalidação, objetivo de parcial e risco da posição aberta.
+- Exportar CSVs e um backup completo JSON; restaurar backups do próprio Lastro.
 
-O Lastro organiza três perguntas em uma mesma tela:
+Catálogo de entrada atual: BTC, ETH, SOL, USDC, USDT, BNB, BRL e USD. Importação de extratos e integração com corretoras são próximas etapas, não funções já disponíveis.
 
-| Pergunta | O que o produto apresenta |
+## Primeiro uso
+
+A aplicação abre com registros demonstrativos separados entre dois titulares. Eles não representam a carteira real de ninguém.
+
+1. Abra **Operações** e confira uma venda de exemplo no botão **Ver**.
+2. Observe as parcelas de resultado, o custo baixado e as taxas.
+3. Na **Visão geral**, veja o preço médio e o saldo derivados do livro.
+4. Clique numa posição para ver estratégia, contexto e operações relacionadas.
+5. Na **Base fiscal**, consulte o resumo mensal e as pendências de cadastro.
+6. Use **Dados e backup** para exportar os exemplos ou iniciar um livro vazio.
+
+Para começar seu próprio livro, primeiro registre aportes ou saldos anteriores com custo conhecido. Uma compra exige saldo da moeda de pagamento na conta selecionada; uma venda exige saldo do ativo. O sistema recusa saídas sem saldo, inclusive quando uma edição retroativa invalida operações posteriores.
+
+## Um exemplo simples de preço médio
+
+Suponha uma carteira em reais:
+
+| Evento | Valor |
+| --- | ---: |
+| Compra de 2 unidades a R$ 1.000, taxa R$ 20 | Custo R$ 2.020 |
+| Compra de 1 unidade a R$ 1.300, taxa R$ 10 | Custo adicional R$ 1.310 |
+| Saldo antes da venda | 3 unidades, custo R$ 3.330, PM R$ 1.110 |
+| Venda de 1 unidade por R$ 1.500, taxa R$ 15 | Líquido R$ 1.485 |
+| Resultado realizado da venda | R$ 375 |
+| Saldo restante | 2 unidades, custo R$ 2.220, PM R$ 1.110 |
+
+As taxas já estão no custo ou no líquido. A coluna **Taxas registradas** permite consultar o gasto, sem descontá-lo novamente do resultado.
+
+## Como o livro é calculado
+
+### Ordem e titularidade
+
+As operações são reprocessadas por data/hora em Brasília, sequência de cadastro e identificador. A média móvel ponderada é calculada por **titular + ativo**, consolidando as contas desse titular. Custódia é mantida separada por conta/carteira.
+
+Essa é uma política de controle gerencial. Não determina, por si só, a política exigida em cada regime tributário.
+
+### Compra e venda
+
+- **Compra:** preço × quantidade × cotação histórica determina o valor bruto em BRL. Taxas em moeda de negociação, BRL ou terceiro token são incorporadas ao custo; a moeda usada no pagamento tem seu custo proporcional baixado.
+- **Taxa no ativo comprado:** reduz a quantidade recebida, mantendo o custo total pago. O preço médio reflete a quantidade líquida.
+- **Venda:** receita líquida em BRL menos custo proporcional baixado resulta no ganho/prejuízo gerencial do ativo.
+- **Taxa no ativo vendido:** baixa adicional da quantidade e do custo do próprio ativo.
+- **Taxa em terceiro token:** exige saldo anterior desse token e sua cotação em BRL; a perna de disposição e seu custo ficam detalhados.
+
+Cada venda parcial conta como uma venda, não como encerramento integral de uma posição. As contagens de lucro, prejuízo e zero são das vendas registradas; negociações incluem compras, vendas e conversões.
+
+### USDC, câmbio e conversões
+
+Vender BTC por USDC gera resultado do BTC e estabelece custo em reais para os USDC recebidos. Utilizar esses USDC depois pode gerar diferença entre seu valor no momento e seu custo histórico.
+
+Por isso, o app separa:
+
+1. resultado das vendas de ativos;
+2. conversões/variação em BRL das moedas utilizadas ou retiradas;
+3. resultado das taxas pagas em ativos e despesas de rede.
+
+Uma compra pode mostrar variação realizada da moeda utilizada, sem que o BTC recém-comprado tenha sido vendido. Essa separação evita confundir moedas e evita duplicar o resultado.
+
+**Conversão é um único lançamento:** informe ativo recebido, quantidade recebida, moeda/ativo entregue e unidades entregues por unidade recebida. O motor deriva ambas as pernas. Não registre também uma compra e venda para a mesma conversão.
+
+### Aportes, saldos e transferências
+
+| Tipo | Tratamento no MVP |
 | --- | --- |
-| Qual era meu plano? | Entrada, invalidação, parcial e limite de risco. |
-| Onde estou agora? | Preço, resultado, distâncias e impacto potencial na carteira. |
-| O que mudou ao redor? | Juros, petróleo, mercado acionário e leitura técnica. |
+| Saldo inicial | Quantidade anterior e custo histórico total conhecido. Não é aporte novo nem lucro. |
+| Aporte | BRL ou USD que entram na conta. Não é lucro. |
+| Retirada | BRL ou USD que saem; a moeda pode gerar variação gerencial em reais. Não é venda de cripto por si só. |
+| Transferência própria | Move quantidade entre contas do mesmo titular sem mudar média; eventual taxa reduz o resultado. |
+| Imposto pago | Registro manual do valor, competência, referência e origem do pagamento. |
 
-O investidor interpreta essas informações e decide. O registro da decisão preserva o contexto daquele momento.
+Para entrada de cripto já existente, registre saldo inicial com custo histórico e documentação. Não use isso para simular rendimentos ou operações não suportadas. Transferências entre titulares não são suportadas.
 
-## O que mudou na v2
+As taxas de saldo inicial, aporte, retirada e imposto não são registradas nesses tipos nesta versão. Taxas de rede pertencem ao tipo transferência. Não registre uma conversão BRL/USDC como retirada ou aporte para contornar custos.
 
-- Carteira e oportunidades ocupam o centro da navegação.
-- A tese é definida ao adicionar uma posição ou intenção de entrada.
-- O detalhe mantém o plano visível em um painel lateral no desktop e como primeiro bloco em telas menores.
-- **Estado do plano** e **estado do contexto** são avaliações separadas.
-- Gráfico ilustrativo, níveis, progresso, indicadores e cores resumem a primeira leitura.
-- Explicações de alerta, evidências contrárias e fórmulas ficam em detalhes expansíveis.
-- A revisão registra uma decisão; não apaga alertas e não altera saldos ou quantidades.
+### Impostos pagos
 
-## Um exemplo concreto
+Escolha se o pagamento foi **fora da carteira**, para só registrar a despesa informada, ou se deve **debitar o saldo da conta**. A competência e o comprovante ficam separados da data do pagamento.
 
-O BTC demonstrativo usa o plano discutido para o produto:
+O consolidado apresenta impostos no mês do pagamento. O indicador “realizado após impostos informados” é gerencial, pois o pagamento pode se referir a outro período.
 
-| Premissa | Plano de exemplo |
+## Visão geral
+
+Seis cards mostram patrimônio, realizado, aberto, negociações, taxas e impostos pagos. A tabela de carteira apresenta:
+
+- titular e ativo;
+- quantidade;
+- preço médio em reais;
+- custo em aberto;
+- preço de referência e valor marcado;
+- lucro/prejuízo não realizado;
+- saúde da posição e contexto simulado, quando há estratégia.
+
+Filtros de titular e período afetam consolidados. Saldos são reconstruídos até a data final. Compras anteriores ao período continuam compondo o custo das vendas no período.
+
+### Evolução patrimonial
+
+O gráfico reconstrói patrimônio nas datas dos registros, usando as últimas referências disponíveis em cada ponto. O último ponto usa preços simulados quando a data final é 31/10/2026 ou posterior.
+
+Uma segunda curva mostra saldos iniciais a custo + aportes − retiradas. Ela ajuda a perceber que entrada de capital não é lucro. Não é um histórico de preços diário, nem cálculo de retorno ponderado por tempo ou dinheiro.
+
+Para datas anteriores à referência demonstrativa, a carteira usa os últimos preços registrados até aquela data. Não há avaliação histórica real do contexto.
+
+## Saúde das posições
+
+O detalhe mantém plano e contexto separados, com tese breve, invalidação, objetivo de parcial e limite de risco. Preço médio e quantidade vêm do livro, sem edição direta na estratégia.
+
+Os níveis do plano são em USD. A avaliação de risco os converte pelo dólar simulado atual e compara com o custo médio em BRL e o patrimônio do titular. É uma estimativa; não garante execução ou perda máxima e não inclui taxas futuras, slippage ou gaps.
+
+Os cenários de contexto continuam fictícios: misto, estresse, recuperação, perda de suporte e objetivo alcançado. Trocar cenário muda a marcação da carteira, mas preserva as cotações históricas usadas no custo.
+
+Registrar uma revisão não envia ordens, não altera saldos e não remove alertas. Uma venda de verdade precisa ser registrada no livro.
+
+## Base de apoio fiscal
+
+A tela consolida mensalmente negociações, vendas brutas, resultado das vendas, outras parcelas realizadas, taxas, impostos pagos, aportes e retiradas. Sinaliza instituição sem localização, falta de referência externa e saldo inicial com custo zero declarado.
+
+O usuário informa Brasil/exterior com base na entidade/documentação da instituição. A marca comercial da corretora não determina essa informação automaticamente.
+
+**O MVP não determina alíquota, isenção, regime tributário, compensação, código, vencimento, imposto devido ou obrigação declaratória. Não gera DARF.** Os dados gerenciais precisam de conferência e classificação adequada para uso fiscal. As pendências da tela não constituem auditoria completa.
+
+| Exportação | Conteúdo |
 | --- | --- |
-| Entrada | US$ 76.000 |
-| Cenário negativo | Encerrar caso perca a referência de US$ 74.000. |
-| Limite de risco | Perda planejada de até 2% da carteira nesta posição. |
-| Cenário positivo | Realizar 25% da posição em US$ 85.000. |
+| Operações CSV | Dados originais, câmbio, taxas, custos, resultados, pernas derivadas, titular, instituição e referências. |
+| Carteira CSV | Quantidade, média, custo, marcação, resultado e custódia na data final. |
+| Base mensal CSV | Consolidados por mês e por titular, mantendo bases separadas na visão família. |
+| Backup JSON | Todo o livro, titulares, estratégias e revisões; independente dos filtros da tela. |
 
-No cenário **Estresse**, o BTC vale US$ 78.500. A posição de 0,2 BTC apresenta lucro aberto de US$ 500, mas juros e petróleo sobem enquanto o S&P 500 cai.
+CSV utiliza UTF-8 com BOM, separador ponto-e-vírgula e vírgula decimal. Textos com prefixos de fórmulas são neutralizados para uso em planilhas. Os arquivos não substituem os comprovantes de origem.
 
-A tela mostra simultaneamente:
+## Executar e verificar
 
-- **Plano: dentro dos níveis.** O preço não atingiu a invalidação nem o objetivo.
-- **Contexto: reavaliar.** As condições do exemplo merecem atenção, mesmo com lucro.
-
-Não há contradição: o preço ainda respeita o plano, enquanto o contexto sugere revisar se suas premissas continuam adequadas.
-
-## Experimente cinco cenários
-
-Use **Simular contexto**, no topo. O cenário selecionado atualiza preços, patrimônio, risco e leituras em todas as telas.
-
-| Cenário | O que observar |
-| --- | --- |
-| Atenção · contexto misto | Níveis preservados com pressão macro moderada. |
-| Estresse · aversão a risco | Posição BTC ainda lucrativa e contexto vermelho. |
-| Favorável · recuperação | Melhora contextual sem remover os limites do plano. |
-| Perda do suporte | Preço abaixo da invalidação; perda simulada pode superar a planejada. |
-| Objetivo alcançado | Referência de parcial atingida, sem realizar operação automaticamente. |
-
-As classificações são roteirizadas por cenário. Os exemplos macro incluem intensidade do movimento; não há motor de sinais ao vivo, probabilidades ou validação estatística. A trajetória do gráfico é ilustrativa, não uma série de candles reais.
-
-A referência de data e hora identifica o conjunto demonstrativo. Não indica atualização ao vivo.
-
-## Como usar
-
-1. Abra **Visão geral** para ver patrimônio, resultado, caixa, risco agregado e pontos de atenção.
-2. Clique em BTC para confrontar o plano com o cenário.
-3. Alterne para **Estresse** e observe lucro e alerta vermelho coexistirem.
-4. Expanda a explicação da classificação e a evidência contrária.
-5. Use **Reavaliar posição** para registrar sua decisão, com motivo opcional.
-6. Edite o plano e confira o recálculo do risco. A versão anterior dos níveis fica no registro.
-7. Em **Oportunidades**, acompanhe uma intenção sem incluí-la no patrimônio.
-
-### Adicionar um ativo
-
-Escolha BTC, ETH ou SOL e informe se já possui posição ou quer observar. Defina quantidade, entrada, invalidação, objetivo, percentual da parcial, limite de risco e o motivo em uma frase.
-
-O formulário calcula o risco enquanto você preenche e sinaliza quando supera o limite escolhido. Para posições compradas, a invalidação deve ficar abaixo da entrada e o objetivo acima dela.
-
-Os ativos disponíveis são limitados ao catálogo demonstrativo. A quantidade pode ser ajustada; isso não representa uma compra ou venda.
-
-### Registrar uma decisão
-
-As opções incluem manter, aguardar confirmação, planejar redução, revisar proteção, planejar encerramento e planejar parcial.
-
-Cada registro guarda preço, cenário, classificações e plano daquele momento. A decisão não elimina alertas contextuais e não muda quantidade ou caixa. Operações efetivamente executadas não são conciliadas neste protótipo.
-
-## Entenda os números de risco
-
-| Medida | Cálculo e significado |
-| --- | --- |
-| Resultado aberto | (Preço atual − entrada) × quantidade. |
-| Perda planejada | (Entrada − invalidação) × quantidade. |
-| Risco da posição na carteira | Perda planejada ÷ patrimônio atual simulado. |
-| Do preço atual até a invalidação | Máximo entre preço atual − invalidação e zero, multiplicado pela quantidade. Inclui devolução de lucro. |
-| Risco planejado agregado | Soma das perdas planejadas das posições ÷ patrimônio atual simulado. |
-
-**Limite de 2% da carteira é diferente de queda de 2% do ativo.** O tamanho da posição determina o impacto no patrimônio.
-
-O limite é individual por posição. A visão geral apresenta a soma dos riscos planejados. Essa soma não é VaR, não modela correlações e não garante perda máxima. Taxas, gaps e slippage não estão incluídos.
-
-O caixa pode ser ajustado em **Minha carteira** e altera o denominador do risco. USDC é tratado como USD 1:1 na demonstração. Intenções em observação não entram no patrimônio nem no risco agregado; seu risco individual é uma estimativa sobre o patrimônio existente.
-
-## Por que explorar esta ideia?
-
-O valor proposto é facilitar decisões quando o investidor se sente travado: preço, plano e contexto aparecem juntos, com explicações acessíveis e sem exigir leitura longa na primeira camada.
-
-A tese funciona como referência para interpretar o momento. A interação principal é acompanhar a situação e comparar cenários. A documentação da decisão é uma consequência desse fluxo.
-
-Uma assinatura é uma hipótese futura se houver utilidade recorrente. Ainda precisamos comprovar se as pessoas entendem os alertas, voltam ao produto, tomam decisões mais informadas e consideram pagar. Não há promessa de melhora de rentabilidade.
-
-### O que validar agora
-
-- A pessoa consegue explicar por que há lucro e alerta vermelho simultaneamente?
-- Consegue localizar entrada, invalidação e parcial sem ajuda?
-- Entende o risco sobre a carteira e a diferença para devolução de lucro?
-- Encontra rapidamente as evidências e os limites da leitura?
-- Adiciona uma intenção com pouco esforço?
-- Voltaria para acompanhar uma posição real?
-
-O experimento deve orientar se aprofundamos, simplificamos ou mudamos a proposta. Elogios à interface, sozinhos, não comprovam demanda.
-
-## Estado do produto e próximos passos possíveis
-
-| Disponível na demonstração | Ainda não implementado |
-| --- | --- |
-| Carteira e oportunidades locais | Corretoras e importação de operações |
-| Plano por posição e risco calculado | Preços e indicadores ao vivo |
-| Cinco cenários macro e de preço fictícios | Motor de avaliação com fontes reais |
-| Revisão e histórico com contexto | Notificações e monitoramento contínuo |
-| Persistência no navegador | Contas, sincronização e backup em servidor |
-| Interface visual responsiva | IA para sugerir teses alinhadas ao perfil |
-
-A IA é uma possibilidade futura: sugerir planos e explicitar premissas para o usuário escolher e ajustar. Não há integração ou análise por IA nesta versão.
-
-## Executar localmente
-
-Sem dependências e sem build. Com Python 3, na pasta que contém o index.html:
+Sem dependências nem build. Com Python 3, na pasta dos arquivos públicos:
 
 ```sh
 python -m http.server 8000
 ```
 
-Abra [http://localhost:8000](http://localhost:8000) em um navegador moderno.
+Abra [http://localhost:8000](http://localhost:8000).
 
-```text
-index.html           Estrutura da interface
-styles.css           Estilos responsivos
-app.js               Dados, regras demonstrativas e interações
-tests/risk.test.cjs   Verificação dos cálculos e transições
-README.md            Proposta, roteiro e limites
-```
-
-No checkout usado pelo Sites, os três arquivos públicos ficam em dist/; no GitHub ficam na raiz.
-
-### Verificar cálculos
-
-Com Node.js instalado:
+Com Node.js, na raiz do repositório:
 
 ```sh
 node --check app.js
-node tests/risk.test.cjs
+node --check ledger.js
+node tests/ledger.test.cjs
 ```
 
-O teste cobre patrimônio sem intenções, resultado, perda planejada, devolução de lucro, alerta contextual com lucro, invalidação, objetivo, excesso de risco, preservação de contexto passado e validação de níveis.
+No checkout do Sites, os arquivos públicos ficam em dist/. O teste aceita ambas as estruturas.
 
-### Dados locais e restauração
+```text
+index.html              Estrutura da aplicação
+styles.css              Layout responsivo
+ledger.js               Motor contábil gerencial, sem DOM
+app.js                  Interface, formulários, exportação e persistência
+tests/ledger.test.cjs    Casos numéricos e validações
+PLAN.md                 Escopo revisado e evolução do MVP
+README.md               Instruções e critérios de cálculo
+```
 
-A v2 usa a chave lastro-v2 no localStorage e preserva separadamente a chave lastro-v1. Não há migração automática dos dados antigos. O histórico não é sincronizado entre dispositivos ou origens.
+O teste cobre média ponderada, vendas parciais, moedas históricas, conversões, taxas em moeda de negociação/ativo/terceiro token, transferência, titulares separados, custódia, períodos parciais, aportes, retiradas, impostos, saldo insuficiente, datas e CSV.
 
-Use **Restaurar demonstração** para voltar aos exemplos da v2, após confirmação. Limpar os dados do navegador também remove os registros locais. Não use o protótipo como armazenamento único de informações financeiras.
+## Persistência e limites
+
+A v3 usa lastro-v3 no localStorage. Os dados de v1/v2 permanecem separados, sem migração automática: um saldo estático sem custo e histórico não deve virar um livro artificialmente.
+
+O backup JSON é validado antes da confirmação de restauração. Ele substitui a v3 local e não importa relatórios de corretoras. Exporte antes de restaurar, limpar o livro ou trocar de dispositivo.
+
+Limites atuais:
+
+- preços e contexto de mercado simulados, sem cotação ao vivo;
+- entrada manual e catálogo limitado;
+- sem contas de usuário, banco ou histórico de edição em servidor;
+- quantidade e valores usam Number do JavaScript, não aritmética decimal financeira certificada;
+- sem derivativos, short, DeFi/LP, rendimentos, eventos societários ou transferências entre titulares;
+- motor gerencial não homologado para apuração fiscal; concilie saldos e custos com comprovantes.
+
+**Próxima prioridade:** validar o esforço e a confiabilidade do lançamento manual com extratos conciliáveis. Importação e regras fiscais versionadas só entram depois que essa base estiver sólida.
