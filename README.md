@@ -1,6 +1,6 @@
-# Lastro — seus números, explicados
+# Lastro — clareza e organização para suas contas
 
-O Lastro organiza operações de cripto para responder **quanto custaram seus saldos, de onde veio seu resultado e o que ainda precisa ser conferido**. Um histórico contínuo evita recriar o controle em outra planilha todo mês.
+O Lastro organiza operações de cripto para **entender os resultados e preparar os dados para suas obrigações fiscais**. Registre uma vez, acompanhe custos e saldos e compartilhe um compilado claro com seu contador. A plataforma não substitui a análise de um contador especializado.
 
 ## Para quem
 
@@ -18,6 +18,20 @@ Investidores brasileiros de cripto à vista, com poucas contas, operações em r
 
 Essa proposta é uma hipótese competitiva, não uma validação de mercado. A utilidade e a disposição de pagar ainda serão testadas com investidores e contadores.
 
+## Organização fiscal: a recompensa pelo registro
+
+Uma tela reúne, por período e titular:
+
+- Resumo mensal de valores vendidos, custo das quantidades vendidas, resultados de vendas, câmbio/conversões/rede, taxas e pagamentos de imposto registrados.
+- Operações detalhadas com quantidade, preço, moeda, câmbio histórico, conta, país da instituição, referência, custo e resultado, com acesso ao cálculo.
+- Posição anual por ativo e titular, comparando quantidade e custo de aquisição no fim do ano anterior e do ano escolhido, incluindo as contas em que há saldo.
+- Pagamentos de imposto com data, mês de referência, origem e comprovante informado.
+- CSVs mensal, anual e de operações, além de um relatório HTML autossuficiente para compartilhar ou imprimir pelo navegador.
+
+O período De–Até controla o resumo mensal e as operações. O saldo anual usa **todo o histórico até 31/12 do ano da data Até**. O seletor de ano permite aplicar o ano inteiro ao período. Ano em andamento é uma prévia, não um fechamento definitivo. Ausência de histórico anterior não comprova saldo zero. Saldos são a custo de aquisição; não há enquadramento automático em fichas/códigos de declaração.
+
+Taxas já integram os cálculos. Pagamentos de imposto são registros manuais, nunca uma estimativa de obrigação. Os relatórios não calculam DARF nem entregam declarações.
+
 ## Comece por um período que você consiga conferir
 
 1. Registre um saldo inicial com custo de aquisição conhecido ou um aporte.
@@ -25,7 +39,7 @@ Essa proposta é uma hipótese competitiva, não uma validação de mercado. A u
 3. Abra **Ver composição** para entender o resultado e **Ver cálculo** para chegar ao lançamento.
 4. Em **Conferência**, informe o saldo total de um ativo em uma conta no fim do dia, conforme seu extrato. Inclua quantidades bloqueadas em ordens, não só o saldo disponível.
 5. Investigue diferenças e pendências. Uma referência repetida pode ser uma ordem com várias execuções, e não um lançamento duplicado.
-6. Exporte operações, saldos, resumo mensal e comparações. Preserve também um backup JSON.
+6. Abra Organização fiscal, confira o mês ou ano, revise os saldos anuais e baixe o relatório ou CSVs para seu contador. Preserve também um backup JSON.
 
 ## O que cada número significa
 
@@ -68,3 +82,7 @@ A infraestrutura de hospedagem usa uma cópia desses arquivos em `dist/`.
 ## Próximo investimento
 
 Validar o fluxo com históricos reais e autorização dos participantes. Priorizar uma primeira importação CSV com prévia e prevenção de duplicações se o esforço manual bloquear o uso. Expandir somente quando houver evidência de tempo economizado, números conciliáveis e uso recorrente.
+
+## Diretriz de interface
+
+Explicações gerais ficam em frases curtas dentro das seções. Ícones de informação são reservados para métricas e cabeçalhos de tabela com pouco espaço. Não converter automaticamente subtítulos, orientações de formulário ou rodapés em ícones.

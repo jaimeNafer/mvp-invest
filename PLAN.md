@@ -1,8 +1,8 @@
-# Lastro — MVP 4: entender e conferir
+# Lastro — MVP 4: entender, organizar e prestar contas
 
 ## Promessa
 
-Entender os próprios números e manter um histórico contínuo, sem refazer o controle mensal. Sem recomendações de investimento ou promessa de apuração fiscal automática.
+Entender os próprios números e ter os registros organizados para as obrigações fiscais fazem parte do mesmo contexto. Manter um histórico contínuo, sem refazer o controle mensal. A plataforma facilita a vida do investidor e o trabalho do contador; não substitui sua análise especializada.
 
 ## Público e escopo
 
@@ -51,3 +51,11 @@ Meta exploratória: pelo menos três usuários pagando e mantendo o próprio con
 ## Guardas de produto
 
 Não transformar coincidência de quantidade em selo de carteira validada. Não esconder lacunas atrás de números precisos. Não usar IA para inferir custos ausentes ou prometer imposto correto. Um extrato digitado não foi autenticado. Histórico incompleto pode produzir preço médio incorreto mesmo com saldo coincidente.
+
+## Organização fiscal e clareza visual
+
+Entregue: compilado mensal com custo vendido; detalhamento das operações; saldos anuais a custo de aquisição por titular/ativo, com custódia; pagamentos de imposto; exportações CSV e relatório HTML para compartilhamento/impressão. O ano escolhido é o da data Até; a posição anual usa todo o histórico até 31/12, mesmo se o período for apenas um mês. Ano em andamento aparece como prévia. Sem histórico anterior não é saldo zero certificado.
+
+Ícones apenas em métricas e colunas compactas. Orientações gerais, filtros, subtítulos e avisos usam texto breve visível. Suprimir o excesso de ícones não deve esconder as limitações de uso dos números.
+
+A importação CSV futura usará o mesmo livro e os mesmos relatórios. O fluxo manual já deve entregar esse valor hoje. Continuam fora do escopo recomendações de investimentos, regras tributárias automáticas e emissão de DARF.

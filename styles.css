@@ -171,3 +171,11 @@ th .info-button{width:15px;height:15px;min-height:15px;font-size:10px;margin-lef
 .waterfall-row.total{font-size:16px;border-bottom:0;color:#176e59}
 .cash-summary{display:flex;gap:24px;flex-wrap:wrap;margin-top:14px;color:var(--muted);font-size:12px}.cash-summary b{display:block;color:var(--ink);margin-top:5px}
 @media(max-width:750px){.focus-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+/* Plain guidance in spacious areas; icons stay in compact cards and columns. */
+.section-copy{margin:6px 0 14px;font-size:12px;line-height:1.5;color:var(--muted)}
+.head .sub{margin-top:6px;font-size:13px;line-height:1.5}.filter-note{max-width:260px;font-size:11px;line-height:1.5}
+.fiscal-intro{display:flex;align-items:center;gap:14px;padding:14px 16px;margin-bottom:14px;border:1px solid #d8e7e0;border-radius:8px;background:#eff7f3}.fiscal-intro>div{flex:1}.fiscal-intro p{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.5}.fiscal-intro label{margin:0;font-size:11px}.fiscal-intro select{display:block;margin-top:4px}
+.fiscal-totals{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.fiscal-totals .number-small{min-width:0;padding:12px}.fiscal-totals strong{font-size:20px}.period-caption{margin:6px 0 12px;font-size:12px;color:var(--muted)}
+.fiscal-footer{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:16px 0;padding:16px;background:#edf1f3;border-radius:8px}.fiscal-footer p{margin:6px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}.row-help{display:block;max-width:380px;font-size:11px;color:var(--muted);line-height:1.5;margin-top:4px}
+@media(max-width:1000px){.fiscal-totals{grid-template-columns:repeat(3,minmax(0,1fr))}.fiscal-intro{flex-wrap:wrap}.fiscal-intro>div{flex-basis:100%}}
+@media(max-width:750px){.fiscal-totals{grid-template-columns:repeat(2,minmax(0,1fr))}.fiscal-footer{align-items:flex-start;flex-direction:column}.fiscal-totals strong{font-size:18px}}

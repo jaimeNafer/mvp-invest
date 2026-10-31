@@ -40,6 +40,19 @@ function replay(events,options={}){
 function period(report,start='',end='9999-12-31') {const inside=d=>d.slice(0,10)>=start&&d.slice(0,10)<=end,rows=report.rows.filter(e=>inside(e.date)),sales=rows.filter(e=>e.type==='SELL'),tax=report.taxes.filter(e=>inside(e.date)).reduce((s,e)=>s+e.value,0);return{rows,count:rows.filter(e=>['BUY','SELL','CONVERT'].includes(e.type)).length,sales:sales.length,wins:sales.filter(e=>e.tradeResult>EPS).length,losses:sales.filter(e=>e.tradeResult< -EPS).length,flat:sales.filter(e=>Math.abs(e.tradeResult)<=EPS).length,fees:rows.reduce((s,e)=>s+e.feeBRL,0),tax,realized:rows.reduce((s,e)=>s+e.resultBRL,0),saleResult:sales.reduce((s,e)=>s+e.tradeResult,0),conversion:rows.reduce((s,e)=>s+e.conversionResult+e.feeResult,0),volume:sales.reduce((s,e)=>s+e.grossBRL,0),deposits:report.flows.filter(e=>inside(e.date)&&e.value>0).reduce((s,e)=>s+e.value,0),withdrawals:report.flows.filter(e=>inside(e.date)&&e.value<0).reduce((s,e)=>s-e.value,0)}}
 function value(report,marks){return report.holdings.map(h=>({...h,mark:marks[h.asset]??report.marks[h.asset]??null,value:(marks[h.asset]??report.marks[h.asset]??0)*h.qty,unrealized:((marks[h.asset]??report.marks[h.asset]??0)*h.qty)-h.cost}))}
 function monthly(report,start='',end='9999-12-31'){let months=[...new Set(report.rows.filter(r=>r.date.slice(0,10)>=start&&r.date.slice(0,10)<=end).map(r=>r.date.slice(0,7)))];return months.map(month=>({month,...period(report,start>month+'-01'?start:month+'-01',end<month+'-31'?end:month+'-31')}))}
+function annualHoldings(events,year,owner='all'){
+ if(!Number.isInteger(year)||year<1901||year>9998)throw Error('Ano inválido.');
+ const previous=(year-1)+'-12-31',closing=year+'-12-31',opening=year+'-01-01',before=replay(events,{owner,end:previous}),after=replay(events,{owner,end:closing});
+ const key=h=>JSON.stringify([h.owner,h.asset]),keys=new Map();
+ for(const h of [...before.holdings,...after.holdings])keys.set(key(h),{owner:h.owner,asset:h.asset});
+ for(const e of after.rows.filter(e=>e.date.slice(0,10)>=opening&&!(e.type==='TAX'&&e.taxSource!=='portfolio')))for(const asset of [e.asset,...(['BUY','SELL','CONVERT'].includes(e.type)?[e.quote]:[])])keys.set(JSON.stringify([e.owner,asset]),{owner:e.owner,asset});
+ return [...keys.values()].map(item=>{
+  const first=before.holdings.find(h=>key(h)===key(item)),last=after.holdings.find(h=>key(h)===key(item));
+  const hasPrevious=before.rows.some(e=>e.owner===item.owner&&!(e.type==='TAX'&&e.taxSource!=='portfolio')&&[e.asset,...(['BUY','SELL','CONVERT'].includes(e.type)?[e.quote]:[]),e.feeQty?e.feeCurrency:''].includes(item.asset));
+  const accounts=Object.entries(after.custody).filter(([k,q])=>k.startsWith(item.owner+'|')&&k.endsWith('|'+item.asset)&&q>EPS).map(([k,qty])=>({venue:k.slice(item.owner.length+1,-item.asset.length-1),qty}));
+  return{...item,previousDate:previous,closingDate:closing,hasPrevious,previousQty:first?.qty||0,previousCost:first?.cost||0,qty:last?.qty||0,cost:last?.cost||0,average:last?.average||0,accounts};
+ }).sort((a,b)=>a.owner.localeCompare(b.owner)||a.asset.localeCompare(b.asset));
+}
 function compareBalance(events,check){
  if(!check||!check.owner||!check.venue||!/^[A-Z0-9]{2,12}$/.test(check.asset||'')||!/^\d{4}-\d{2}-\d{2}$/.test(check.date||'')||!Number.isFinite(Date.parse(check.date+'T00:00:00Z'))||new Date(check.date+'T00:00:00Z').toISOString().slice(0,10)!==check.date||!finite(check.qty)||check.qty<0||check.qty>1e12)throw Error('Informe titular, conta, ativo, data válida e saldo não negativo.');
  const r=replay(events,{owner:check.owner,end:check.date}),book=r.custody[check.owner+'|'+check.venue+'|'+check.asset]||0,difference=book-check.qty;
@@ -57,5 +70,5 @@ function findIssues(report){
  return issues;
 }
 function csv(rows){if(!rows.length)return'\ufeffSem registros\r\n';let keys=Object.keys(rows[0]);const cell=v=>{if(typeof v==='number')return String(v).replace('.',',');let s=String(v??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};return '\ufeff'+[keys.map(cell).join(';'),...rows.map(r=>keys.map(k=>cell(r[k])).join(';'))].join('\r\n')}
-return{validate,replay,period,value,monthly,compareBalance,findIssues,csv,EPS,TYPES};
+return{validate,replay,period,value,monthly,annualHoldings,compareBalance,findIssues,csv,EPS,TYPES};
 });
