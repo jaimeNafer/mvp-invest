@@ -151,3 +151,18 @@ dialog textarea{height:80px}
 .chart-legend i{display:inline-block;width:14px;height:9px;border-radius:2px}
 .equity-bars{height:230px;width:100%;display:block}
 @media(max-width:750px){.equity-bars{min-width:500px}.card:has(.equity-bars){overflow-x:auto}}
+
+/* Contextual help stays readable and out of the data's way. */
+.info-button{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;min-height:18px;margin-left:5px;padding:0;border:1px solid #83999f;border-radius:50%;background:transparent;color:#526f76;font:600 11px/1 Georgia,serif;vertical-align:middle;cursor:help;letter-spacing:0;text-transform:none;flex-shrink:0}
+.info-button:hover,.info-button:focus-visible{background:#e2f2ec;border-color:#147d64;color:#147d64;outline:2px solid #147d6440;outline-offset:2px}
+.info-popover{position:fixed;inset:auto;margin:0;padding:13px 15px;box-sizing:border-box;border:1px solid #d5e2df;border-radius:9px;box-shadow:0 8px 28px #102f3526;background:#fff;color:#243f45;font:400 13px/1.55 system-ui,sans-serif;max-height:calc(100vh - 24px);overflow:auto;text-transform:none;letter-spacing:normal}
+.help-inline{display:inline-flex;margin:3px 0}.help-inline .info-button{margin-left:0}
+.metric .eyebrow{display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:20px}
+.metric strong{margin-bottom:0}.metric{min-height:88px}
+.filter-help{margin-left:auto;color:var(--muted);font-size:11px;align-self:center}
+.head h1 .info-button{vertical-align:middle}.fiscal-warning>.info-button{margin-left:10px}
+th .info-button{width:15px;height:15px;min-height:15px;font-size:10px;margin-left:3px}
+@media(pointer:coarse){.info-button{width:24px;height:24px;min-height:24px}}
+#fields .form-grid>div>label{display:inline-block;margin-right:3px}
+#fields .form-grid>div>.info-button{margin-bottom:5px}
+.audit-summary{font-size:12px;color:var(--muted);margin:12px 0}
