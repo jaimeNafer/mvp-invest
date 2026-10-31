@@ -34,7 +34,7 @@ const vm=require('node:vm');
 const appSource=fs.readFileSync(fs.existsSync('app.js')?'app.js':'dist/app.js','utf8').split('let state=cl(seed)')[0];
 vm.runInNewContext(appSource+`
  const report=Ledger.replay(seed.events);
- const reference={BRL:1}; for(const [a,v] of Object.entries(markets.mixed.usd)) reference[a]=v*markets.mixed.fx;
+ const reference=report.marks;
  const equity=Ledger.value(report,reference).reduce((s,h)=>s+h.value,0);
  const unrealized=Ledger.value(report,reference).reduce((s,h)=>s+h.unrealized,0);
  const capital=report.initial.reduce((s,x)=>s+x.value,0)+report.flows.reduce((s,x)=>s+x.value,0);
@@ -45,3 +45,22 @@ vm.runInNewContext(appSource+`
  for(const row of report.rows) assertions.ok(Math.abs(row.resultBRL-row.legs.reduce((s,l)=>s+l.resultBRL,0))<1e-6,'each row result must reconcile with its detailed legs');
 `,{Ledger:E,assertions:assert});
 console.log('PASS: application demo reconciles equity and every realized leg');
+
+// External checks never change the book and always replay the selected date.
+const compareEvents=[event(1,'DEPOSIT','BRL',5000),event(2,'BUY','BTC',2,{price:1000,quote:'BRL'}),event(3,'TRANSFER','BTC',.5,{toVenue:'Y'}),event(4,'OPENING','BTC',9,{owner:'B',costBRL:9000})];
+const original=JSON.stringify(compareEvents);
+assert.equal(E.compareBalance(compareEvents,{owner:'A',venue:'X',asset:'BTC',date:'2026-01-02',qty:2}).matches,true);
+assert.equal(E.compareBalance(compareEvents,{owner:'A',venue:'X',asset:'BTC',date:'2026-01-03',qty:2}).difference,-.5);
+assert.equal(E.compareBalance(compareEvents,{owner:'A',venue:'Y',asset:'BTC',date:'2026-01-04',qty:.5}).matches,true);
+assert.equal(E.compareBalance(compareEvents,{owner:'B',venue:'X',asset:'BTC',date:'2026-01-04',qty:9}).matches,true);
+assert.equal(E.compareBalance(compareEvents,{owner:'A',venue:'Z',asset:'BTC',date:'2026-01-04',qty:0}).matches,true);
+assert.throws(()=>E.compareBalance(compareEvents,{owner:'A',venue:'X',asset:'BTC',date:'2026-02-30',qty:0}),/data válida/);
+assert.throws(()=>E.compareBalance(compareEvents,{owner:'A',venue:'X',asset:'BTC',date:'2026-01-04',qty:-1}),/saldo não negativo/);
+assert.equal(JSON.stringify(compareEvents),original,'checking does not adjust transactions');
+const amended=compareEvents.map(e=>e.type==='TRANSFER'?{...e,qty:.75}:e);
+assert.equal(E.compareBalance(amended,{owner:'A',venue:'Y',asset:'BTC',date:'2026-01-04',qty:.5}).matches,false,'historical correction invalidates a former match');
+const withIssues=E.replay([event(1,'OPENING','BRL',5000,{costBRL:5000,country:'UNKNOWN'}),event(2,'BUY','BTC',1,{price:1000,quote:'BRL',reference:'ORDER'}),event(3,'BUY','BTC',1,{price:1000,quote:'BRL',reference:'ORDER'}),event(4,'OPENING','ETH',1,{costBRL:0})]);
+assert.equal(E.findIssues(withIssues).filter(i=>i.kind==='repeated').length,2);
+assert.equal(E.findIssues(withIssues).filter(i=>i.kind==='cost').length,1);
+assert.equal(E.findIssues(withIssues).filter(i=>i.kind==='country').length,1);
+console.log('PASS: external balance checks, dates, custody, owners, zero balances, historical changes and review flags');

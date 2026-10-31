@@ -1,201 +1,70 @@
-# Lastro v3 — operações sob controle, carteira com clareza
+# Lastro — seus números, explicados
 
-> Registre uma vez. Entenda custo, resultado e saúde da carteira sem reconstruir tudo em uma planilha.
+O Lastro organiza operações de cripto para responder **quanto custaram seus saldos, de onde veio seu resultado e o que ainda precisa ser conferido**. Um histórico contínuo evita recriar o controle em outra planilha todo mês.
 
-O MVP foi simplificado para priorizar a principal dor do usuário: **registrar operações e entender lucro, prejuízo, taxas, preço médio e patrimônio**, com uma base exportável para apoiar a organização fiscal.
+## Para quem
 
-A estratégia de cada ativo continua no detalhe da posição. O centro do produto agora é um livro manual que alimenta os consolidados automaticamente.
+Investidores brasileiros de cripto à vista, com poucas contas, operações em reais ou stablecoins e necessidade de separar titulares. O protótipo começa com exemplos fictícios; os lançamentos próprios são manuais.
 
-**Protótipo local, com exemplos fictícios e preços de mercado simulados.** O motor calcula resultados gerenciais a partir dos lançamentos; não calcula imposto devido e não emite DARF. O plano atualizado está em [PLAN.md](PLAN.md).
+## O diferencial que estamos validando
 
-## O que você consegue fazer
+**Do total ao lançamento, do lançamento ao documento.**
 
-- Registrar compras, vendas, conversões e taxas, com quantidade e moeda originais.
-- Informar cotação histórica para converter cada operação em reais.
-- Manter saldos e custo de USDC, USD e outros ativos usados nas negociações.
-- Separar titulares e consolidar a família sem misturar suas bases de custo.
-- Registrar saldos iniciais, aportes, retiradas, transferências próprias e impostos pagos.
-- Ver preço médio, custo em aberto, resultado realizado e resultado não realizado.
-- Extrair negociações, vendas com lucro/prejuízo/neutras, taxas, impostos e base mensal.
-- Revisar tese, invalidação, objetivo de parcial e risco da posição aberta.
-- Exportar CSVs e um backup completo JSON; restaurar backups do próprio Lastro.
+- **Resultado explicado:** separa vendas de ativos de câmbio, conversões e rede; permite abrir os lançamentos e seus cálculos.
+- **Fila de conferência:** aponta país ausente, referência de ordem ausente, custo inicial zero e referências repetidas. O usuário investiga e corrige; não há exclusões automáticas.
+- **Comparação com extrato:** registre quantidade, conta, titular, data e referência do documento. O Lastro compara com o saldo calculado no fim desse dia e mostra a diferença. Uma correção posterior no histórico recalcula a comparação.
+- **Histórico contínuo:** custos anteriores continuam compondo os resultados mesmo quando a tela mostra só um mês.
+- **Titulares separados:** a visão conjunta soma valores sem compartilhar preço médio entre pessoas.
 
-Catálogo de entrada atual: BTC, ETH, SOL, USDC, USDT, BNB, BRL e USD. Importação de extratos e integração com corretoras são próximas etapas, não funções já disponíveis.
+Essa proposta é uma hipótese competitiva, não uma validação de mercado. A utilidade e a disposição de pagar ainda serão testadas com investidores e contadores.
 
-## Primeiro uso
+## Comece por um período que você consiga conferir
 
-A aplicação abre com registros demonstrativos separados entre dois titulares. Eles não representam a carteira real de ninguém.
+1. Registre um saldo inicial com custo de aquisição conhecido ou um aporte.
+2. Cadastre compras, vendas, conversões e taxas, com as cotações históricas em reais.
+3. Abra **Ver composição** para entender o resultado e **Ver cálculo** para chegar ao lançamento.
+4. Em **Conferência**, informe o saldo total de um ativo em uma conta no fim do dia, conforme seu extrato. Inclua quantidades bloqueadas em ordens, não só o saldo disponível.
+5. Investigue diferenças e pendências. Uma referência repetida pode ser uma ordem com várias execuções, e não um lançamento duplicado.
+6. Exporte operações, saldos, resumo mensal e comparações. Preserve também um backup JSON.
 
-1. Abra **Operações** e confira uma venda de exemplo no botão **Ver**.
-2. Observe as parcelas de resultado, o custo baixado e as taxas.
-3. Na **Visão geral**, veja o preço médio e o saldo derivados do livro.
-4. Clique numa posição para ver estratégia, contexto e operações relacionadas.
-5. Na **Base fiscal**, consulte o resumo mensal e as pendências de cadastro.
-6. Use **Dados e backup** para exportar os exemplos ou iniciar um livro vazio.
+## O que cada número significa
 
-Para começar seu próprio livro, primeiro registre aportes ou saldos anteriores com custo conhecido. Uma compra exige saldo da moeda de pagamento na conta selecionada; uma venda exige saldo do ativo. O sistema recusa saídas sem saldo, inclusive quando uma edição retroativa invalida operações posteriores.
-
-## Um exemplo simples de preço médio
-
-Suponha uma carteira em reais:
-
-| Evento | Valor |
-| --- | ---: |
-| Compra de 2 unidades a R$ 1.000, taxa R$ 20 | Custo R$ 2.020 |
-| Compra de 1 unidade a R$ 1.300, taxa R$ 10 | Custo adicional R$ 1.310 |
-| Saldo antes da venda | 3 unidades, custo R$ 3.330, PM R$ 1.110 |
-| Venda de 1 unidade por R$ 1.500, taxa R$ 15 | Líquido R$ 1.485 |
-| Resultado realizado da venda | R$ 375 |
-| Saldo restante | 2 unidades, custo R$ 2.220, PM R$ 1.110 |
-
-As taxas já estão no custo ou no líquido. A coluna **Taxas registradas** permite consultar o gasto, sem descontá-lo novamente do resultado.
-
-## Como o livro é calculado
-
-### Ordem e titularidade
-
-As operações são reprocessadas por data/hora em Brasília, sequência de cadastro e identificador. A média móvel ponderada é calculada por **titular + ativo**, consolidando as contas desse titular. Custódia é mantida separada por conta/carteira.
-
-Essa é uma política de controle gerencial. Não determina, por si só, a política exigida em cada regime tributário.
-
-### Compra e venda
-
-- **Compra:** preço × quantidade × cotação histórica determina o valor bruto em BRL. Taxas em moeda de negociação, BRL ou terceiro token são incorporadas ao custo; a moeda usada no pagamento tem seu custo proporcional baixado.
-- **Taxa no ativo comprado:** reduz a quantidade recebida, mantendo o custo total pago. O preço médio reflete a quantidade líquida.
-- **Venda:** receita líquida em BRL menos custo proporcional baixado resulta no ganho/prejuízo gerencial do ativo.
-- **Taxa no ativo vendido:** baixa adicional da quantidade e do custo do próprio ativo.
-- **Taxa em terceiro token:** exige saldo anterior desse token e sua cotação em BRL; a perna de disposição e seu custo ficam detalhados.
-
-Cada venda parcial conta como uma venda, não como encerramento integral de uma posição. As contagens de lucro, prejuízo e zero são das vendas registradas; negociações incluem compras, vendas e conversões.
-
-### USDC, câmbio e conversões
-
-Vender BTC por USDC gera resultado do BTC e estabelece custo em reais para os USDC recebidos. Utilizar esses USDC depois pode gerar diferença entre seu valor no momento e seu custo histórico.
-
-Por isso, o app separa:
-
-1. resultado das vendas de ativos;
-2. conversões/variação em BRL das moedas utilizadas ou retiradas;
-3. resultado das taxas pagas em ativos e despesas de rede.
-
-Uma compra pode mostrar variação realizada da moeda utilizada, sem que o BTC recém-comprado tenha sido vendido. Essa separação evita confundir moedas e evita duplicar o resultado.
-
-**Conversão é um único lançamento:** informe ativo recebido, quantidade recebida, moeda/ativo entregue e unidades entregues por unidade recebida. O motor deriva ambas as pernas. Não registre também uma compra e venda para a mesma conversão.
-
-### Aportes, saldos e transferências
-
-| Tipo | Tratamento no MVP |
+| Número | Significado |
 | --- | --- |
-| Saldo inicial | Quantidade anterior e custo histórico total conhecido. Não é aporte novo nem lucro. |
-| Aporte | BRL ou USD que entram na conta. Não é lucro. |
-| Retirada | BRL ou USD que saem; a moeda pode gerar variação gerencial em reais. Não é venda de cripto por si só. |
-| Transferência própria | Move quantidade entre contas do mesmo titular sem mudar média; eventual taxa reduz o resultado. |
-| Imposto pago | Registro manual do valor, competência, referência e origem do pagamento. |
+| Custo dos saldos | Custo de aquisição do que ainda está na carteira, incluindo taxas elegíveis. |
+| Resultado realizado | Resultado das operações do período; inclui câmbio/conversões e rede. Taxas já consideradas, impostos pagos separados. |
+| Taxas | Total informativo de taxas em reais. Não descontar novamente do resultado. |
+| Valor de referência | Quantidade pela última cotação registrada nas operações. Pode estar desatualizado; não é valor de mercado. |
+| Comparação de saldo | Quantidade do Lastro menos quantidade digitada do extrato, por conta, titular, ativo e data. |
+| Pagamento de imposto | Valor pago e cadastrado pelo usuário. Não é imposto calculado ou devido. |
 
-Para entrada de cripto já existente, registre saldo inicial com custo histórico e documentação. Não use isso para simular rendimentos ou operações não suportadas. Transferências entre titulares não são suportadas.
+Coincidir quantidade **não comprova custo, completude ou correção fiscal**. Ausência de pendências significa somente que as checagens implementadas não apontaram problemas. O Lastro não acessa nem autentica o extrato digitado.
 
-As taxas de saldo inicial, aporte, retirada e imposto não são registradas nesses tipos nesta versão. Taxas de rede pertencem ao tipo transferência. Não registre uma conversão BRL/USDC como retirada ou aporte para contornar custos.
+## Limites desta versão
 
-### Impostos pagos
+- Não recomenda ativos, entradas, saídas, stops ou alocações. Estratégias e alertas macro foram retirados da interface.
+- Não calcula imposto, não emite DARF e não entrega declarações. O resumo mensal organiza dados para conferência.
+- Não possui cotações ao vivo. O gráfico usa referências dos lançamentos e não representa rentabilidade histórica de mercado.
+- Não importa arquivos de corretoras nem sincroniza APIs nesta versão. Restaurar JSON é recuperar um backup do Lastro.
+- O histórico é local ao navegador: sem conta de usuário, sincronização ou backup automático em servidor. O acesso ao site pode ter uma barreira do provedor de hospedagem, mas isso não sincroniza o livro.
+- Cálculos gerenciais em `Number` do JavaScript; precisam de validação contábil independente e aritmética decimal antes de produção.
+- Fora do escopo: futuros, alavancagem, staking, rendimentos, pools/DeFi e transferências entre titulares.
 
-Escolha se o pagamento foi **fora da carteira**, para só registrar a despesa informada, ou se deve **debitar o saldo da conta**. A competência e o comprovante ficam separados da data do pagamento.
-
-O consolidado apresenta impostos no mês do pagamento. O indicador “realizado após impostos informados” é gerencial, pois o pagamento pode se referir a outro período.
-
-## Visão geral
-
-Seis cards mostram patrimônio, realizado, aberto, negociações, taxas e impostos pagos. A tabela de carteira apresenta:
-
-- titular e ativo;
-- quantidade;
-- preço médio em reais;
-- custo em aberto;
-- preço de referência e valor marcado;
-- lucro/prejuízo não realizado;
-- saúde da posição e contexto simulado, quando há estratégia.
-
-Filtros de titular e período afetam consolidados. Saldos são reconstruídos até a data final. Compras anteriores ao período continuam compondo o custo das vendas no período.
-
-### Evolução patrimonial
-
-O gráfico reconstrói patrimônio nas datas dos registros, usando as últimas referências disponíveis em cada ponto. O último ponto usa preços simulados quando a data final é 31/10/2026 ou posterior.
-
-Uma segunda curva mostra saldos iniciais a custo + aportes − retiradas. Ela ajuda a perceber que entrada de capital não é lucro. Não é um histórico de preços diário, nem cálculo de retorno ponderado por tempo ou dinheiro.
-
-Para datas anteriores à referência demonstrativa, a carteira usa os últimos preços registrados até aquela data. Não há avaliação histórica real do contexto.
-
-## Saúde das posições
-
-O detalhe mantém plano e contexto separados, com tese breve, invalidação, objetivo de parcial e limite de risco. Preço médio e quantidade vêm do livro, sem edição direta na estratégia.
-
-Os níveis do plano são em USD. A avaliação de risco os converte pelo dólar simulado atual e compara com o custo médio em BRL e o patrimônio do titular. É uma estimativa; não garante execução ou perda máxima e não inclui taxas futuras, slippage ou gaps.
-
-Os cenários de contexto continuam fictícios: misto, estresse, recuperação, perda de suporte e objetivo alcançado. Trocar cenário muda a marcação da carteira, mas preserva as cotações históricas usadas no custo.
-
-Registrar uma revisão não envia ordens, não altera saldos e não remove alertas. Uma venda de verdade precisa ser registrada no livro.
-
-## Base de apoio fiscal
-
-A tela consolida mensalmente negociações, vendas brutas, resultado das vendas, outras parcelas realizadas, taxas, impostos pagos, aportes e retiradas. Sinaliza instituição sem localização, falta de referência externa e saldo inicial com custo zero declarado.
-
-O usuário informa Brasil/exterior com base na entidade/documentação da instituição. A marca comercial da corretora não determina essa informação automaticamente.
-
-**O MVP não determina alíquota, isenção, regime tributário, compensação, código, vencimento, imposto devido ou obrigação declaratória. Não gera DARF.** Os dados gerenciais precisam de conferência e classificação adequada para uso fiscal. As pendências da tela não constituem auditoria completa.
-
-| Exportação | Conteúdo |
-| --- | --- |
-| Operações CSV | Dados originais, câmbio, taxas, custos, resultados, pernas derivadas, titular, instituição e referências. |
-| Carteira CSV | Quantidade, média, custo, marcação, resultado e custódia na data final. |
-| Base mensal CSV | Consolidados por mês e por titular, mantendo bases separadas na visão família. |
-| Backup JSON | Todo o livro, titulares, estratégias e revisões; independente dos filtros da tela. |
-
-CSV utiliza UTF-8 com BOM, separador ponto-e-vírgula e vírgula decimal. Textos com prefixos de fórmulas são neutralizados para uso em planilhas. Os arquivos não substituem os comprovantes de origem.
+A versão de produto é MVP 4. A chave de armazenamento e o formato de backup continuam v3 para preservar compatibilidade. Dados antigos de estratégias/revisões permanecem no backup, sem funcionalidade ativa.
 
 ## Executar e verificar
 
-Sem dependências nem build. Com Python 3, na pasta dos arquivos públicos:
+Sem dependências de execução. Sirva a pasta que contém `index.html`, `app.js`, `ledger.js` e `styles.css` por HTTP:
 
 ```sh
-python -m http.server 8000
+python3 -m http.server 8000
+node --test tests/ledger.test.cjs
 ```
 
-Abra [http://localhost:8000](http://localhost:8000).
+O motor fica em `ledger.js`; a interface em `app.js`. Os testes cobrem custo médio, taxas, câmbio, contas, titulares, filtros, composição dos resultados, comparações históricas e pendências.
 
-Com Node.js, na raiz do repositório:
+A infraestrutura de hospedagem usa uma cópia desses arquivos em `dist/`.
 
-```sh
-node --check app.js
-node --check ledger.js
-node tests/ledger.test.cjs
-```
+## Próximo investimento
 
-No checkout do Sites, os arquivos públicos ficam em dist/. O teste aceita ambas as estruturas.
-
-```text
-index.html              Estrutura da aplicação
-styles.css              Layout responsivo
-ledger.js               Motor contábil gerencial, sem DOM
-app.js                  Interface, formulários, exportação e persistência
-tests/ledger.test.cjs    Casos numéricos e validações
-PLAN.md                 Escopo revisado e evolução do MVP
-README.md               Instruções e critérios de cálculo
-```
-
-O teste cobre média ponderada, vendas parciais, moedas históricas, conversões, taxas em moeda de negociação/ativo/terceiro token, transferência, titulares separados, custódia, períodos parciais, aportes, retiradas, impostos, saldo insuficiente, datas e CSV.
-
-## Persistência e limites
-
-A v3 usa lastro-v3 no localStorage. Os dados de v1/v2 permanecem separados, sem migração automática: um saldo estático sem custo e histórico não deve virar um livro artificialmente.
-
-O backup JSON é validado antes da confirmação de restauração. Ele substitui a v3 local e não importa relatórios de corretoras. Exporte antes de restaurar, limpar o livro ou trocar de dispositivo.
-
-Limites atuais:
-
-- preços e contexto de mercado simulados, sem cotação ao vivo;
-- entrada manual e catálogo limitado;
-- sem contas de usuário, banco ou histórico de edição em servidor;
-- quantidade e valores usam Number do JavaScript, não aritmética decimal financeira certificada;
-- sem derivativos, short, DeFi/LP, rendimentos, eventos societários ou transferências entre titulares;
-- motor gerencial não homologado para apuração fiscal; concilie saldos e custos com comprovantes.
-
-**Próxima prioridade:** validar o esforço e a confiabilidade do lançamento manual com extratos conciliáveis. Importação e regras fiscais versionadas só entram depois que essa base estiver sólida.
+Validar o fluxo com históricos reais e autorização dos participantes. Priorizar uma primeira importação CSV com prévia e prevenção de duplicações se o esforço manual bloquear o uso. Expandir somente quando houver evidência de tempo economizado, números conciliáveis e uso recorrente.

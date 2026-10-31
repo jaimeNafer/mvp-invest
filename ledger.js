@@ -40,6 +40,22 @@ function replay(events,options={}){
 function period(report,start='',end='9999-12-31') {const inside=d=>d.slice(0,10)>=start&&d.slice(0,10)<=end,rows=report.rows.filter(e=>inside(e.date)),sales=rows.filter(e=>e.type==='SELL'),tax=report.taxes.filter(e=>inside(e.date)).reduce((s,e)=>s+e.value,0);return{rows,count:rows.filter(e=>['BUY','SELL','CONVERT'].includes(e.type)).length,sales:sales.length,wins:sales.filter(e=>e.tradeResult>EPS).length,losses:sales.filter(e=>e.tradeResult< -EPS).length,flat:sales.filter(e=>Math.abs(e.tradeResult)<=EPS).length,fees:rows.reduce((s,e)=>s+e.feeBRL,0),tax,realized:rows.reduce((s,e)=>s+e.resultBRL,0),saleResult:sales.reduce((s,e)=>s+e.tradeResult,0),conversion:rows.reduce((s,e)=>s+e.conversionResult+e.feeResult,0),volume:sales.reduce((s,e)=>s+e.grossBRL,0),deposits:report.flows.filter(e=>inside(e.date)&&e.value>0).reduce((s,e)=>s+e.value,0),withdrawals:report.flows.filter(e=>inside(e.date)&&e.value<0).reduce((s,e)=>s-e.value,0)}}
 function value(report,marks){return report.holdings.map(h=>({...h,mark:marks[h.asset]??report.marks[h.asset]??null,value:(marks[h.asset]??report.marks[h.asset]??0)*h.qty,unrealized:((marks[h.asset]??report.marks[h.asset]??0)*h.qty)-h.cost}))}
 function monthly(report,start='',end='9999-12-31'){let months=[...new Set(report.rows.filter(r=>r.date.slice(0,10)>=start&&r.date.slice(0,10)<=end).map(r=>r.date.slice(0,7)))];return months.map(month=>({month,...period(report,start>month+'-01'?start:month+'-01',end<month+'-31'?end:month+'-31')}))}
+function compareBalance(events,check){
+ if(!check||!check.owner||!check.venue||!/^[A-Z0-9]{2,12}$/.test(check.asset||'')||!/^\d{4}-\d{2}-\d{2}$/.test(check.date||'')||!Number.isFinite(Date.parse(check.date+'T00:00:00Z'))||new Date(check.date+'T00:00:00Z').toISOString().slice(0,10)!==check.date||!finite(check.qty)||check.qty<0||check.qty>1e12)throw Error('Informe titular, conta, ativo, data válida e saldo não negativo.');
+ const r=replay(events,{owner:check.owner,end:check.date}),book=r.custody[check.owner+'|'+check.venue+'|'+check.asset]||0,difference=book-check.qty;
+ return{...check,book,difference,matches:Math.abs(difference)<=EPS};
+}
+function findIssues(report){
+ const issues=[],refs=new Map();
+ for(const e of report.rows){
+  if(e.country==='UNKNOWN')issues.push({id:e.id,kind:'country',label:'País da instituição ausente',help:'Informe Brasil ou exterior conforme os documentos da instituição.'});
+  if(['BUY','SELL','CONVERT'].includes(e.type)&&!e.reference)issues.push({id:e.id,kind:'reference',label:'Falta ordem ou comprovante',help:'Adicione a referência para localizar esta operação no extrato.'});
+  if(e.type==='OPENING'&&e.costBRL===0)issues.push({id:e.id,kind:'cost',label:'Custo inicial informado como zero',help:'Confira o custo de aquisição. Custo desconhecido não equivale a zero.'});
+  if(e.reference){const key=JSON.stringify([e.owner,e.venue,e.reference]);if(!refs.has(key))refs.set(key,[]);refs.get(key).push(e);}
+ }
+ for(const entries of refs.values())if(entries.length>1)for(const e of entries)issues.push({id:e.id,kind:'repeated',label:'Referência repetida: confira',help:'Pode ser uma ordem com várias execuções ou um lançamento repetido. Compare os documentos antes de excluir.'});
+ return issues;
+}
 function csv(rows){if(!rows.length)return'\ufeffSem registros\r\n';let keys=Object.keys(rows[0]);const cell=v=>{if(typeof v==='number')return String(v).replace('.',',');let s=String(v??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};return '\ufeff'+[keys.map(cell).join(';'),...rows.map(r=>keys.map(k=>cell(r[k])).join(';'))].join('\r\n')}
-return{validate,replay,period,value,monthly,csv,EPS,TYPES};
+return{validate,replay,period,value,monthly,compareBalance,findIssues,csv,EPS,TYPES};
 });

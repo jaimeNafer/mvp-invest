@@ -166,3 +166,8 @@ th .info-button{width:15px;height:15px;min-height:15px;font-size:10px;margin-lef
 #fields .form-grid>div>label{display:inline-block;margin-right:3px}
 #fields .form-grid>div>.info-button{margin-bottom:5px}
 .audit-summary{font-size:12px;color:var(--muted);margin:12px 0}
+.focus-metrics{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.waterfall-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+.waterfall-row.total{font-size:16px;border-bottom:0;color:#176e59}
+.cash-summary{display:flex;gap:24px;flex-wrap:wrap;margin-top:14px;color:var(--muted);font-size:12px}.cash-summary b{display:block;color:var(--ink);margin-top:5px}
+@media(max-width:750px){.focus-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
