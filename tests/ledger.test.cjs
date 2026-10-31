@@ -64,3 +64,41 @@ assert.equal(E.findIssues(withIssues).filter(i=>i.kind==='repeated').length,2);
 assert.equal(E.findIssues(withIssues).filter(i=>i.kind==='cost').length,1);
 assert.equal(E.findIssues(withIssues).filter(i=>i.kind==='country').length,1);
 console.log('PASS: external balance checks, dates, custody, owners, zero balances, historical changes and review flags');
+// Annual support uses acquisition costs and all history through December 31.
+const annualEvents=[{...event(1,'OPENING','BTC',2,{costBRL:2000}),date:'2024-12-15T10:00'},
+ {...event(2,'SELL','BTC',.5,{price:1600,quote:'BRL'}),date:'2025-02-01T10:00'},
+ {...event(3,'BUY','BTC',.25,{price:2000,quote:'BRL'}),date:'2025-11-01T10:00'},
+ {...event(4,'TRANSFER','BTC',.25,{toVenue:'Y'}),date:'2025-12-20T10:00'},
+ {...event(5,'OPENING','BTC',1,{owner:'B',costBRL:3000}),date:'2025-03-01T10:00'}];
+const yearRows=E.annualHoldings(annualEvents,2025),aYear=yearRows.find(h=>h.owner==='A'&&h.asset==='BTC'),bYear=yearRows.find(h=>h.owner==='B'&&h.asset==='BTC');
+assert.equal(aYear.previousQty,2);assert.equal(aYear.previousCost,2000);
+assert.equal(aYear.qty,1.75);assert.equal(aYear.cost,2000,'closing is at cost, not latest price');
+assert.equal(aYear.accounts.find(x=>x.venue==='Y').qty,.25);
+assert.equal(bYear.hasPrevious,false,'missing prior history must not claim a confirmed zero');assert.equal(bYear.cost,3000);
+assert.equal(E.annualHoldings(annualEvents,2025,'A').some(h=>h.owner==='B'),false);
+const exited=E.annualHoldings([annualEvents[0],{...event(2,'SELL','BTC',2,{price:1500,quote:'BRL'}),date:'2025-12-31T10:00'}],2025,'A').find(h=>h.asset==='BTC');assert.equal(exited.qty,0);assert.equal(exited.cost,0);assert.equal(exited.previousCost,2000);
+assert.throws(()=>E.annualHoldings([],NaN),/Ano inválido/);
+console.log('PASS: annual acquisition cost, prior-year history, fully sold assets, late-year entries, custody and owners');
+
+// Exercise actual export functions with a download sink, without browser/network.
+const uiSource=fs.readFileSync(fs.existsSync('app.js')?'app.js':'dist/app.js','utf8').split("$('backupFile').onchange")[0];
+vm.runInNewContext(uiSource+`
+ let captured;
+ download=(name,data,mime)=>{captured={name,data,mime};};
+ owner='Eliane (demo)';start='2026-09-01';end='2026-09-30';
+ exportAnnual();
+ assertions.ok(Math.abs(Number(captured.data.split('\\r\\n').find(line=>line.includes('\"BTC\"')).split(';')[9].replace(',','.'))-7657.65)<1e-6);
+ assertions.ok(!captured.data.includes('Jaime (demo)'),'annual export respects titular');
+ exportFiscal();
+ assertions.ok(captured.data.includes('custo_vendido_BRL'));
+ assertions.ok(!captured.data.includes('Jaime (demo)'),'monthly export respects titular');
+ assertions.equal(fiscalMonthly(report()).length,1,'partial month export respects date filter');
+ exportFiscalReport();
+ assertions.ok(captured.data.startsWith('<!doctype html>'));
+ assertions.ok(captured.data.includes('Saldos anuais a custo de aquisição'));
+ assertions.ok(captured.data.includes('Operações do período'));
+ assertions.ok(!captured.data.includes('<button'),'portable report contains no inactive buttons or help icons');
+ assertions.ok(!captured.data.includes('Jaime (demo)'),'report respects titular');
+ assertions.ok(captured.data.includes('150,15'),'report includes actual historical result');
+`,{Ledger:E,assertions:assert,document:{getElementById:()=>({})},localStorage:{getItem:()=>null},console});
+console.log('PASS: actual monthly CSV, annual CSV and portable report exports with date/titular filters');
