@@ -1,278 +1,178 @@
-# Lastro — sua carteira precisa de um motivo, um plano e uma memória
+# Lastro v2 — clareza para decidir
 
-> Entenda o que você tem, por que comprou e o que precisa acontecer para mudar de decisão.
+> Seu plano de um lado. O momento do mercado do outro.
 
-O Lastro é uma proposta de aplicativo para acompanhar investimentos em cripto conectando **carteira, tese de investimento, plano de risco e diário de decisões**.
+O Lastro é um protótipo de acompanhamento de investimentos em cripto. Seu objetivo é ajudar o investidor a entender **o que mudou, como isso afeta suas posições e quais premissas merecem revisão**.
 
-A experiência começa com uma pergunta simples: **se você abrisse sua carteira hoje, conseguiria explicar por que ainda mantém cada posição?**
+A v2 prioriza leitura visual, pouco texto na primeira camada e explicações sob demanda. A tese permanece no detalhe de cada posição, confrontada com os preços e o contexto do momento.
 
-O objetivo é tornar essa resposta fácil de encontrar, revisar e comparar com o que você realmente fez.
+**Todos os dados são fictícios.** Preços, movimentos macroeconômicos, gráficos e leituras técnicas são cenários demonstrativos. Não há consulta ao mercado, previsão de preços ou execução de ordens.
 
-**Estado atual:** protótipo navegável com dados fictícios. Este repositório demonstra uma experiência de produto; ainda não comprova demanda, disposição a pagar ou melhora de resultados financeiros.
+## O problema que queremos resolver
 
-## 1. O problema que queremos resolver
+Uma posição pode estar lucrativa enquanto o ambiente fica mais arriscado. Outra pode seguir dentro dos limites de preço, mas já exigir uma revisão das premissas.
 
-Imagine esta situação:
+O Lastro organiza três perguntas em uma mesma tela:
 
-Você compra um ativo depois de estudar um cenário. Define mentalmente um limite de perda, pensa em realizar parte do lucro e decide esperar uma confirmação antes de aumentar a posição.
-
-Dias depois, o preço muda. Você lê uma opinião diferente, vê uma oportunidade em outro ativo e tenta lembrar exatamente o que havia planejado.
-
-A pergunta deixa de ser apenas “quanto estou ganhando?” e passa a ser:
-
-- Por que entrei nessa posição?
-- O que mudou desde a compra?
-- Estou seguindo meu plano ou adaptando a explicação ao preço?
-- Essa compra adicional já estava prevista?
-- Quando vendi, respeitei meu critério ou agi por impulso?
-- O que posso aprender com essa operação?
-
-O problema que o Lastro pretende atacar é a **distância entre ter informações e conseguir usá-las de forma consistente nas próprias decisões**.
-
-Um saldo informa o tamanho da posição. Para entender a decisão, precisamos também do seu contexto.
-
-## 2. O que é uma tese de investimento?
-
-“Tese” é o nome dado à explicação de por que um investimento faz sentido para você e em quais condições essa explicação deixa de valer.
-
-Ela pode ser curta e escrita em linguagem comum:
-
-> “Quero exposição a este ativo enquanto o cenário que estudei continuar válido. Vou manter uma posição limitada, revisar no fechamento diário e reduzir a exposição se o critério de invalidação acontecer.”
-
-Uma tese útil responde a quatro perguntas:
-
-| Pergunta | O que registrar |
+| Pergunta | O que o produto apresenta |
 | --- | --- |
-| Por que tenho esse ativo? | A oportunidade ou o motivo da exposição. |
-| O que sustenta essa decisão? | As condições que você espera observar. |
-| O que faria mudar de ideia? | Os critérios de invalidação e revisão. |
-| Qual é o próximo passo? | A ação ou observação que já está planejada. |
+| Qual era meu plano? | Entrada, invalidação, parcial e limite de risco. |
+| Onde estou agora? | Preço, resultado, distâncias e impacto potencial na carteira. |
+| O que mudou ao redor? | Juros, petróleo, mercado acionário e leitura técnica. |
 
-A proposta do Lastro é colocar essas respostas ao lado da posição correspondente, para que o investidor não precise reconstruir seu raciocínio a cada revisão.
+O investidor interpreta essas informações e decide. O registro da decisão preserva o contexto daquele momento.
 
-## 3. A experiência que estamos propondo
+## O que mudou na v2
 
-**Carteira → tese → plano → decisão → revisão.**
+- Carteira e oportunidades ocupam o centro da navegação.
+- A tese é definida ao adicionar uma posição ou intenção de entrada.
+- O detalhe mantém o plano visível em um painel lateral no desktop e como primeiro bloco em telas menores.
+- **Estado do plano** e **estado do contexto** são avaliações separadas.
+- Gráfico ilustrativo, níveis, progresso, indicadores e cores resumem a primeira leitura.
+- Explicações de alerta, evidências contrárias e fórmulas ficam em detalhes expansíveis.
+- A revisão registra uma decisão; não apaga alertas e não altera saldos ou quantidades.
 
-1. **Veja a carteira:** posições, caixa e distribuição do patrimônio.
-2. **Abra um ativo:** encontre o motivo da exposição e os critérios do plano.
-3. **Revise o contexto:** compare o que havia previsto com o que está observando.
-4. **Registre uma decisão:** explique o que decidiu e por quê.
-5. **Volte ao histórico:** acompanhe como seu raciocínio mudou ao longo do tempo.
+## Um exemplo concreto
 
-O valor pretendido está na continuidade desse ciclo. Cada registro ajuda a dar contexto à próxima revisão.
+O BTC demonstrativo usa o plano discutido para o produto:
 
-### Um exemplo prático
-
-Considere uma posição fictícia em BTC:
-
-| Momento | Uso pretendido do Lastro |
+| Premissa | Plano de exemplo |
 | --- | --- |
-| Antes da compra | Registrar a motivação, o limite da exposição e a invalidação. |
-| Durante a posição | Consultar o plano antes de aumentar, reduzir ou manter. |
-| Depois de uma realização parcial | Registrar o motivo e a relação com o plano original. |
-| Quando o cenário mudar | Documentar o que deixou de valer e a decisão tomada. |
-| Na revisão posterior | Ler a sequência e identificar onde houve disciplina, dúvida ou improviso. |
+| Entrada | US$ 76.000 |
+| Cenário negativo | Encerrar caso perca a referência de US$ 74.000. |
+| Limite de risco | Perda planejada de até 2% da carteira nesta posição. |
+| Cenário positivo | Realizar 25% da posição em US$ 85.000. |
 
-O sistema organiza o raciocínio do investidor. A decisão continua sendo dele.
+No cenário **Estresse**, o BTC vale US$ 78.500. A posição de 0,2 BTC apresenta lucro aberto de US$ 500, mas juros e petróleo sobem enquanto o S&P 500 cai.
 
-## 4. O que o usuário ganha com isso?
+A tela mostra simultaneamente:
 
-### Clareza antes de agir
+- **Plano: dentro dos níveis.** O preço não atingiu a invalidação nem o objetivo.
+- **Contexto: reavaliar.** As condições do exemplo merecem atenção, mesmo com lucro.
 
-Ter o plano junto da posição pode facilitar uma pausa útil: “Essa ação faz sentido diante do que eu mesmo defini?”
+Não há contradição: o preço ainda respeita o plano, enquanto o contexto sugere revisar se suas premissas continuam adequadas.
 
-### Memória das decisões
+## Experimente cinco cenários
 
-O diário preserva a justificativa escrita naquele momento. Isso permite revisar o raciocínio original, sem depender apenas da lembrança posterior.
+Use **Simular contexto**, no topo. O cenário selecionado atualiza preços, patrimônio, risco e leituras em todas as telas.
 
-### Uma rotina de revisão
-
-A carteira pode funcionar também como uma lista de decisões a acompanhar: quais posições precisam de atenção e qual é o próximo passo de cada uma.
-
-### Material para aprender com a própria experiência
-
-O histórico pode ajudar a investigar se uma decisão respeitou o plano, quais critérios foram úteis e quais precisam melhorar.
-
-**Esses são benefícios pretendidos. O protótipo ainda não mede redução de impulsividade, economia de tempo ou melhoria de desempenho.**
-
-## 5. Para quem faz sentido começar?
-
-O público inicial proposto é o **investidor individual em cripto que acompanha suas posições ativamente e já tenta trabalhar com algum plano**.
-
-Alguém que mantém poucas posições, consulta análises, faz revisões e deseja entender melhor suas próprias decisões é um perfil útil para testar a ideia.
-
-O encaixe parece menor para quem faz aportes automáticos e raramente revisa posições, ou para quem procura apenas uma cotação rápida.
-
-Esse recorte é uma hipótese de público. Precisamos observar quem usa o produto de verdade antes de ampliá-lo.
-
-## 6. Por que alguém usaria em vez de uma planilha, notas ou um chat?
-
-O Lastro precisa merecer esse lugar na rotina. Organizar tudo manualmente em ferramentas existentes é uma alternativa válida.
-
-| Alternativa | O que precisamos demonstrar para justificar a troca |
+| Cenário | O que observar |
 | --- | --- |
-| Planilha | Que consultar o plano e registrar uma decisão exige menos esforço. |
-| Aplicativo de notas | Que a ligação entre posição, tese e histórico facilita a revisão. |
-| Conversas em um chat | Que o contexto fica mais fácil de localizar e acompanhar ao longo do tempo. |
-| Acompanhamento apenas por saldo | Que o registro do processo é útil o suficiente para ser mantido. |
+| Atenção · contexto misto | Níveis preservados com pressão macro moderada. |
+| Estresse · aversão a risco | Posição BTC ainda lucrativa e contexto vermelho. |
+| Favorável · recuperação | Melhora contextual sem remover os limites do plano. |
+| Perda do suporte | Preço abaixo da invalidação; perda simulada pode superar a planejada. |
+| Objetivo alcançado | Referência de parcial atingida, sem realizar operação automaticamente. |
 
-**Nosso diferencial proposto é a conexão entre posição e raciocínio.** Ainda precisamos comprovar que essa conexão entrega valor superior ao esforço de preenchê-la.
+As classificações são roteirizadas por cenário. Os exemplos macro incluem intensidade do movimento; não há motor de sinais ao vivo, probabilidades ou validação estatística. A trajetória do gráfico é ilustrativa, não uma série de candles reais.
 
-Um formulário bonito, sozinho, não justifica um produto.
+A referência de data e hora identifica o conjunto demonstrativo. Não indica atualização ao vivo.
 
-## 7. Por que investir tempo nesta ideia?
+## Como usar
 
-### Existe uma experiência concreta para explorar
+1. Abra **Visão geral** para ver patrimônio, resultado, caixa, risco agregado e pontos de atenção.
+2. Clique em BTC para confrontar o plano com o cenário.
+3. Alterne para **Estresse** e observe lucro e alerta vermelho coexistirem.
+4. Expanda a explicação da classificação e a evidência contrária.
+5. Use **Reavaliar posição** para registrar sua decisão, com motivo opcional.
+6. Edite o plano e confira o recálculo do risco. A versão anterior dos níveis fica no registro.
+7. Em **Oportunidades**, acompanhe uma intenção sem incluí-la no patrimônio.
 
-O produto já pode ser usado como demonstração. Isso permite conversar sobre ações específicas: abrir uma posição, revisar o plano e registrar uma decisão.
+### Adicionar um ativo
 
-### O primeiro aprendizado pode vir de um escopo pequeno
+Escolha BTC, ETH ou SOL e informe se já possui posição ou quer observar. Defina quantidade, entrada, invalidação, objetivo, percentual da parcial, limite de risco e o motivo em uma frase.
 
-Podemos investigar o valor do fluxo principal antes de construir integrações, automações ou uma comunidade. O protótipo permite descobrir quais partes fazem falta e quais podem ser removidas.
+O formulário calcula o risco enquanto você preenche e sinaliza quando supera o limite escolhido. Para posições compradas, a invalidação deve ficar abaixo da entrada e o objetivo acima dela.
 
-### Há afinidade entre o problema e quem está construindo
+Os ativos disponíveis são limitados ao catálogo demonstrativo. A quantidade pode ser ajustada; isso não representa uma compra ou venda.
 
-O projeto nasce da combinação entre experiência em desenvolvimento de software e vivência com acompanhamento de investimentos. Essa proximidade facilita formular perguntas e reconhecer atritos reais.
+### Registrar uma decisão
 
-Proximidade com o problema ajuda a começar; usuários externos precisam confirmar se ele também importa para outras pessoas.
+As opções incluem manter, aguardar confirmação, planejar redução, revisar proteção, planejar encerramento e planejar parcial.
 
-### Existe uma hipótese de uso recorrente
+Cada registro guarda preço, cenário, classificações e plano daquele momento. A decisão não elimina alertas contextuais e não muda quantidade ou caixa. Operações efetivamente executadas não são conciliadas neste protótipo.
 
-Se o aplicativo participar das revisões e decisões do investidor, pode haver motivo para voltar. Essa recorrência precisa ser observada: gostar de uma demonstração é diferente de adotar uma rotina.
+## Entenda os números de risco
 
-### Existe uma possibilidade de receita a testar
-
-Uma assinatura pode fazer sentido se o serviço entregar valor contínuo. Antes de definir preço, precisamos descobrir qual benefício faria alguém pagar e continuar usando.
-
-**O investimento de tempo defensável agora é um experimento com limites e critérios de continuidade.** Ainda não há evidência suficiente para assumir meses de desenvolvimento ou retorno financeiro.
-
-## 8. O que poderia virar um negócio?
-
-Uma possibilidade futura é oferecer um plano gratuito para experimentar o fluxo e uma assinatura para quem utiliza o produto com frequência.
-
-| Possibilidade futura | Hipótese de valor |
+| Medida | Cálculo e significado |
 | --- | --- |
-| Histórico e revisões mais completos | Facilitar o acompanhamento contínuo das decisões. |
-| Lembretes configuráveis | Ajudar o usuário a manter sua rotina de revisão. |
-| Relatórios do processo de decisão | Apoiar a identificação de padrões no próprio histórico. |
-| Importação de operações | Reduzir o esforço manual para manter a carteira. |
-| Compartilhamento opcional de teses | Permitir discussão e aprendizado com outras pessoas. |
+| Resultado aberto | (Preço atual − entrada) × quantidade. |
+| Perda planejada | (Entrada − invalidação) × quantidade. |
+| Risco da posição na carteira | Perda planejada ÷ patrimônio atual simulado. |
+| Do preço atual até a invalidação | Máximo entre preço atual − invalidação e zero, multiplicado pela quantidade. Inclui devolução de lucro. |
+| Risco planejado agregado | Soma das perdas planejadas das posições ÷ patrimônio atual simulado. |
 
-Esses recursos **não estão implementados** e não constituem um compromisso de desenvolvimento. Devem ser priorizados a partir de uso observado e conversas com potenciais clientes.
+**Limite de 2% da carteira é diferente de queda de 2% do ativo.** O tamanho da posição determina o impacto no patrimônio.
 
-Também será necessário estimar custos de operação, aquisição, suporte e retenção para avaliar a viabilidade econômica.
+O limite é individual por posição. A visão geral apresenta a soma dos riscos planejados. Essa soma não é VaR, não modela correlações e não garante perda máxima. Taxas, gaps e slippage não estão incluídos.
 
-## 9. O risco principal da ideia
+O caixa pode ser ajustado em **Minha carteira** e altera o denominador do risco. USDC é tratado como USD 1:1 na demonstração. Intenções em observação não entram no patrimônio nem no risco agregado; seu risco individual é uma estimativa sobre o patrimônio existente.
 
-O maior risco é o usuário reconhecer a importância de documentar decisões e, mesmo assim, não querer fazer isso.
+## Por que explorar esta ideia?
 
-Outras perguntas decisivas:
+O valor proposto é facilitar decisões quando o investidor se sente travado: preço, plano e contexto aparecem juntos, com explicações acessíveis e sem exigir leitura longa na primeira camada.
 
-- O preenchimento é rápido o suficiente?
-- O usuário consulta os registros antes de decidir?
-- O diário continua útil depois da novidade inicial?
-- Existe um benefício percebido que justifique pagamento?
-- A necessidade central é organizar decisões ou apenas consolidar operações?
+A tese funciona como referência para interpretar o momento. A interação principal é acompanhar a situação e comparar cenários. A documentação da decisão é uma consequência desse fluxo.
 
-Se as pessoas precisarem de insistência constante para usar o fluxo, teremos de simplificar, mudar o recorte ou reconsiderar a proposta.
+Uma assinatura é uma hipótese futura se houver utilidade recorrente. Ainda precisamos comprovar se as pessoas entendem os alertas, voltam ao produto, tomam decisões mais informadas e consideram pagar. Não há promessa de melhora de rentabilidade.
 
-Também precisamos preservar um limite de interpretação: **um plano bem documentado pode estar errado**. O aplicativo não garante proteção patrimonial nem lucro.
+### O que validar agora
 
-## 10. Como avaliar a ideia usando este protótipo
+- A pessoa consegue explicar por que há lucro e alerta vermelho simultaneamente?
+- Consegue localizar entrada, invalidação e parcial sem ajuda?
+- Entende o risco sobre a carteira e a diferença para devolução de lucro?
+- Encontra rapidamente as evidências e os limites da leitura?
+- Adiciona uma intenção com pouco esforço?
+- Voltaria para acompanhar uma posição real?
 
-### Primeiro: experimentar individualmente
+O experimento deve orientar se aprofundamos, simplificamos ou mudamos a proposta. Elogios à interface, sozinhos, não comprovam demanda.
 
-Escolha um dos ativos demonstrativos e percorra este roteiro:
+## Estado do produto e próximos passos possíveis
 
-1. Abra a tese e leia os critérios.
-2. Edite o motivo da posição e o próximo passo.
-3. Registre uma decisão com sua justificativa.
-4. Abra o diário e procure essa decisão.
-5. Volte depois e avalie se o registro ajudou a recuperar o contexto.
-
-A pergunta principal é: **“Eu teria motivo para voltar a isso na minha próxima revisão?”**
-
-### Depois: observar outras pessoas
-
-Como proposta de experimento, podemos apresentar o protótipo a cinco investidores do perfil inicial e pedir que realizem o mesmo fluxo com um cenário fictício.
-
-Observe o que conseguem fazer sem explicação, o que ignoram e quais informações procuram espontaneamente.
-
-Perguntas úteis:
-
-- Como você resolve isso hoje?
-- Qual foi a última situação em que sentiu falta desse contexto?
-- O que aqui facilitaria sua próxima revisão?
-- Que parte parece trabalho desnecessário?
-- O que precisaria existir para você usar novamente?
-- Em quais condições você consideraria pagar?
-
-### Critérios propostos para decidir o próximo passo
-
-| Evidência observada | Possível decisão |
+| Disponível na demonstração | Ainda não implementado |
 | --- | --- |
-| Pessoas voltam espontaneamente e consultam seus registros | Aprofundar o fluxo e testar uso recorrente. |
-| Existe interesse, mas o preenchimento impede o uso | Simplificar a experiência antes de adicionar funções. |
-| O interesse se concentra em outra necessidade | Investigar uma mudança de foco. |
-| Há elogios, mas nenhum uso concreto após o teste | Reavaliar a proposta antes de ampliar o investimento. |
+| Carteira e oportunidades locais | Corretoras e importação de operações |
+| Plano por posição e risco calculado | Preços e indicadores ao vivo |
+| Cinco cenários macro e de preço fictícios | Motor de avaliação com fontes reais |
+| Revisão e histórico com contexto | Notificações e monitoramento contínuo |
+| Persistência no navegador | Contas, sincronização e backup em servidor |
+| Interface visual responsiva | IA para sugerir teses alinhadas ao perfil |
 
-Cinco testes oferecem aprendizado inicial, não uma comprovação estatística de mercado. Intenção de pagar também precisa ser distinguida de pagamento real.
+A IA é uma possibilidade futura: sugerir planos e explicitar premissas para o usuário escolher e ajustar. Não há integração ou análise por IA nesta versão.
 
-## 11. O que existe hoje
+## Executar localmente
 
-| Recurso | Estado |
-| --- | --- |
-| Visão geral do patrimônio e distribuição | Demonstrativo, com valores fixos. |
-| Posições em BTC, ETH e SOL; caixa em USDC | Carteira fictícia. |
-| Teses por ativo | Exemplos pré-carregados. |
-| Edição do motivo, invalidação, níveis e próximo passo | Funcional no navegador. |
-| Diário de decisões por ativo | Funcional no navegador. |
-| Marcar uma tese como revisada | Funcional, com registro no diário. |
-| Persistência e restauração dos exemplos | localStorage do navegador. |
-| Layout adaptável | Implementado em CSS. |
-| Preços ao vivo, corretoras e execução de ordens | Não implementados. |
-| Contas, sincronização e armazenamento em servidor | Não implementados. |
-| Análise por IA, notificações e comunidade | Não implementadas. |
-| Assinaturas e cobrança | Não implementadas. |
-
-O protótipo permite explorar uma direção de produto. Ainda não é um serviço pronto para operar com dados reais de clientes.
-
-## 12. Como executar localmente
-
-Não há dependências nem etapa de build. É necessário Python 3 e um navegador moderno.
-
-Na pasta do repositório, execute:
+Sem dependências e sem build. Com Python 3, na pasta que contém o index.html:
 
 ```sh
 python -m http.server 8000
 ```
 
-Abra [http://localhost:8000](http://localhost:8000).
-
-### Roteiro de navegação
-
-- **Visão geral:** patrimônio demonstrativo, posições e lembrete de revisão.
-- **Minha carteira:** distribuição e acesso aos ativos.
-- **Teses de investimento:** motivo, condições e próximo passo de cada posição.
-- **Diário de decisões:** registros e opção “Restaurar demonstração”.
-
-As alterações ficam apenas no navegador e na origem em que o aplicativo foi aberto. Limpar os dados do navegador remove esses registros. Não há sincronização ou backup em servidor.
-
-### Estrutura
+Abra [http://localhost:8000](http://localhost:8000) em um navegador moderno.
 
 ```text
-index.html   Interface, estilos, dados fictícios e interações
-README.md    Proposta de valor, hipóteses e instruções
-.gitignore   Exclusões básicas do repositório
+index.html           Estrutura da interface
+styles.css           Estilos responsivos
+app.js               Dados, regras demonstrativas e interações
+tests/risk.test.cjs   Verificação dos cálculos e transições
+README.md            Proposta, roteiro e limites
 ```
 
-### Validação técnica realizada
+No checkout usado pelo Sites, os três arquivos públicos ficam em dist/; no GitHub ficam na raiz.
 
-A sintaxe JavaScript foi verificada. A navegação para uma tese, o registro de uma decisão e a edição do plano foram conferidos no navegador. O layout possui regras responsivas; não foi feita verificação em aparelho móvel.
+### Verificar cálculos
 
-## A proposta em uma frase
+Com Node.js instalado:
 
-**O Lastro quer tornar cada posição compreensível e cada decisão revisável.**
+```sh
+node --check app.js
+node tests/risk.test.cjs
+```
 
-Essa é a razão para experimentar a ideia: descobrir se organizar o raciocínio de investimento resolve uma dificuldade pela qual alguém voltaria ao aplicativo — e, eventualmente, pagaria.
+O teste cobre patrimônio sem intenções, resultado, perda planejada, devolução de lucro, alerta contextual com lucro, invalidação, objetivo, excesso de risco, preservação de contexto passado e validação de níveis.
+
+### Dados locais e restauração
+
+A v2 usa a chave lastro-v2 no localStorage e preserva separadamente a chave lastro-v1. Não há migração automática dos dados antigos. O histórico não é sincronizado entre dispositivos ou origens.
+
+Use **Restaurar demonstração** para voltar aos exemplos da v2, após confirmação. Limpar os dados do navegador também remove os registros locais. Não use o protótipo como armazenamento único de informações financeiras.
