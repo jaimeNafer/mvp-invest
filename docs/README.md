@@ -27,7 +27,7 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 - A proposta original MySQL com 20 tabelas foi preservada. As primeiras migrations próprias de acesso/cadastros estão em `backend/src/main/resources/db/migration/` e foram verificadas em MySQL 8.0.42 descartável.
 - As sete capturas PNG estão em `prototype/screenshots/`, com nomes legíveis. O protótipo executável complementa os estados e interações que as imagens não mostram.
 - Spring Boot/Gradle e React/TypeScript estão estruturados. O login usa um serviço mockado no frontend, com Jaime e Eliane. Autenticação real será externa; o backend de negócio não gerencia usuários ou sessões. Cadastros e funcionalidades financeiras ainda não existem.
-- Verificações atuais e evidências estão na [nota de retomada](06-retomada.md). A configuração de CI existe; sua execução remota não foi verificada.
+- Verificações atuais e evidências estão na [nota de retomada](06-retomada.md). A CI foi executada com sucesso no [PR #11](https://github.com/jaimeNafer/mvp-invest/pull/11), incluindo protótipo, frontend e backend/MySQL.
 - O ambiente de uso está configurado em `lastro_local` no MySQL instalado; estruturas de negócio persistidas; controle de usuários removido por V4. Início por `scripts/Start-Lastro.ps1`. Bancos descartáveis são exclusivos de verificações isoladas.
 - O `PLAN.md` da raiz documenta a fase anterior do protótipo. Para a nova etapa local, prevalecem as decisões confirmadas nesta pasta; o experimento anterior com prazo de 30 dias e usuários externos não é o compromisso desta entrega.
 

@@ -8,7 +8,7 @@
 
 **Propostas para revisão:** Java 21 como baseline; Spring MVC e Spring Data JPA; monólito organizado por funcionalidade; empacotamento do frontend estático no backend para uso local. Versões exatas de Spring Boot, Gradle, Node, React, Vite, driver e Flyway serão fixadas juntas no marco 1, após verificar compatibilidade e a versão do MySQL instalado.
 
-Baseline efetivamente usada e tarefas de comprovação: [marco 1 detalhado](05-marco-1.md). A estrutura Spring Boot/Gradle e React já passou por testes e build locais. A CI remota ainda não foi executada.
+Baseline efetivamente usada e tarefas de comprovação: [marco 1 detalhado](05-marco-1.md). A estrutura Spring Boot/Gradle e React já passou por testes e build locais. A CI remota foi [executada com sucesso](https://github.com/jaimeNafer/mvp-invest/actions/runs/41355920250) no PR #11.
 
 ## Estrutura alvo
 

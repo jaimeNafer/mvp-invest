@@ -1,6 +1,6 @@
 # Roteiro de entregas
 
-Estado em 01/11/2026: etapa de tela de login e mock de JWT concluída e encerrada por Jaime. Serviços separados para autenticação, construção do token e armazenamento. Autenticação real será externa; backend sem controle de usuários/sessões. Próximo passo é discutir os limites da arquitetura antes de cadastros. Envio do token nas chamadas HTTP, CI remota e marcos 3–6 permanecem pendentes. Ordem por dependências, sem calendário fixo.
+Estado em 01/11/2026: etapa de tela de login e mock de JWT concluída e encerrada por Jaime. Serviços separados para autenticação, construção do token e armazenamento. Autenticação real será externa; backend sem controle de usuários/sessões. Próximo passo é discutir os limites da arquitetura antes de cadastros. A primeira publicação está no PR #11, com CI remota aprovada. Envio do token nas chamadas HTTP e marcos 3–6 permanecem pendentes. Ordem por dependências, sem calendário fixo.
 
 ## Marco 1 — Fundação reproduzível
 
