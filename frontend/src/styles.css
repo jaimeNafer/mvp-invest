@@ -1,0 +1,372 @@
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #18363b;
+  background: #f4f6f8;
+  font-synthesis: none;
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+a {
+  color: inherit;
+}
+button,
+input {
+  font: inherit;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #44bfa1;
+  outline-offset: 4px;
+}
+h1 {
+  font-size: clamp(25px, 3vw, 38px);
+  font-weight: 600;
+  letter-spacing: -1.1px;
+  line-height: 1.2;
+  margin: 0 0 14px;
+}
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 224px 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  background: #102f34;
+  color: #c7d8d9;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+}
+.brand {
+  font-size: 34px;
+  letter-spacing: -2px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #fff;
+  line-height: 1;
+}
+.brand span {
+  color: #7ad7be;
+  margin-left: 2px;
+}
+.tagline {
+  font-size: 9px;
+  letter-spacing: 1.1px;
+  color: #86b1b7;
+  margin-top: 15px;
+}
+.sidebar-current {
+  display: block;
+  background: #23474b;
+  color: #fff;
+  margin: 35px -8px 28px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-decoration: none;
+}
+.sidebar-footer {
+  border-top: 1px solid #345155;
+  margin-top: auto;
+  padding-top: 22px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+.account-footer {
+  justify-content: space-between;
+  gap: 12px;
+}
+.account-footer button {
+  border: 1px solid #45676b;
+  background: transparent;
+  color: #d5e9e3;
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.account-footer button:hover {
+  background: #23474b;
+}
+.layout > main {
+  padding: 0 44px 32px;
+  max-width: 1350px;
+  width: 100%;
+  margin: 0 auto;
+  align-self: start;
+}
+.topbar {
+  height: 77px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #dfe7e9;
+  font-size: 12px;
+  color: #6b808c;
+}
+.separator {
+  margin: 0 12px;
+  color: #b5c3c8;
+}
+.badge {
+  display: inline-block;
+  border: 1px solid #d2e3dc;
+  background: #edf6f1;
+  border-radius: 20px;
+  padding: 4px 10px;
+  color: #477466;
+  font-size: 10px;
+}
+.intro {
+  padding: 52px 0 28px;
+}
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #188369;
+  margin: 0 0 12px;
+}
+.intro-text {
+  font-size: 14px;
+  color: #71818e;
+  max-width: 620px;
+  margin: 0;
+}
+.profile-card {
+  border: 1px solid #dce5e9;
+  background: #fff;
+  border-radius: 12px;
+  padding: 30px 34px;
+  max-width: 780px;
+}
+.profile-card h2 {
+  margin: 0 0 26px;
+}
+.profile-details {
+  margin: 0;
+}
+.profile-details > div {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  padding: 16px 0;
+  border-top: 1px solid #e7edef;
+}
+.profile-details dt {
+  color: #71818e;
+  font-size: 13px;
+}
+.profile-details dd {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.access-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 46% 54%;
+}
+.access-intro {
+  background: #102f34;
+  color: #fff;
+  padding: 46px 52px;
+  display: flex;
+  flex-direction: column;
+}
+.access-promise {
+  margin: auto 0;
+  padding: 50px 0;
+}
+.access-promise .eyebrow {
+  color: #7ad7be;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+}
+.access-promise h1 {
+  font-size: clamp(30px, 3vw, 46px);
+  line-height: 1.2;
+  margin-top: 20px;
+  letter-spacing: -1.5px;
+}
+.access-promise > p:last-child {
+  color: #a5bdc0;
+  max-width: 360px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.access-main {
+  display: grid;
+  place-items: center;
+  padding: 56px;
+  min-height: 100vh;
+}
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+.login-card h2 {
+  font-size: 30px;
+  letter-spacing: -1px;
+  margin: 24px 0 10px;
+}
+.login-card > p {
+  font-size: 13px;
+  color: #71818e;
+  line-height: 1.7;
+}
+.login-card label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+}
+.login-card input {
+  font-size: 14px;
+  width: 100%;
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid #cedbdf;
+  border-radius: 6px;
+  color: #18363b;
+  background: #fff;
+}
+.login-card input:focus-visible {
+  outline: 2px solid #188369;
+  outline-offset: 2px;
+}
+.primary-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 13px 16px;
+  background: #137c65;
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.primary-button:hover:enabled {
+  background: #106853;
+}
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.login-card .primary-button {
+  margin: 28px 0 0;
+  width: 100%;
+}
+.login-card .access-error {
+  background: #fff0ed;
+  color: #a13e2f;
+  padding: 10px 12px;
+  border-radius: 6px;
+}
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: 170px 1fr;
+  }
+  .sidebar {
+    padding: 28px 18px;
+  }
+  .layout > main {
+    padding: 0 24px 24px;
+  }
+  .intro {
+    padding-top: 32px;
+  }
+  .access-page {
+    grid-template-columns: 38% 62%;
+  }
+  .access-intro {
+    padding: 32px;
+  }
+  .access-main {
+    padding: 36px;
+  }
+  .access-promise h1 {
+    font-size: 29px;
+  }
+  .access-promise > p:last-child {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .access-page {
+    display: block;
+  }
+  .access-intro {
+    padding: 24px;
+  }
+  .access-intro .tagline {
+    margin-bottom: 0;
+  }
+  .access-promise {
+    display: none;
+  }
+  .access-main {
+    min-height: calc(100vh - 110px);
+    padding: 36px 25px;
+  }
+  .login-card h2 {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 540px) {
+  .layout {
+    display: block;
+  }
+  .sidebar {
+    padding: 18px 22px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+  }
+  .brand {
+    font-size: 28px;
+  }
+  .sidebar .tagline,
+  .sidebar nav {
+    display: none;
+  }
+  .sidebar-footer {
+    margin: 0;
+    border: 0;
+    padding: 0;
+  }
+  .topbar {
+    height: 60px;
+  }
+  .layout > main {
+    padding: 0 20px 22px;
+  }
+  .profile-card {
+    padding: 21px;
+  }
+  .profile-details > div {
+    grid-template-columns: 100px 1fr;
+  }
+}

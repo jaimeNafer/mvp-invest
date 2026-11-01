@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-const E=require(fs.existsSync('ledger.js')?'../ledger.js':'../dist/ledger.js');
+const path=require('node:path');
+const E=require('../ledger.js');
 function event(id,type,asset,qty,extra={}){return{id:String(id),sequence:id,date:`2026-01-${String(id).padStart(2,'0')}T10:00`,owner:'A',venue:'X',country:'BR',type,asset,qty,fx:1,feeQty:0,feeFx:1,feeCurrency:'BRL',...extra}}
 const initial=event(1,'DEPOSIT','BRL',10000);
 let events=[initial,event(2,'BUY','BTC',2,{price:1000,quote:'BRL',feeQty:20}),event(3,'BUY','BTC',1,{price:1300,quote:'BRL',feeQty:10}),event(4,'SELL','BTC',1,{price:1500,quote:'BRL',feeQty:15})];
@@ -31,7 +32,7 @@ assert.throws(()=>E.replay([initial,initial]),/duplicado/);
 assert.ok(E.csv([{reference:'=HYPERLINK("x")',value:-2}]).includes("'=HYPERLINK"));assert.ok(E.csv([{name:'A;B',value:1.5}]).includes('1,5'));
 console.log('PASS: cost basis, historical FX, cash, custody, conversions, fees, owners, date filters, tax records, validation, CSV escaping');
 const vm=require('node:vm');
-const appSource=fs.readFileSync(fs.existsSync('app.js')?'app.js':'dist/app.js','utf8').split('let state=cl(seed)')[0];
+const appSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8').split('let state=cl(seed)')[0];
 vm.runInNewContext(appSource+`
  const report=Ledger.replay(seed.events);
  const reference=report.marks;
@@ -81,7 +82,7 @@ assert.throws(()=>E.annualHoldings([],NaN),/Ano inválido/);
 console.log('PASS: annual acquisition cost, prior-year history, fully sold assets, late-year entries, custody and owners');
 
 // Exercise actual export functions with a download sink, without browser/network.
-const uiSource=fs.readFileSync(fs.existsSync('app.js')?'app.js':'dist/app.js','utf8').split("$('backupFile').onchange")[0];
+const uiSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8').split("$('backupFile').onchange")[0];
 vm.runInNewContext(uiSource+`
  let captured;
  download=(name,data,mime)=>{captured={name,data,mime};};

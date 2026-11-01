@@ -1,0 +1,1967 @@
+[
+  {
+    "name": "usuarios",
+    "desc": "Identidade de acesso; autenticação delegada a provedor OIDC, sem senha em texto ou documento fiscal.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "nome",
+        "VARCHAR(160) NOT NULL",
+        "Nome de exibição."
+      ],
+      [
+        "email",
+        "VARCHAR(254) NOT NULL",
+        "Endereço de acesso."
+      ],
+      [
+        "auth_emissor",
+        "VARCHAR(180) COLLATE utf8mb4_bin NOT NULL",
+        "Issuer OIDC configurado no backend."
+      ],
+      [
+        "auth_sujeito",
+        "VARCHAR(180) COLLATE utf8mb4_bin NOT NULL",
+        "Subject estável do provedor."
+      ],
+      [
+        "ativo",
+        "BOOLEAN NOT NULL DEFAULT TRUE",
+        "Habilitação do acesso."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "email"
+        ]
+      ],
+      [
+        "UNIQUE",
+        [
+          "auth_emissor",
+          "auth_sujeito"
+        ]
+      ]
+    ],
+    "fks": [],
+    "checks": []
+  },
+  {
+    "name": "espacos",
+    "desc": "Unidade de isolamento de dados; pode conter titulares de uma família.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "nome",
+        "VARCHAR(120) NOT NULL",
+        "Nome do espaço."
+      ],
+      [
+        "criado_por",
+        "BIGINT UNSIGNED NOT NULL",
+        "Usuário fundador."
+      ],
+      [
+        "revisao_livro",
+        "BIGINT UNSIGNED NOT NULL DEFAULT 0",
+        "Incrementada na mesma transação de confirmação, cancelamento ou substituição de operações."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [],
+    "fks": [
+      [
+        [
+          "criado_por"
+        ],
+        "usuarios",
+        [
+          "id"
+        ]
+      ]
+    ],
+    "checks": []
+  },
+  {
+    "name": "membros_espaco",
+    "desc": "Quem pode acessar o espaço; permissões aplicadas pela API.",
+    "cols": [
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "usuario_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Usuário autorizado."
+      ],
+      [
+        "papel",
+        "ENUM('ADMIN','EDITOR','LEITOR') NOT NULL",
+        "Perfil de acesso."
+      ],
+      [
+        "ativo",
+        "BOOLEAN NOT NULL DEFAULT TRUE",
+        "Revogação sem apagar autoria."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "PRIMARY",
+        [
+          "espaco_id",
+          "usuario_id"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id"
+        ],
+        "espacos",
+        [
+          "id"
+        ]
+      ],
+      [
+        [
+          "usuario_id"
+        ],
+        "usuarios",
+        [
+          "id"
+        ]
+      ]
+    ],
+    "checks": []
+  },
+  {
+    "name": "titulares",
+    "desc": "Pessoas cujos custos são calculados separadamente, mesmo dentro do mesmo espaço.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "nome",
+        "VARCHAR(160) NOT NULL",
+        "Nome do titular."
+      ],
+      [
+        "tipo",
+        "ENUM('PF','PJ') NOT NULL DEFAULT 'PF'",
+        "Identificação cadastral, não regime de apuração."
+      ],
+      [
+        "pais_residencia",
+        "CHAR(2) NULL",
+        "País ISO-3166, quando informado."
+      ],
+      [
+        "documento_cifrado",
+        "VARBINARY(512) NULL",
+        "CPF/CNPJ cifrado pela aplicação; chave fora do banco."
+      ],
+      [
+        "documento_hash",
+        "BINARY(32) NULL",
+        "HMAC de documento normalizado para identificação, não SHA simples de CPF."
+      ],
+      [
+        "ativo",
+        "BOOLEAN NOT NULL DEFAULT TRUE",
+        "Titular arquivado permanece no histórico."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "documento_hash"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id"
+        ],
+        "espacos",
+        [
+          "id"
+        ]
+      ]
+    ],
+    "checks": []
+  },
+  {
+    "name": "instituicoes",
+    "desc": "Cadastro de instituições; uma carteira própria pode não ter instituição.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "codigo",
+        "VARCHAR(80) COLLATE utf8mb4_bin NOT NULL",
+        "Código interno estável, não o nome comercial."
+      ],
+      [
+        "nome",
+        "VARCHAR(160) NOT NULL",
+        "Nome comercial."
+      ],
+      [
+        "razao_social",
+        "VARCHAR(200) NULL",
+        "Entidade legal, se conhecida."
+      ],
+      [
+        "cnpj",
+        "CHAR(14) NULL",
+        "CNPJ somente dígitos, opcional."
+      ],
+      [
+        "pais_sede",
+        "CHAR(2) NULL",
+        "País cadastral; não determina sozinho o tratamento fiscal."
+      ],
+      [
+        "ativo",
+        "BOOLEAN NOT NULL DEFAULT TRUE",
+        "Disponível para novas contas."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "codigo"
+        ]
+      ]
+    ],
+    "fks": [],
+    "checks": []
+  },
+  {
+    "name": "ativos",
+    "desc": "Identidade do ativo/moeda; ticker não é chave primária e não é globalmente único.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "codigo",
+        "VARCHAR(80) COLLATE utf8mb4_bin NOT NULL",
+        "Identificador canônico, ex.: fiat:BRL, crypto:BTC, crypto:USDC."
+      ],
+      [
+        "ticker",
+        "VARCHAR(32) NOT NULL",
+        "Símbolo de apresentação, pode repetir em ativos distintos."
+      ],
+      [
+        "nome",
+        "VARCHAR(160) NOT NULL",
+        "Nome do ativo."
+      ],
+      [
+        "tipo",
+        "ENUM('FIAT','CRIPTO') NOT NULL",
+        "Tipo de cadastro, não classificação tributária."
+      ],
+      [
+        "casas_decimais",
+        "TINYINT UNSIGNED NOT NULL DEFAULT 8",
+        "Precisão suportada pelo MVP, até 18 casas."
+      ],
+      [
+        "ativo",
+        "BOOLEAN NOT NULL DEFAULT TRUE",
+        "Ativo disponível para novos lançamentos."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "codigo"
+        ]
+      ],
+      [
+        "INDEX",
+        [
+          "ticker"
+        ]
+      ]
+    ],
+    "fks": [],
+    "checks": [
+      "casas_decimais <= 18"
+    ]
+  },
+  {
+    "name": "contas",
+    "desc": "Custódia por titular: corretora, carteira ou conta bancária.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "instituicao_id",
+        "BIGINT UNSIGNED NULL",
+        "Instituição cadastrada; nula para carteira própria."
+      ],
+      [
+        "nome",
+        "VARCHAR(120) NOT NULL",
+        "Apelido da conta, não identificação externa sensível."
+      ],
+      [
+        "tipo",
+        "ENUM('CORRETORA','CARTEIRA','BANCO') NOT NULL",
+        "Local de custódia."
+      ],
+      [
+        "identificador_externo",
+        "VARCHAR(180) NULL",
+        "Referência externa opcional; não guardar segredo de API."
+      ],
+      [
+        "ativo",
+        "BOOLEAN NOT NULL DEFAULT TRUE",
+        "Conta arquivada mantém histórico."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "titular_id",
+          "nome"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "titular_id"
+        ],
+        "titulares",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "instituicao_id"
+        ],
+        "instituicoes",
+        [
+          "id"
+        ]
+      ]
+    ],
+    "checks": []
+  },
+  {
+    "name": "arquivos",
+    "desc": "Metadados de documentos e CSVs. Conteúdo privado fora do banco.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "enviado_por",
+        "BIGINT UNSIGNED NOT NULL",
+        "Membro que enviou o arquivo."
+      ],
+      [
+        "nome_original",
+        "VARCHAR(255) NOT NULL",
+        "Nome do arquivo."
+      ],
+      [
+        "storage_key",
+        "VARCHAR(500) COLLATE utf8mb4_bin NOT NULL",
+        "Chave privada de armazenamento, sem URL assinada ou credenciais."
+      ],
+      [
+        "sha256",
+        "BINARY(32) NOT NULL",
+        "Hash dos bytes; usar UNHEX no SQL, bytes na API."
+      ],
+      [
+        "mime_type",
+        "VARCHAR(100) NOT NULL",
+        "Tipo do arquivo."
+      ],
+      [
+        "tamanho_bytes",
+        "BIGINT UNSIGNED NOT NULL",
+        "Tamanho em bytes."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "sha256"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "enviado_por"
+        ],
+        "membros_espaco",
+        [
+          "espaco_id",
+          "usuario_id"
+        ]
+      ]
+    ],
+    "checks": []
+  },
+  {
+    "name": "importacoes",
+    "desc": "Lote de importação com contexto fixo e versão do mapeador. Preparação para etapa futura.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "conta_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Conta de origem do arquivo."
+      ],
+      [
+        "arquivo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "CSV original preservado."
+      ],
+      [
+        "formato",
+        "VARCHAR(80) NOT NULL",
+        "Identificador do formato, ex.: corretora-operacoes-v1."
+      ],
+      [
+        "versao_mapeador",
+        "VARCHAR(50) NOT NULL",
+        "Versão que normalizou os dados."
+      ],
+      [
+        "status",
+        "ENUM('PENDENTE','EM_REVISAO','APLICADO','FALHOU','CANCELADO') NOT NULL DEFAULT 'PENDENTE'",
+        "Estado do fluxo de prévia/confirmação."
+      ],
+      [
+        "iniciado_por",
+        "BIGINT UNSIGNED NOT NULL",
+        "Membro responsável."
+      ],
+      [
+        "aplicado_em",
+        "DATETIME(6) NULL",
+        "Instante UTC de aplicação."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "conta_id"
+        ],
+        "contas",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "arquivo_id"
+        ],
+        "arquivos",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "iniciado_por"
+        ],
+        "membros_espaco",
+        [
+          "espaco_id",
+          "usuario_id"
+        ]
+      ]
+    ],
+    "checks": []
+  },
+  {
+    "name": "linhas_importacao",
+    "desc": "Linha original e proposta normalizada; não altera o livro antes da confirmação.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "importacao_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Lote de origem."
+      ],
+      [
+        "numero_linha",
+        "INT UNSIGNED NOT NULL",
+        "Número no arquivo original."
+      ],
+      [
+        "dados_originais",
+        "JSON NOT NULL",
+        "Valores textuais conforme arquivo, sem inferir precisão com ponto flutuante."
+      ],
+      [
+        "dados_normalizados",
+        "JSON NULL",
+        "Prévia do evento normalizado."
+      ],
+      [
+        "fingerprint",
+        "BINARY(32) NULL",
+        "Candidato a duplicação; não basta para excluir automaticamente."
+      ],
+      [
+        "status",
+        "ENUM('PENDENTE','NORMALIZADA','IGNORADA','ERRO','APLICADA') NOT NULL DEFAULT 'PENDENTE'",
+        "Estado da revisão."
+      ],
+      [
+        "mensagem",
+        "VARCHAR(500) NULL",
+        "Pendência ou decisão da revisão."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        "UNIQUE",
+        [
+          "importacao_id",
+          "numero_linha"
+        ]
+      ],
+      [
+        "INDEX",
+        [
+          "espaco_id",
+          "fingerprint"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "importacao_id"
+        ],
+        "importacoes",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ]
+    ],
+    "checks": [
+      "numero_linha > 0"
+    ]
+  },
+  {
+    "name": "operacoes",
+    "desc": "Evento de negócio. Uma edição cria substituta e preserva a versão anterior.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "conta_principal_id",
+        "BIGINT UNSIGNED NULL",
+        "Conta principal da operação; movimentos identificam todas as contas envolvidas."
+      ],
+      [
+        "tipo",
+        "ENUM('SALDO_INICIAL','APORTE','COMPRA','VENDA','CONVERSAO','RETIRADA','TRANSFERENCIA','IMPOSTO') NOT NULL",
+        "Eventos suportados pelo MVP à vista."
+      ],
+      [
+        "status",
+        "ENUM('RASCUNHO','CONFIRMADA','CANCELADA','SUBSTITUIDA') NOT NULL DEFAULT 'RASCUNHO'",
+        "Somente confirmadas entram em novos cálculos."
+      ],
+      [
+        "ocorreu_em_utc",
+        "DATETIME(6) NOT NULL",
+        "Instante real em UTC."
+      ],
+      [
+        "data_local",
+        "DATE NOT NULL",
+        "Data da operação no fuso informado, para relatórios."
+      ],
+      [
+        "fuso_origem",
+        "VARCHAR(64) NOT NULL DEFAULT 'America/Sao_Paulo'",
+        "Fuso IANA usado para determinar data_local."
+      ],
+      [
+        "ordem_livro",
+        "BIGINT UNSIGNED NOT NULL",
+        "Desempate determinístico de eventos no mesmo instante; preservado em substituições."
+      ],
+      [
+        "ativo_preco_id",
+        "BIGINT UNSIGNED NULL",
+        "Ativo cujo preço unitário foi negociado."
+      ],
+      [
+        "moeda_preco_id",
+        "BIGINT UNSIGNED NULL",
+        "Moeda em que o preço foi expresso."
+      ],
+      [
+        "preco_unitario",
+        "DECIMAL(38,18) NULL",
+        "Unidades da moeda_preco por unidade do ativo_preco."
+      ],
+      [
+        "pais_instituicao",
+        "CHAR(2) NULL",
+        "País cadastral informado à época; nulo significa desconhecido."
+      ],
+      [
+        "referencia_externa",
+        "VARCHAR(180) NULL",
+        "Ordem/negócio/comprovante; não é única porque uma ordem pode ter vários fills."
+      ],
+      [
+        "origem",
+        "ENUM('MANUAL','CSV') NOT NULL DEFAULT 'MANUAL'",
+        "Origem do lançamento."
+      ],
+      [
+        "linha_importacao_id",
+        "BIGINT UNSIGNED NULL",
+        "Linha original para rastreabilidade."
+      ],
+      [
+        "idempotencia",
+        "BINARY(32) NULL",
+        "Chave estável de requisição/item importado para impedir reaplicação exata."
+      ],
+      [
+        "substitui_operacao_id",
+        "BIGINT UNSIGNED NULL",
+        "Versão anterior da mesma operação."
+      ],
+      [
+        "observacao",
+        "VARCHAR(1000) NULL",
+        "Contexto e origem de custo."
+      ],
+      [
+        "criado_por",
+        "BIGINT UNSIGNED NOT NULL",
+        "Membro autor."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "idempotencia"
+        ]
+      ],
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "titular_id",
+          "substitui_operacao_id"
+        ]
+      ],
+      [
+        "INDEX",
+        [
+          "espaco_id",
+          "titular_id",
+          "status",
+          "ocorreu_em_utc",
+          "ordem_livro"
+        ]
+      ],
+      [
+        "INDEX",
+        [
+          "espaco_id",
+          "titular_id",
+          "data_local"
+        ]
+      ],
+      [
+        "INDEX",
+        [
+          "espaco_id",
+          "referencia_externa"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "titular_id"
+        ],
+        "titulares",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "conta_principal_id"
+        ],
+        "contas",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "ativo_preco_id"
+        ],
+        "ativos",
+        [
+          "id"
+        ]
+      ],
+      [
+        [
+          "moeda_preco_id"
+        ],
+        "ativos",
+        [
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "linha_importacao_id"
+        ],
+        "linhas_importacao",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "substitui_operacao_id"
+        ],
+        "operacoes",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "criado_por"
+        ],
+        "membros_espaco",
+        [
+          "espaco_id",
+          "usuario_id"
+        ]
+      ]
+    ],
+    "checks": [
+      "((tipo IN ('COMPRA','VENDA','CONVERSAO') AND ativo_preco_id IS NOT NULL AND moeda_preco_id IS NOT NULL AND ativo_preco_id <> moeda_preco_id AND preco_unitario IS NOT NULL AND preco_unitario > 0) OR (tipo NOT IN ('COMPRA','VENDA','CONVERSAO') AND ativo_preco_id IS NULL AND moeda_preco_id IS NULL AND preco_unitario IS NULL))",
+      "origem <> 'CSV' OR linha_importacao_id IS NOT NULL"
+    ]
+  },
+  {
+    "name": "movimentos",
+    "desc": "Pernas explícitas de quantidade e conta; inclui taxas sem embuti-las uma segunda vez no saldo.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "operacao_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Evento ao qual pertence."
+      ],
+      [
+        "conta_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Conta movimentada, necessariamente do mesmo titular."
+      ],
+      [
+        "ativo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Ativo/moeda movimentado."
+      ],
+      [
+        "papel",
+        "ENUM('ATIVO','LIQUIDACAO','TAXA','CAIXA','SALDO_INICIAL','TRANSFERENCIA') NOT NULL",
+        "Função da perna no evento."
+      ],
+      [
+        "direcao",
+        "ENUM('ENTRADA','SAIDA') NOT NULL",
+        "Sentido da quantidade, que é sempre positiva."
+      ],
+      [
+        "quantidade",
+        "DECIMAL(38,18) NOT NULL",
+        "Quantidade original do ativo."
+      ],
+      [
+        "cotacao_brl",
+        "DECIMAL(38,18) NULL",
+        "Reais por unidade na data. Não é cotação atual."
+      ],
+      [
+        "valor_referencia_brl",
+        "DECIMAL(38,8) NULL",
+        "Valor histórico bruto da perna conforme os dados disponíveis."
+      ],
+      [
+        "fonte_cotacao",
+        "VARCHAR(200) NULL",
+        "Fonte/documento da conversão em reais."
+      ],
+      [
+        "custo_inicial_brl",
+        "DECIMAL(38,8) NULL",
+        "Custo total informado em saldo inicial; NULL desconhecido e zero explicitamente conhecido."
+      ],
+      [
+        "observacao",
+        "VARCHAR(500) NULL",
+        "Origem do custo ou detalhe da taxa."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "titular_id",
+          "operacao_id",
+          "id"
+        ]
+      ],
+      [
+        "INDEX",
+        [
+          "espaco_id",
+          "titular_id",
+          "conta_id",
+          "ativo_id"
+        ]
+      ],
+      [
+        "INDEX",
+        [
+          "operacao_id",
+          "papel"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "operacao_id"
+        ],
+        "operacoes",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "conta_id"
+        ],
+        "contas",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "ativo_id"
+        ],
+        "ativos",
+        [
+          "id"
+        ]
+      ]
+    ],
+    "checks": [
+      "quantidade > 0",
+      "cotacao_brl IS NULL OR cotacao_brl > 0",
+      "valor_referencia_brl IS NULL OR valor_referencia_brl >= 0",
+      "custo_inicial_brl IS NULL OR custo_inicial_brl >= 0",
+      "papel = 'SALDO_INICIAL' OR custo_inicial_brl IS NULL",
+      "papel <> 'SALDO_INICIAL' OR direcao = 'ENTRADA'",
+      "papel <> 'TAXA' OR direcao = 'SAIDA'"
+    ]
+  },
+  {
+    "name": "pagamentos_imposto",
+    "desc": "Pagamento já realizado e informado, sem cálculo de obrigação tributária.",
+    "cols": [
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "operacao_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Operação do tipo IMPOSTO, validada pelo serviço."
+      ],
+      [
+        "moeda_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Moeda efetivamente paga."
+      ],
+      [
+        "quantidade",
+        "DECIMAL(38,18) NOT NULL",
+        "Quantidade paga."
+      ],
+      [
+        "cotacao_brl",
+        "DECIMAL(38,18) NOT NULL",
+        "Reais por unidade na data do pagamento."
+      ],
+      [
+        "valor_pago_brl",
+        "DECIMAL(38,8) NOT NULL",
+        "Valor total registrado em reais."
+      ],
+      [
+        "competencia",
+        "DATE NULL",
+        "Primeiro dia do mês de referência, pode diferir do pagamento."
+      ],
+      [
+        "origem_pagamento",
+        "ENUM('EXTERNO','CARTEIRA') NOT NULL",
+        "Externo não movimenta os saldos do Lastro."
+      ],
+      [
+        "codigo_receita",
+        "VARCHAR(20) NULL",
+        "Código informado do documento, sem inferência."
+      ],
+      [
+        "referencia_documento",
+        "VARCHAR(180) NULL",
+        "Número do comprovante."
+      ],
+      [
+        "arquivo_id",
+        "BIGINT UNSIGNED NULL",
+        "Comprovante privado opcional."
+      ]
+    ],
+    "keys": [
+      [
+        "PRIMARY",
+        [
+          "operacao_id"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "operacao_id"
+        ],
+        "operacoes",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "moeda_id"
+        ],
+        "ativos",
+        [
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "arquivo_id"
+        ],
+        "arquivos",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ]
+    ],
+    "checks": [
+      "quantidade > 0",
+      "cotacao_brl > 0",
+      "valor_pago_brl > 0",
+      "competencia IS NULL OR DAYOFMONTH(competencia) = 1"
+    ]
+  },
+  {
+    "name": "execucoes_calculo",
+    "desc": "Snapshot versionado e reproduzível do processamento gerencial, não motor fiscal.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "revisao_livro",
+        "BIGINT UNSIGNED NOT NULL",
+        "Revisão processada, deve coincidir com a atual para relatório vigente."
+      ],
+      [
+        "data_limite",
+        "DATE NOT NULL",
+        "Processa TODO o histórico até esta data local; não apenas o mês do relatório."
+      ],
+      [
+        "versao_motor",
+        "VARCHAR(80) NOT NULL",
+        "Versão da política de custo médio, taxas, câmbio e arredondamento."
+      ],
+      [
+        "status",
+        "ENUM('PROCESSANDO','CONCLUIDO','FALHOU','INCOMPLETO') NOT NULL DEFAULT 'PROCESSANDO'",
+        "INCOMPLETO quando faltam custos/dados que impedem concluir os resultados."
+      ],
+      [
+        "iniciado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de início."
+      ],
+      [
+        "concluido_em",
+        "DATETIME(6) NULL",
+        "Instante UTC de término."
+      ],
+      [
+        "erro",
+        "VARCHAR(1000) NULL",
+        "Motivo de falha ou incompletude."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        "INDEX",
+        [
+          "espaco_id",
+          "revisao_livro",
+          "data_limite",
+          "status"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id"
+        ],
+        "espacos",
+        [
+          "id"
+        ]
+      ]
+    ],
+    "checks": []
+  },
+  {
+    "name": "resultados_operacoes",
+    "desc": "Composição por evento em uma execução; NÃO altera os fatos originais.",
+    "cols": [
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "calculo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Execução de origem."
+      ],
+      [
+        "operacao_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Versão exata da operação processada."
+      ],
+      [
+        "receita_liquida_venda_brl",
+        "DECIMAL(38,8) NULL",
+        "Receita de venda após taxas alocadas, quando aplicável."
+      ],
+      [
+        "custo_baixado_brl",
+        "DECIMAL(38,8) NULL",
+        "Custo baixado do ativo principal; NULL quando não aplicável ou desconhecido."
+      ],
+      [
+        "custo_incorporado_brl",
+        "DECIMAL(38,8) NULL",
+        "Custo incorporado no ativo principal, quando aplicável; outras pernas ficam em resultados_movimentos."
+      ],
+      [
+        "resultado_venda_brl",
+        "DECIMAL(38,8) NULL",
+        "Resultado de venda; não confundir com câmbio da moeda usada."
+      ],
+      [
+        "resultado_cambio_brl",
+        "DECIMAL(38,8) NULL",
+        "Resultado de conversões e uso de moedas."
+      ],
+      [
+        "resultado_rede_brl",
+        "DECIMAL(38,8) NULL",
+        "Resultado de despesas de rede e outras taxas reconhecidas."
+      ],
+      [
+        "resultado_total_brl",
+        "DECIMAL(38,8) NULL",
+        "Soma das parcelas conhecidas; NULL se insuficientes."
+      ],
+      [
+        "situacao",
+        "ENUM('CALCULADO','PENDENTE') NOT NULL",
+        "Resultado pendente nunca deve aparecer como zero confirmado."
+      ],
+      [
+        "pendencia",
+        "VARCHAR(500) NULL",
+        "Explicação da ausência de resultado."
+      ]
+    ],
+    "keys": [
+      [
+        "PRIMARY",
+        [
+          "calculo_id",
+          "operacao_id"
+        ]
+      ],
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "titular_id",
+          "calculo_id",
+          "operacao_id"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "calculo_id"
+        ],
+        "execucoes_calculo",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "operacao_id"
+        ],
+        "operacoes",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ]
+    ],
+    "checks": [
+      "situacao <> 'CALCULADO' OR (resultado_venda_brl IS NOT NULL AND resultado_cambio_brl IS NOT NULL AND resultado_rede_brl IS NOT NULL AND resultado_total_brl IS NOT NULL AND resultado_total_brl = resultado_venda_brl + resultado_cambio_brl + resultado_rede_brl)"
+    ]
+  },
+  {
+    "name": "resultados_movimentos",
+    "desc": "Rastreabilidade do custo e resultado por perna, inclusive taxas em outro token.",
+    "cols": [
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "calculo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Execução de cálculo."
+      ],
+      [
+        "operacao_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Operação correspondente ao movimento e ao resultado pai."
+      ],
+      [
+        "movimento_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Movimento original."
+      ],
+      [
+        "custo_baixado_brl",
+        "DECIMAL(38,8) NULL",
+        "Custo retirado do estoque gerencial."
+      ],
+      [
+        "custo_incorporado_brl",
+        "DECIMAL(38,8) NULL",
+        "Custo adicionado ao estoque."
+      ],
+      [
+        "resultado_venda_brl",
+        "DECIMAL(38,8) NULL",
+        "Parcela de venda."
+      ],
+      [
+        "resultado_cambio_brl",
+        "DECIMAL(38,8) NULL",
+        "Parcela de câmbio/conversão."
+      ],
+      [
+        "resultado_rede_brl",
+        "DECIMAL(38,8) NULL",
+        "Parcela de rede/taxa."
+      ],
+      [
+        "situacao",
+        "ENUM('CALCULADO','PENDENTE') NOT NULL",
+        "Disponibilidade dos cálculos da perna."
+      ]
+    ],
+    "keys": [
+      [
+        "PRIMARY",
+        [
+          "calculo_id",
+          "movimento_id"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "calculo_id",
+          "operacao_id"
+        ],
+        "resultados_operacoes",
+        [
+          "espaco_id",
+          "titular_id",
+          "calculo_id",
+          "operacao_id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "operacao_id",
+          "movimento_id"
+        ],
+        "movimentos",
+        [
+          "espaco_id",
+          "titular_id",
+          "operacao_id",
+          "id"
+        ]
+      ]
+    ],
+    "checks": []
+  },
+  {
+    "name": "posicoes_calculadas",
+    "desc": "Snapshot por titular/ativo: preço médio não é calculado separadamente por corretora.",
+    "cols": [
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "calculo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Snapshot até a data limite."
+      ],
+      [
+        "ativo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Ativo do estoque."
+      ],
+      [
+        "quantidade",
+        "DECIMAL(38,18) NOT NULL",
+        "Quantidade remanescente, zero permitido para ativo encerrado."
+      ],
+      [
+        "custo_total_brl",
+        "DECIMAL(38,8) NULL",
+        "Custo a aquisição; NULL quando histórico não permite concluir."
+      ],
+      [
+        "preco_medio_brl",
+        "DECIMAL(38,18) NULL",
+        "Custo unitário gerencial em reais, sem preço de mercado."
+      ],
+      [
+        "situacao_custo",
+        "ENUM('CONHECIDO','PENDENTE') NOT NULL",
+        "Qualidade do custo, não certificação contábil."
+      ]
+    ],
+    "keys": [
+      [
+        "PRIMARY",
+        [
+          "calculo_id",
+          "titular_id",
+          "ativo_id"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "calculo_id"
+        ],
+        "execucoes_calculo",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "titular_id"
+        ],
+        "titulares",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "ativo_id"
+        ],
+        "ativos",
+        [
+          "id"
+        ]
+      ]
+    ],
+    "checks": [
+      "quantidade >= 0",
+      "custo_total_brl IS NULL OR custo_total_brl >= 0",
+      "preco_medio_brl IS NULL OR preco_medio_brl >= 0",
+      "situacao_custo <> 'CONHECIDO' OR (custo_total_brl IS NOT NULL AND preco_medio_brl IS NOT NULL)",
+      "quantidade <> 0 OR (custo_total_brl = 0 AND preco_medio_brl = 0)"
+    ]
+  },
+  {
+    "name": "saldos_contas",
+    "desc": "Quantidade por conta para conciliação; separada do custo médio por titular.",
+    "cols": [
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "calculo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Execução de origem."
+      ],
+      [
+        "conta_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Custódia."
+      ],
+      [
+        "ativo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Ativo."
+      ],
+      [
+        "quantidade",
+        "DECIMAL(38,18) NOT NULL",
+        "Saldo total, incluindo quantidades bloqueadas em ordens."
+      ]
+    ],
+    "keys": [
+      [
+        "PRIMARY",
+        [
+          "calculo_id",
+          "conta_id",
+          "ativo_id"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "calculo_id"
+        ],
+        "execucoes_calculo",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "conta_id"
+        ],
+        "contas",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "ativo_id"
+        ],
+        "ativos",
+        [
+          "id"
+        ]
+      ]
+    ],
+    "checks": [
+      "quantidade >= 0"
+    ]
+  },
+  {
+    "name": "conciliacoes_saldo",
+    "desc": "Saldo digitado do extrato. Diferença é consultada contra um cálculo vigente, não congelada como selo.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "titular_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Titular beneficiário dos investimentos; não é necessariamente o usuário de acesso."
+      ],
+      [
+        "conta_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Conta do extrato."
+      ],
+      [
+        "ativo_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Ativo do extrato."
+      ],
+      [
+        "data_saldo",
+        "DATE NOT NULL",
+        "Fim do dia no fuso da operação/espaço definido no serviço."
+      ],
+      [
+        "quantidade_extrato",
+        "DECIMAL(38,18) NOT NULL",
+        "Quantidade total do extrato, incluindo bloqueios."
+      ],
+      [
+        "referencia_documento",
+        "VARCHAR(200) NOT NULL",
+        "Comprovante que permite refazer a conferência."
+      ],
+      [
+        "arquivo_id",
+        "BIGINT UNSIGNED NULL",
+        "Extrato privado opcional."
+      ],
+      [
+        "informado_por",
+        "BIGINT UNSIGNED NOT NULL",
+        "Membro responsável."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ],
+      [
+        "atualizado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)",
+        "Atualização cadastral; guardar versão anterior na auditoria."
+      ]
+    ],
+    "keys": [
+      [
+        "UNIQUE",
+        [
+          "espaco_id",
+          "conta_id",
+          "ativo_id",
+          "data_saldo"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id",
+          "titular_id",
+          "conta_id"
+        ],
+        "contas",
+        [
+          "espaco_id",
+          "titular_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "ativo_id"
+        ],
+        "ativos",
+        [
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "arquivo_id"
+        ],
+        "arquivos",
+        [
+          "espaco_id",
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "informado_por"
+        ],
+        "membros_espaco",
+        [
+          "espaco_id",
+          "usuario_id"
+        ]
+      ]
+    ],
+    "checks": [
+      "quantidade_extrato >= 0"
+    ]
+  },
+  {
+    "name": "auditoria",
+    "desc": "Trilha append-only por serviço; não colocar senhas, tokens ou documentos abertos nos JSONs.",
+    "cols": [
+      [
+        "id",
+        "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT",
+        "Identificador interno, sem significado de negócio."
+      ],
+      [
+        "espaco_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Espaço ao qual o registro pertence."
+      ],
+      [
+        "usuario_id",
+        "BIGINT UNSIGNED NULL",
+        "Autor; NULL para trabalho de sistema."
+      ],
+      [
+        "entidade",
+        "VARCHAR(64) NOT NULL",
+        "Tipo de entidade, ex.: operacoes, conciliacoes_saldo."
+      ],
+      [
+        "registro_id",
+        "BIGINT UNSIGNED NOT NULL",
+        "Identificador lógico; integridade polimórfica aplicada pelo serviço."
+      ],
+      [
+        "acao",
+        "ENUM('CRIAR','CONFIRMAR','CANCELAR','SUBSTITUIR','ATUALIZAR','IMPORTAR') NOT NULL",
+        "Ação auditada."
+      ],
+      [
+        "dados_antes",
+        "JSON NULL",
+        "Estado anterior sem informações sigilosas desnecessárias."
+      ],
+      [
+        "dados_depois",
+        "JSON NULL",
+        "Estado seguinte."
+      ],
+      [
+        "correlacao_id",
+        "VARCHAR(80) NULL",
+        "Identificador de requisição/job."
+      ],
+      [
+        "criado_em",
+        "DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)",
+        "Instante UTC de criação."
+      ]
+    ],
+    "keys": [
+      [
+        "INDEX",
+        [
+          "espaco_id",
+          "entidade",
+          "registro_id",
+          "criado_em"
+        ]
+      ]
+    ],
+    "fks": [
+      [
+        [
+          "espaco_id"
+        ],
+        "espacos",
+        [
+          "id"
+        ]
+      ],
+      [
+        [
+          "espaco_id",
+          "usuario_id"
+        ],
+        "membros_espaco",
+        [
+          "espaco_id",
+          "usuario_id"
+        ]
+      ]
+    ],
+    "checks": []
+  }
+]

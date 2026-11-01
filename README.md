@@ -1,88 +1,106 @@
-# Lastro — clareza e organização para suas contas
+# Lastro — clareza para suas contas
 
-O Lastro organiza operações de cripto para **entender os resultados e preparar os dados para suas obrigações fiscais**. Registre uma vez, acompanhe custos e saldos e compartilhe um compilado claro com seu contador. A plataforma não substitui a análise de um contador especializado.
+Aplicação para organizar operações de cripto à vista, entender custos e resultados e preparar informações para conferência com o contador.
 
-## Para quem
+## Estado da entrega
 
-Investidores brasileiros de cripto à vista, com poucas contas, operações em reais ou stablecoins e necessidade de separar titulares. O protótipo começa com exemplos fictícios; os lançamentos próprios são manuais.
+Etapa de tela de login e mock de JWT concluída. Serviços separados para autenticação mockada, construção do token e armazenamento local; usuários Jaime e Eliane. O backend não gerencia usuários ou sessões; autenticação real será feita por um backend externo específico. O token está disponível para futura integração HTTP, ainda não implementada. MySQL permanece para o domínio de negócio. Cadastros e motor financeiro ainda não foram implementados.
 
-## O diferencial que estamos validando
+Acordos obrigatórios de desenvolvimento: [AGENTS.md](AGENTS.md). Planejamento e estado de execução: [docs/README.md](docs/README.md).
 
-**Do total ao lançamento, do lançamento ao documento.**
+## Executar o aplicativo
 
-- **Resultado explicado:** separa vendas de ativos de câmbio, conversões e rede; permite abrir os lançamentos e seus cálculos.
-- **Fila de conferência:** aponta país ausente, referência de ordem ausente, custo inicial zero e referências repetidas. O usuário investiga e corrige; não há exclusões automáticas.
-- **Comparação com extrato:** registre quantidade, conta, titular, data e referência do documento. O Lastro compara com o saldo calculado no fim desse dia e mostra a diferença. Uma correção posterior no histórico recalcula a comparação.
-- **Histórico contínuo:** custos anteriores continuam compondo os resultados mesmo quando a tela mostra só um mês.
-- **Titulares separados:** a visão conjunta soma valores sem compartilhar preço médio entre pessoas.
+Em PowerShell 7, na raiz:
 
-Essa proposta é uma hipótese competitiva, não uma validação de mercado. A utilidade e a disposição de pagar ainda serão testadas com investidores e contadores.
-
-## Organização fiscal: a recompensa pelo registro
-
-Uma tela reúne, por período e titular:
-
-- Resumo mensal de valores vendidos, custo das quantidades vendidas, resultados de vendas, câmbio/conversões/rede, taxas e pagamentos de imposto registrados.
-- Operações detalhadas com quantidade, preço, moeda, câmbio histórico, conta, país da instituição, referência, custo e resultado, com acesso ao cálculo.
-- Posição anual por ativo e titular, comparando quantidade e custo de aquisição no fim do ano anterior e do ano escolhido, incluindo as contas em que há saldo.
-- Pagamentos de imposto com data, mês de referência, origem e comprovante informado.
-- CSVs mensal, anual e de operações, além de um relatório HTML autossuficiente para compartilhar ou imprimir pelo navegador.
-
-O período De–Até controla o resumo mensal e as operações. O saldo anual usa **todo o histórico até 31/12 do ano da data Até**. O seletor de ano permite aplicar o ano inteiro ao período. Ano em andamento é uma prévia, não um fechamento definitivo. Ausência de histórico anterior não comprova saldo zero. Saldos são a custo de aquisição; não há enquadramento automático em fichas/códigos de declaração.
-
-Taxas já integram os cálculos. Pagamentos de imposto são registros manuais, nunca uma estimativa de obrigação. Os relatórios não calculam DARF nem entregam declarações.
-
-## Comece por um período que você consiga conferir
-
-1. Registre um saldo inicial com custo de aquisição conhecido ou um aporte.
-2. Cadastre compras, vendas, conversões e taxas, com as cotações históricas em reais.
-3. Abra **Ver composição** para entender o resultado e **Ver cálculo** para chegar ao lançamento.
-4. Em **Conferência**, informe o saldo total de um ativo em uma conta no fim do dia, conforme seu extrato. Inclua quantidades bloqueadas em ordens, não só o saldo disponível.
-5. Investigue diferenças e pendências. Uma referência repetida pode ser uma ordem com várias execuções, e não um lançamento duplicado.
-6. Abra Organização fiscal, confira o mês ou ano, revise os saldos anuais e baixe o relatório ou CSVs para seu contador. Preserve também um backup JSON.
-
-## O que cada número significa
-
-| Número | Significado |
-| --- | --- |
-| Custo dos saldos | Custo de aquisição do que ainda está na carteira, incluindo taxas elegíveis. |
-| Resultado realizado | Resultado das operações do período; inclui câmbio/conversões e rede. Taxas já consideradas, impostos pagos separados. |
-| Taxas | Total informativo de taxas em reais. Não descontar novamente do resultado. |
-| Valor de referência | Quantidade pela última cotação registrada nas operações. Pode estar desatualizado; não é valor de mercado. |
-| Comparação de saldo | Quantidade do Lastro menos quantidade digitada do extrato, por conta, titular, ativo e data. |
-| Pagamento de imposto | Valor pago e cadastrado pelo usuário. Não é imposto calculado ou devido. |
-
-Coincidir quantidade **não comprova custo, completude ou correção fiscal**. Ausência de pendências significa somente que as checagens implementadas não apontaram problemas. O Lastro não acessa nem autentica o extrato digitado.
-
-## Limites desta versão
-
-- Não recomenda ativos, entradas, saídas, stops ou alocações. Estratégias e alertas macro foram retirados da interface.
-- Não calcula imposto, não emite DARF e não entrega declarações. O resumo mensal organiza dados para conferência.
-- Não possui cotações ao vivo. O gráfico usa referências dos lançamentos e não representa rentabilidade histórica de mercado.
-- Não importa arquivos de corretoras nem sincroniza APIs nesta versão. Restaurar JSON é recuperar um backup do Lastro.
-- O histórico é local ao navegador: sem conta de usuário, sincronização ou backup automático em servidor. O acesso ao site pode ter uma barreira do provedor de hospedagem, mas isso não sincroniza o livro.
-- Cálculos gerenciais em `Number` do JavaScript; precisam de validação contábil independente e aritmética decimal antes de produção.
-- Fora do escopo: futuros, alavancagem, staking, rendimentos, pools/DeFi e transferências entre titulares.
-
-A versão de produto é MVP 4. A chave de armazenamento e o formato de backup continuam v3 para preservar compatibilidade. Dados antigos de estratégias/revisões permanecem no backup, sem funcionalidade ativa.
-
-## Executar e verificar
-
-Sem dependências de execução. Sirva a pasta que contém `index.html`, `app.js`, `ledger.js` e `styles.css` por HTTP:
-
-```sh
-python3 -m http.server 8000
-node --test tests/ledger.test.cjs
+```powershell
+.\scripts\Start-Lastro.ps1
 ```
 
-O motor fica em `ledger.js`; a interface em `app.js`. Os testes cobrem custo médio, taxas, câmbio, contas, titulares, filtros, composição dos resultados, comparações históricas e pendências.
+Abra [Lastro](http://127.0.0.1:8080/). O JAR serve frontend e backend juntos. A aplicação usa o MySQL persistente configurado; Docker não é necessário para utilizar o aplicativo.
 
-A infraestrutura de hospedagem usa uma cópia desses arquivos em `dist/`.
+Para reconstruir o pacote antes de iniciar:
 
-## Próximo investimento
+```powershell
+.\scripts\Start-Lastro.ps1 -Build
+```
 
-Validar o fluxo com históricos reais e autorização dos participantes. Priorizar uma primeira importação CSV com prévia e prevenção de duplicações se o esforço manual bloquear o uso. Expandir somente quando houver evidência de tempo economizado, números conciliáveis e uso recorrente.
+Requisitos: Java 21, serviço MySQL ativo e configuração privada. Para build do frontend, Node 22.23.4 recomendado e npm. Gradle é fornecido pelo wrapper.
 
-## Diretriz de interface
+## Conexão e acessos locais
 
-Explicações gerais ficam em frases curtas dentro das seções. Ícones de informação são reservados para métricas e cabeçalhos de tabela com pouco espaço. Não converter automaticamente subtítulos, orientações de formulário ou rodapés em ícones.
+A configuração particular fica em `.local/mysql.properties`, ignorada pelo Git. Chaves:
+
+```properties
+lastro.database.url=jdbc:mysql://127.0.0.1:3306/lastro_local?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+lastro.database.username=lastro_app
+lastro.database.password=
+```
+
+Na instalação deste computador, `lastro_local` e `lastro_app` já foram criados e as migrations aplicadas. O usuário da aplicação tem permissões apenas nesse schema; a credencial administrativa não é usada pelo backend nem foi salva no projeto.
+
+Para entrar, informe `jaime` ou `eliane` e deixe a senha vazia. O serviço mockado valida os dados no frontend, sem consultar o backend/MySQL. Entrar salva um JWT mockado na localStorage (`lastro.token`), com nome e role `acesso_total`; sair remove o token e limpa o perfil. Atualizar a página mantém o token, mas retorna ao formulário de login. [Responsabilidades e operação](docs/07-acesso-local.md).
+
+`LASTRO_CONFIG_PATH` pode indicar outro arquivo privado. Variáveis `LASTRO_DB_URL`, `LASTRO_DB_USER` e `LASTRO_DB_PASSWORD` sobrescrevem os valores privados. Spring Boot não carrega `.env` automaticamente. Nunca versionar credenciais ou dados reais.
+
+## Desenvolvimento com frontend separado
+
+Backend, dentro de `backend`:
+
+```powershell
+.\gradlew.bat bootRun
+```
+
+Frontend, em outro terminal, dentro de `frontend`:
+
+```powershell
+npm ci
+npm run dev
+```
+
+Abra [frontend de desenvolvimento](http://127.0.0.1:5173/). O login funciona mesmo com o backend desligado. Vite encaminha futuras chamadas de negócio em `/api` ao backend persistente em 8080. Ambos escutam em loopback. Não execute `bootRun` e o JAR simultaneamente na mesma porta.
+
+## Verificar o projeto
+
+Na raiz:
+
+```powershell
+node --test prototype/tests/ledger.test.cjs
+```
+
+Dentro de `frontend`:
+
+```powershell
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+Dentro de `backend`, com Docker Desktop ativo:
+
+```powershell
+.\gradlew.bat check bootJar -PincludeFrontend
+```
+
+`check` inclui testes de migrations e integridade do banco com MySQL/Testcontainers. Os testes de acesso ficam no frontend. Esses testes desabilitam a importação da configuração privada e não usam o banco persistente. Docker indisponível faz a suíte integrada falhar; não há H2 nem descarte silencioso dos testes. Em Linux/CI, usar `bash gradlew`.
+
+`localTestRun` existe apenas para verificações isoladas e não preserva dados. Para o fluxo real, usar a conexão persistente.
+
+## Organização
+
+- `backend/`: Java 21, Spring Boot, Gradle e Flyway/MySQL.
+- `frontend/`: React, TypeScript, Vite, Biome e testes de componentes.
+- `prototype/`: protótipo original, testes e capturas de referência preservados.
+- `docs/`: escopo, arquitetura, acordos, entregas e validação.
+- `scripts/`: execução local.
+- `lastro-modelo-mysql-v1/`: proposta histórica do banco; seus scripts não são as migrations da aplicação.
+
+O workflow [.github/workflows/verify.yml](.github/workflows/verify.yml) verifica builds e testes sem deploy ou credenciais pessoais. O resultado remoto deve ser consultado nos checks do pull request; validação local não substitui a execução da CI.
+
+## Arquivos no Git
+
+Versionar código, testes, migrations, documentação, lockfile npm, Gradle Wrapper e as sete imagens de referência do protótipo. O modelo MySQL descompactado permanece como referência histórica.
+
+O `.gitignore` mantém fora do repositório configurações privadas em `.local/`, arquivos de ambiente pessoais, backups locais, dependências, caches, builds, cobertura, logs e metadados de ferramentas. O ZIP original do modelo é uma cópia duplicada: permanece no computador e não é enviado. Não ignorar genericamente imagens, SQL ou JAR, pois existem referências, migrations e arquivos do wrapper necessários nessas extensões.
+
+Próximo passo: discutir o controle da arquitetura antes de implementar cadastros reais de titulares e contas por perfil. Importação CSV, recomendações de investimentos e cálculo automático de tributos permanecem fora do MVP atual.
