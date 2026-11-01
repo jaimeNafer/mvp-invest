@@ -1,0 +1,91 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.2'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'io.github.jaimenafer'
+version = '0.0.1-SNAPSHOT'
+
+sourceSets {
+	integrationTest {
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+	}
+}
+
+configurations {
+	integrationTestImplementation.extendsFrom testImplementation
+	integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.flywaydb:flyway-mysql'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+	testImplementation 'org.testcontainers:testcontainers-mysql'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+tasks.register('integrationTest', Test) {
+	description = 'Verifica a aplicação com MySQL descartável (requer Docker).'
+	group = 'verification'
+	testClassesDirs = sourceSets.integrationTest.output.classesDirs
+	classpath = sourceSets.integrationTest.runtimeClasspath
+	useJUnitPlatform()
+	shouldRunAfter test
+}
+
+tasks.named('check') {
+	dependsOn integrationTest
+}
+
+tasks.register('localTestRun', JavaExec) {
+	description = 'Inicia a aplicação com MySQL descartável; os dados não são persistidos entre execuções.'
+	group = 'application'
+	dependsOn integrationTestClasses
+	classpath = sourceSets.integrationTest.runtimeClasspath
+	mainClass = 'io.github.jaimenafer.lastro.TestLocalApplication'
+}
+
+tasks.register('copyFrontend', Copy) {
+	from '../frontend/dist'
+	into layout.buildDirectory.dir('frontend-static/static')
+	doFirst {
+		if (!file('../frontend/dist/index.html').isFile()) {
+			throw new GradleException('Execute npm ci e npm run build em frontend antes de empacotar com -PincludeFrontend.')
+		}
+	}
+}
+
+if (providers.gradleProperty('includeFrontend').isPresent()) {
+	sourceSets.main.resources.srcDir layout.buildDirectory.dir('frontend-static')
+	tasks.named('processResources') { dependsOn copyFrontend }
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}

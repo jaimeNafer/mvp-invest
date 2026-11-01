@@ -1,5 +1,7 @@
 # Lastro — MVP 4: entender, organizar e prestar contas
 
+> **Registro da fase do protótipo.** O planejamento da nova aplicação local, para Jaime e Eliane, está em [docs/README.md](docs/README.md). Na nova etapa, o piloto não tem prazo fixo, começa com entrada manual e não inclui usuários externos nem publicação em nuvem. Os itens “Entregue” abaixo se referem ao protótipo, não ao backend futuro.
+
 ## Promessa
 
 Entender os próprios números e ter os registros organizados para as obrigações fiscais fazem parte do mesmo contexto. Manter um histórico contínuo, sem refazer o controle mensal. A plataforma facilita a vida do investidor e o trabalho do contador; não substitui sua análise especializada.

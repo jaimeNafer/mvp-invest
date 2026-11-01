@@ -1,0 +1,39 @@
+name: Verificar Lastro
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
+        with:
+          distribution: corretto
+          java-version: '21'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: gradle/actions/setup-gradle@7ca78c16c887dc6c5f36fd6d0cb0f5c23d940e69
+      - name: Verificar protótipo preservado
+        run: node --test prototype/tests/ledger.test.cjs
+      - name: Instalar frontend
+        working-directory: frontend
+        run: npm ci
+      - name: Verificar frontend
+        working-directory: frontend
+        run: |
+          npm run lint
+          npm test
+          npm run build
+      - name: Verificar backend, MySQL e pacote local
+        working-directory: backend
+        run: bash gradlew clean check bootJar -PincludeFrontend --no-daemon
