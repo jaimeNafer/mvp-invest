@@ -14,7 +14,7 @@ Próximo passo: especificar o primeiro lançamento e a política decimal, com pe
 
 ## Publicação da revisão — 02/11/2026
 
-Jaime solicitou enviar as alterações ao Git. O PR #12 já foi integrado em `main`; esta revisão será publicada na branch `codex/java27-vinculos-carteiras`, em PR próprio para revisão, sem merge automático. Reúne a correção Java 27/V8 e o esclarecimento de que carteiras apresentam os mesmos registros do usuário/instituição.
+Jaime solicitou enviar as alterações ao Git. O PR #12 já foi integrado em `main`; esta revisão foi publicada na branch `codex/java27-vinculos-carteiras`, com [PR #13](https://github.com/jaimeNafer/mvp-invest/pull/13) para revisão, sem merge automático. Reúne a correção Java 27/V8 e o esclarecimento de que carteiras apresentam os mesmos registros do usuário/instituição.
 
 Evidências locais preservadas: `check` com 24 testes backend (5 unitários e 19 MySQL/Testcontainers), 13 testes frontend, lint, build, pacote integrado e HTTP real aprovados na correção anterior. O esclarecimento posterior alterou documentos; não implementou o motor. A CI do PR #12 refere-se à entrega anterior; os checks da nova revisão devem ser conferidos no próprio PR. Credenciais, backups e dados locais permanecem excluídos do Git.
 

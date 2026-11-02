@@ -1,6 +1,6 @@
 # Roteiro de entregas
 
-Estado em 02/11/2026: cadastro de carteiras e execução Java 27 implementados. Esclarecimento vigente: `contas` associa carteiras e instituições; operações serão únicas por evento, pertencentes ao usuário/instituição e compartilhadas na visualização das carteiras. PR #12 integrado em `main`; revisão Java 27/V8/modelagem destinada à branch `codex/java27-vinculos-carteiras`, com PR próprio. [Retomada](06-retomada.md).
+Estado em 02/11/2026: cadastro de carteiras e execução Java 27 implementados. Esclarecimento vigente: `contas` associa carteiras e instituições; operações serão únicas por evento, pertencentes ao usuário/instituição e compartilhadas na visualização das carteiras. PR #12 integrado em `main`; revisão Java 27/V8/modelagem publicada no [PR #13](https://github.com/jaimeNafer/mvp-invest/pull/13), branch `codex/java27-vinculos-carteiras`. [Retomada](06-retomada.md).
 
 **Etapa de carteiras concluída por Jaime em 02/11/2026**, originalmente publicada no PR #12. O novo requisito altera a propriedade das contas e a execução em Java 27; a [modelagem vigente](10-modelagem-de-carteiras.md) substitui a anterior. Pendências de ativos/identidade externa não estão incluídas nesta correção.
 
