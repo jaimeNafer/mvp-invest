@@ -1,10 +1,12 @@
 # Marco 1 — Fundação reproduzível: tarefas de execução
 
+> Modelagem revisada posteriormente por V5: espaços foram removidos, titulares independem de grupos e mantêm referência do perfil responsável. As menções a espaços neste registro são históricas. Prevalece a [modelagem vigente](10-modelagem-de-carteiras.md).
+
 > Registro histórico da fundação. O estado vigente é login mockado no frontend com autenticação externa futura; as referências abaixo a Security, status, identificação local e credenciais descrevem a implementação anterior e não devem ser reintroduzidas. Consulte [identificação atual](07-acesso-local.md) e [acordos](08-acordos-de-qualidade.md).
 
 Preparado e implementado parcialmente em 01/11/2026. A entrega é uma base executável e verificável, ainda sem funcionalidades financeiras. A lista de tarefas abaixo conserva os critérios de aceite; o estado atual distingue resultados locais e pendências externas.
 
-Atualização posterior no mesmo dia: a conexão de uso já está no MySQL persistente `lastro_local`, por usuário exclusivo `lastro_app`, com migrations e os dois acessos criados. Login/logout e isolamento foram confirmados após reinício. Os registros abaixo sobre uso somente descartável descrevem a fase da fundação; o procedimento atual está em [acesso persistente](07-acesso-local.md). A única pendência externa de CI é sua execução no GitHub.
+Atualização posterior no mesmo dia: a conexão de uso já está no MySQL persistente `lastro_local`, por usuário exclusivo `lastro_app`, com migrations e os dois acessos criados. Login/logout e isolamento foram confirmados após reinício. Os registros abaixo sobre uso somente descartável descrevem a fase da fundação; o procedimento atual está em [acesso persistente](07-acesso-local.md). Atualização de publicação: a CI foi [executada com sucesso](https://github.com/jaimeNafer/mvp-invest/actions/runs/41355920250) no PR #11. Os registros de ausência de execução abaixo descrevem o encerramento histórico da fundação.
 
 ## Estado de execução
 

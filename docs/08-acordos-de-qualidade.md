@@ -16,6 +16,11 @@ Consolidado em 01/11/2026, ao concluir a tela de login e o mock de JWT. Estas re
 | Q08 | Reduzir escopo não autoriza substituir o fluxo de negócio por uma demonstração. | Persistência financeira usa MySQL real. O mock de acesso é uma exceção explícita de escopo, até a integração externa. Não estender essa exceção a outras funcionalidades por conveniência. |
 | Q09 | Qualidade precisa de evidência proporcional à mudança. | Executar lint, typecheck/build e testes pertinentes ao comportamento alterado. Não ignorar testes, suprimir alertas ou forçar dependências para obter sucesso. Evitar testes que apenas repitam a implementação sem verificar um comportamento relevante. |
 | Q10 | A evolução deve preservar dados e decisões. | Não reescrever migrations aplicadas; evoluir por novas migrations. Preservar alterações existentes e segredos fora do Git. Atualizar o estado atual e distinguir o que foi verificado do que continua proposto. |
+| Q11 | Uma mudança de interface precisa funcionar de ponta a ponta. | Conferir estilos no navegador e o contrato da API em execução. Alterar a listagem exige verificar seus estados reais, incluindo arquivados, sem depender somente de mocks dos testes. Reutilizar o padrão visual em modais e ícones. |
+| Q12 | Propriedade, acesso e agrupamento são responsabilidades distintas. | Dados financeiros pertencem às contas do usuário; carteiras são visões que reutilizam essas contas. Não copiar operações para criar visões nem somar a mesma conta duas vezes ao selecionar carteiras. |
+| Q13 | Informações do usuário pertencem ao contexto da requisição. | Filter carrega as claims do Bearer; services recebem `UsuarioAtual` por injeção, sem ler headers/servlet ou decodificar JWT. Não transmitir ID de perfil separado do token nem armazenar contexto em singleton, estático ou ThreadLocal manual. Testar alternância e concorrência entre requisições. |
+| Q14 | O significado dos dados deve acompanhar o schema. | Documentar tabelas/colunas de negócio com `COMMENT` no MySQL e atualizar o dicionário vigente. Comentários de metadados são documentação solicitada, sem substituir nomes claros no código. Evoluir por nova migration preservando dados e definições; não copiar campos de modelos históricos sem validar o escopo atual. |
+| Q15 | Comentários de dados devem servir ao uso em produção. | Descrever somente a finalidade, de forma breve e objetiva; listar opções de campos com valores restritos. Não incluir mocks, classes, headers, estágio do projeto, justificativas ou comparações com outros conceitos. Manter detalhes de implementação nos documentos técnicos. |
 
 Esses aprendizados não dependem de novos lembretes de Jaime. Cabe ao agente aplicá-los durante a implementação e revisar o próprio trabalho antes de apresentar a entrega.
 
@@ -35,7 +40,7 @@ Essa separação é o exemplo aprovado para a necessidade atual. Não obriga a c
 
 - Login e saída exclusivamente no frontend, com `jaime` e `eliane` e senhas vazias.
 - JWT mockado com `sub`, `name`, role `acesso_total` e `iat`, salvo na chave `lastro.token` e removido ao sair.
-- Token sem assinatura (`alg: none`), destinado a apoiar a futura integração das chamadas ao backend. Envio HTTP e validação de acesso ainda não foram implementados.
+- Token sem assinatura (`alg: none`), enviado como Bearer pelo cliente HTTP. O backend lê `sub`, `name` e `role` e disponibiliza contexto por requisição; o cadastro usa `sub` como referência do perfil. `X-Perfil-Id` foi substituído. A leitura do mock não comprova autenticidade; validação real de acesso permanece futura.
 - Recarregar a página preserva o token, mas não restaura automaticamente o perfil.
 - Autenticação real será responsabilidade de um backend externo específico, a implementar depois.
 - Banco de negócio persistente, com controle de usuários removido por V4 e estruturas de negócio preservadas.
@@ -48,6 +53,14 @@ Antes de concluir, conferir se a tela contém apenas apresentação, se serviço
 
 Essa revisão não cria um novo ciclo de aprovação. Escolhas rotineiras autorizadas devem avançar diretamente. A conversa sobre limites da arquitetura de negócio permanece o próximo passo antes de expandir o backend.
 
+Após retirar espaços, Jaime aprovou substituir titulares por carteiras em 02/11/2026. Aplicar a [modelagem vigente](10-modelagem-de-carteiras.md): conta única por usuário/instituição e múltiplas carteiras reutilizando contas. Decisões antigas de titulares/espaços não orientam novas funcionalidades.
+
+Carteiras são visões de contas completas: não duplicar fatos por carteira e deduplicar contas por ID nas futuras consultas combinadas. Desvincular/arquivar não exclui contas. Criar/editar contas e vínculos é uma transação; falhas/conflitos não podem deixar gravação parcial. Usar JPA e `@EntityGraph` para os DTOs, sem exclusão em cascata. Catálogo mantido pelo sistema; novos vínculos exigem instituição ativa.
+
+V1–V7 são imutáveis. V8 exige cadastros antigos vazios e backup antes da aplicação; registros inesperados interrompem a atualização, sem conversão ou descarte automático. Comentários permanecem concisos e limitados à finalidade do campo e às opções aplicáveis.
+
 ## Decisões substituídas
 
 A autenticação local com senhas no MySQL e a identificação por sessão no backend foram retiradas do escopo. Também foi substituída a concentração da criação do JWT e das operações de localStorage em autenticação. Esses desenhos não devem ser reintroduzidos por referência a notas históricas.
+
+A proibição anterior de qualquer identificação no backend foi revisada pelo pedido de contexto injetável a partir do Bearer. A emissão/validação real de credenciais continua externa; não confundir leitura do token mockado com autenticação efetiva.

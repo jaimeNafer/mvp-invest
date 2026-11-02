@@ -27,3 +27,7 @@ export async function entrar(login: string, senha: string): Promise<Usuario> {
 export function sair(): void {
   armazenamentoLocal.remover(chaveToken);
 }
+
+export function obterToken(): string | null {
+  return armazenamentoLocal.obter(chaveToken);
+}

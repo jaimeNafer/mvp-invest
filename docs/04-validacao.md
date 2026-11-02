@@ -43,7 +43,7 @@ Cada linha poderá gerar mais de um teste. Completar esta matriz antes de implem
 | T06 | Transferência própria e taxa de rede | Principal preserva custo; custódia muda; taxa não aparece duas vezes no resultado. |
 | T07 | Aporte, retirada e imposto externo/da carteira | Capital não vira lucro; imposto externo não debita carteira; moeda pode ter resultado cambial próprio. |
 | T08 | Saída sem saldo, inclusive taxa e conta errada | Rejeitar tudo sem gravação parcial ou saldo negativo. |
-| T09 | Mesmo ativo em titulares e usuários diferentes | Custos separados; visão conjunta do espaço soma sem misturar médias; outro espaço inacessível. |
+| T09 | Mesmo ativo em contas e usuários diferentes | Custos individuais preservados; consolidação futura soma resultados, sem reutilizar média do grupo nas operações. Perfil A não lista/altera registros do perfil B pelo contrato local; isso não comprova autorização real. |
 | T10 | Mesmo instante e eventos fora de ordem de cadastro | Ordem determinística; filtros processam histórico anterior antes da apresentação. |
 | T11 | Correção/cancelamento retroativo válido e inválido | Recalcular ou recusar atomicamente; preservar versão anterior, motivo e autoria. |
 | T12 | Reenvio da requisição e revisão antiga | Não duplicar fatos; rejeitar conflito de edição com orientação para atualizar. |
@@ -52,18 +52,25 @@ Cada linha poderá gerar mais de um teste. Completar esta matriz antes de implem
 | T15 | Ano anterior sem histórico, posição encerrada e ano corrente | Ausência não vira zero certificado; zero sustentado pelo histórico é distinto; ano atual é prévia. |
 | T16 | Decimais, divisão periódica e limites de escala | Valores reproduzíveis conforme política versionada; excesso rejeitado; transporte sem Number financeiro. |
 | T17 | Login pelo serviço mockado, erro de credenciais, saída e recarga | Jaime/Eliane com senha vazia; credenciais incorretas recusadas; saída/recarga limpam o perfil; nenhuma chamada HTTP. |
-| T18 | Separação de cadastros por perfil — contrato pendente | Definir e testar junto aos cadastros; o mock do frontend não comprova identidade; autenticação externa será integrada depois. |
+| T18 | Contexto por requisição e separação por perfil | Bearer carrega ID/nome/role; ausência/estrutura inválida retorna 401; header/corpo não substituem `sub`. Alternância e requisições simultâneas não misturam registros. Mock não comprova autenticidade; integração externa permanece futura. |
 | T19 | CSV/HTML e entradas com caracteres especiais | Totais consistentes; texto não executa script nem fórmula de planilha. |
 | T20 | JSON inválido/incompatível e recuperação válida | Falha sem alteração parcial; recuperação mantém isolamento, fatos, auditoria e resultados recalculados. |
 | T21 | Migrations em MySQL vazio e banco já migrado | Estrutura criada corretamente; segundo início não altera indevidamente o banco. |
 | T22 | Históricos sintéticos crescentes até 5.000 eventos | Paginação correta, totais independentes da página e resultados reproduzíveis. |
 | T23 | Prévia no backend, edição, respostas fora de ordem e confirmação após mudança do livro | Mesmo motor na prévia/confirmação; nenhuma gravação na prévia; edição substitui o evento; resposta antiga não sobrescreve dados atuais; revisão desatualizada exige atualização. |
+| T24 | Carteiras com uma/várias instituições, edição, nome duplicado e seleção vazia/repetida/inválida | Nome normalizado até 160 caracteres; seleção obrigatória; 400/409 legíveis; falha preserva formulário e não deixa gravação parcial. |
+| T25 | Duas carteiras de um usuário selecionam Binance; outro usuário também seleciona Binance | Duas primeiras compartilham ID de conta; outro usuário recebe conta distinta e não consulta/altera carteiras alheias. |
+| T26 | Remover vínculo, arquivar/reativar carteira e instituição inativada | Conta/vínculos de outras carteiras preservados; arquivada continua na lista com somente reativar; vínculo inativo existente pode ser mantido/removido, novo é recusado. |
+| T27 | Concorrência de criação da mesma conta e rollback | Uma conta por usuário/instituição; requisição conflitante retorna 409, reverte tudo e permite nova tentativa reutilizando a conta. |
+| T28 | V7 → V8, cadastros antigos não vazios e reaplicação | Recusar dados antigos antes de alterar tabelas; com cadastros vazios preservar ativos, criar constraints/comentários e catálogo; segunda aplicação não muda dados. Testes históricos até V7 preservados. |
+
+T24–T28 foram implementados com JPA/MockMvc/MySQL e testes React. Resultados executados e fluxo local: [nota de retomada](06-retomada.md). As futuras consultas combinadas devem deduplicar contas por ID; nenhum motor financeiro é declarado pronto por esta entrega.
 
 Não prometer cobertura de todos os casos possíveis. A matriz cobre as regras conhecidas e deve evoluir com o histórico real.
 
 ### Exemplo financeiro de referência para T02
 
-Fixture fictícia em BRL, com um titular e uma conta; usar strings decimais na implementação:
+Fixture fictícia em BRL, com um usuário e uma conta; usar strings decimais na implementação:
 
 1. Aporte de R$ 10.000.
 2. Compra de 0,01 BTC ao preço unitário de R$ 400.000, com taxa de R$ 10 em BRL. Custo incorporado: R$ 4.010; caixa: R$ 5.990.
@@ -74,7 +81,7 @@ Esse caso tem resultados exatos e verifica a ligação entre fatos, custos, caix
 
 ## Ensaio de volume
 
-Gerar eventos válidos, com múltiplas contas/titulares, taxas e correções. Conferir um fechamento conhecido também na massa grande; não medir velocidade sobre eventos financeiramente inválidos.
+Gerar eventos válidos, com múltiplas contas/usuários, taxas e correções. Conferir um fechamento conhecido também na massa grande; não medir velocidade sobre eventos financeiramente inválidos.
 
 Medir listagem filtrada, confirmação com recálculo, visão geral e exportação anual, registrando equipamento e versão do banco. Metas provisórias a calibrar: listagem em até 1 segundo e confirmação com recálculo em até 5 segundos no computador do piloto. Ultrapassagem exige investigação e registro antes do piloto, não uma mudança automática para arquitetura distribuída.
 
@@ -105,7 +112,7 @@ Próxima ação:
 
 ## Checklist de saída do piloto local
 
-- [ ] Jaime e Eliane completaram o fluxo principal em seus espaços.
+- [ ] Jaime e Eliane completaram o fluxo principal com suas carteiras, sem misturar os cadastros entre perfis.
 - [ ] Houve manutenção do histórico em sessões posteriores, não apenas demonstração inicial.
 - [ ] Resultados e saldos do recorte foram conferidos, com divergências explicadas.
 - [ ] CSVs/relatório foram avaliados quanto à utilidade; revisão por contador registrada se ocorrer, sem presumir que já aconteceu.

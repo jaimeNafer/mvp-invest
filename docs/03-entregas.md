@@ -1,6 +1,8 @@
 # Roteiro de entregas
 
-Estado em 01/11/2026: etapa de tela de login e mock de JWT concluída e encerrada por Jaime. Serviços separados para autenticação, construção do token e armazenamento. Autenticação real será externa; backend sem controle de usuários/sessões. Próximo passo é discutir os limites da arquitetura antes de cadastros. Envio do token nas chamadas HTTP, CI remota e marcos 3–6 permanecem pendentes. Ordem por dependências, sem calendário fixo.
+Estado em 02/11/2026: login/JWT e cadastro de carteiras implementados. Carteiras selecionam contas únicas por usuário/instituição; substituem titulares. JPA/MySQL, contexto pelo Bearer, transações, catálogo inicial e modais funcionais. Autenticação real será externa. A CI do PR #11 refere-se ao login; esta entrega foi validada localmente e sua publicação foi solicitada em PR próprio. Marcos 3–6 permanecem pendentes. Ordem por dependências, sem calendário fixo.
+
+**Etapa concluída por Jaime em 02/11/2026:** conversão de Titulares em Carteiras, incluindo contas compartilhadas, catálogo inicial, V8, testes e documentação. Encerrar esta funcionalidade; próximos trabalhos devem partir do contrato vigente. Publicação solicitada em PR para `main`, sem merge automático. As pendências futuras do marco 2 não reabrem esta entrega.
 
 ## Marco 1 — Fundação reproduzível
 
@@ -25,13 +27,18 @@ Backlog e evidências: [F01–F07, baseline técnica e diagnóstico do ambiente]
 - [x] Login e saída pelo serviço mockado do frontend, sem dependência de backend/banco. [Responsabilidades atuais](07-acesso-local.md).
 - [x] JWT mockado com nome e role `acesso_total`, salvo em `lastro.token` e removido ao sair; serviços próprios para JWT e localStorage, com responsabilidades documentadas.
 - [x] Encerrar a etapa de login e consolidar aprendizados de qualidade para as próximas tarefas. [Regras permanentes e exemplos](08-acordos-de-qualidade.md).
-- [ ] Integrar o token às futuras chamadas de negócio após definir o contrato; o mock não representa autenticação ou autorização reais.
-- [ ] Discutir responsabilidades e critérios de extração de classes antes da próxima expansão do backend. O fluxo de senhas e redefinição foi retirado do escopo.
-- [ ] Criar titulares, contas e catálogo inicial dos ativos suportados pelo protótipo. Contas são registros identificados, não texto livre repetido em cada operação.
-- [ ] Definir a separação dos cadastros pelo perfil selecionado e o arquivamento de registros referenciados no histórico. Definir o contrato de identidade externa antes da integração; não confiar nos IDs do mock como autorização.
-- [ ] Construir shell React com navegação aprovada, identificação do usuário, saída e estados de carregamento/erro/vazio.
+- [x] Integrar o token às chamadas de carteiras e instituições pelo cliente HTTP; o mock não representa autenticação ou autorização reais.
+- [x] Obter a identificação do Bearer no backend por filter e contexto por requisição injetável nas services; substituir `X-Perfil-Id`, mantendo emissão mockada e autenticação real futura.
+- [x] Alinhar JPA e responsabilidades. Decisão vigente substitui titulares por carteiras; senhas permanecem fora do backend de negócio.
+- [x] Criar, consultar, editar, arquivar e reativar carteiras no MySQL. Modal com nome e instituições. [Contrato e verificações](09-cadastro-de-carteiras.md).
+- [x] Criar/reutilizar contas únicas por usuário/instituição em uma transação, sem cadastro independente. Várias carteiras compartilham uma conta sem copiar dados.
+- [x] Disponibilizar catálogo inicial de instituições: Binance e BitGet, por migration e sem tela de manutenção.
+- [ ] Definir os ativos suportados e provisionar o catálogo para o primeiro lançamento; a tabela existente é preservada.
+- [x] Separar carteiras/contas por `perfil_ref` obtido de `UsuarioAtual.id()`. V8 exige cadastros antigos vazios e backup, preservando V1–V7 e ativos.
+- [ ] Aplicar o contexto aos próximos cadastros e definir o contrato de identidade externa antes da integração real; não confiar nos IDs do mock como autorização.
+- [x] Entregar navegação entre Meu perfil e Carteiras, identificação do perfil, saída e estados de carregamento/erro/vazio no cadastro.
 
-**Aceite futuro dos cadastros:** registrar titular/conta, reiniciar e encontrá-los no perfil correspondente. A troca de perfil não mistura listagens. Os contratos de consulta e gravação devem definir o vínculo ao perfil antes da implementação. O mock de acesso não comprova identidade nem autorização. Entrada inválida não grava parcialmente.
+**Aceite dos cadastros:** registrar carteiras com instituições e encontrá-las no usuário correspondente. A troca de usuário não mistura listagens. Duas carteiras reutilizam a conta do usuário; outro usuário possui uma conta distinta. Remover vínculo/arquivar preserva contas. Entrada inválida ou conflito não grava parcialmente. O mock de acesso não comprova identidade nem autorização.
 
 **Aprendizado:** o backend de negócio não gerencia autenticação. O serviço mockado no frontend permite evoluir a interface enquanto o backend externo específico permanece fora do escopo atual.
 
@@ -55,7 +62,7 @@ Backlog e evidências: [F01–F07, baseline técnica e diagnóstico do ambiente]
 
 **Objetivo:** comparar registros com evidências externas sem fabricar ajustes.
 
-- [ ] Implementar comparação por titular/conta/ativo/data e referência textual do documento, sem upload nesta etapa.
+- [ ] Implementar comparação por usuário/conta/ativo/data e referência textual do documento, sem upload nesta etapa.
 - [ ] Criar migration das comparações de saldo e validar atualização do banco existente.
 - [ ] Entregar fila de pendências: país/referência ausente, custo zero e referência repetida; links para investigar os lançamentos.
 - [ ] Atualizar diferenças após mudanças no histórico; exportar as comparações autorizadas.
@@ -66,13 +73,13 @@ Backlog e evidências: [F01–F07, baseline técnica e diagnóstico do ambiente]
 
 **Objetivo:** aproveitar o histórico fora da aplicação e recuperar os dados.
 
-- [ ] Entregar resumo mensal e posições anuais por titular/ativo, com custo e custódia; ano corrente aparece como prévia.
+- [ ] Entregar resumo mensal e posições anuais por usuário/ativo, com custo e custódia; ano corrente aparece como prévia.
 - [ ] Entregar operações detalhadas e impostos pagos, separando pagamento de obrigação calculada.
 - [ ] Entregar CSVs e relatório HTML autossuficiente com conteúdo escapado, impressão e totais compatíveis com a interface.
-- [ ] Revisar o contrato de JSON versionado, implementar exportação/restauração do próprio espaço e testar falhas sem perda parcial.
+- [ ] Revisar o contrato de JSON versionado, implementar exportação/restauração das contas do usuário e testar falhas sem perda parcial.
 - [ ] Documentar backup MySQL e executar recuperação em banco separado; adaptar os textos de Dados e backup ao novo armazenamento.
 
-**Aceite:** posição anual usa todo o histórico até a data relevante; ausência de histórico anterior não inventa saldo zero. Exportações reproduzem os filtros aplicáveis. Recuperação preserva fatos, conferências e rastreabilidade; não mistura espaços. Arquivo inválido não altera dados.
+**Aceite:** posição anual usa todo o histórico até a data relevante; ausência de histórico anterior não inventa saldo zero. Exportações reproduzem os filtros aplicáveis. Recuperação preserva fatos, titularidade, conferências e rastreabilidade. Arquivo inválido não altera dados. Consolidação é gerencial, sem misturar cálculos individuais ou compensar tributos entre usuários.
 
 ## Marco 6 — Validação local
 

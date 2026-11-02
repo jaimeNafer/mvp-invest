@@ -45,9 +45,9 @@ export default function Login({ onLogin }: { onLogin: (usuario: Usuario) => void
       </section>
       <main className="access-main">
         <form className="login-card" onSubmit={submit} aria-labelledby="login-title">
-          <span className="badge">Seu espaço no Lastro</span>
+          <span className="badge">Sua conta no Lastro</span>
           <h2 id="login-title">Bem-vindo de volta.</h2>
-          <p>Entre para acessar seu espaço.</p>
+          <p>Entre para acompanhar seus investimentos.</p>
           <label htmlFor="login">Usuário</label>
           <input
             id="login"
@@ -76,7 +76,7 @@ export default function Login({ onLogin }: { onLogin: (usuario: Usuario) => void
             </p>
           )}
           <button className="primary-button" type="submit" disabled={busy || !login.trim()}>
-            {busy ? "Entrando…" : "Entrar no meu espaço"}
+            {busy ? "Entrando…" : "Entrar"}
             <span aria-hidden="true">↗</span>
           </button>
         </form>
