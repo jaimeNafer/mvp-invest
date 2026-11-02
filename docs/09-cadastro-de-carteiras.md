@@ -2,7 +2,7 @@
 
 Implementação de 02/11/2026. Substitui o cadastro de titulares. Carteiras são visões das contas do usuário: uma mesma conta pode aparecer em várias carteiras, sem copiar seus dados. [Modelagem e diagrama](10-modelagem-de-carteiras.md).
 
-Etapa concluída e encerrada por Jaime em 02/11/2026, com publicação solicitada em PR para `main`, sem merge automático.
+Etapa concluída e encerrada por Jaime em 02/11/2026. Código publicado no [PR #12](https://github.com/jaimeNafer/mvp-invest/pull/12) para `main`, aberto para revisão e sem merge automático.
 
 ## Uso
 
@@ -50,6 +50,6 @@ V8 cria carteiras, contas por usuário/instituição e seus vínculos, remove ti
 
 Cobertura: criação/edição com uma ou várias instituições, validação, compartilhamento de conta entre carteiras, separação de usuários, remoção de vínculos, arquivo/reativação, instituições inativas, rollback, conflitos e concorrência. Migrações históricas são testadas até V7; atualização V7 → V8 e instalação vazia têm testes próprios, incluindo recusa quando há dados antigos.
 
-Resultados executados e verificação no navegador: [nota de retomada](06-retomada.md). A validação remota da publicação será registrada nos checks do PR desta entrega.
+Resultados executados e verificação no navegador: [nota de retomada](06-retomada.md). A validação remota está nos checks do PR #12, vinculada ao último commit publicado.
 
 Próxima fatia: definir o primeiro fluxo de operações, vinculado à conta do usuário. Motor, importação, relatórios e backoffice não fazem parte desta entrega.

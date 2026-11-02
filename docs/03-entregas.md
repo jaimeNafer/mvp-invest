@@ -1,8 +1,8 @@
 # Roteiro de entregas
 
-Estado em 02/11/2026: login/JWT e cadastro de carteiras implementados. Carteiras selecionam contas únicas por usuário/instituição; substituem titulares. JPA/MySQL, contexto pelo Bearer, transações, catálogo inicial e modais funcionais. Autenticação real será externa. A CI do PR #11 refere-se ao login; esta entrega foi validada localmente e sua publicação foi solicitada em PR próprio. Marcos 3–6 permanecem pendentes. Ordem por dependências, sem calendário fixo.
+Estado em 02/11/2026: login/JWT e cadastro de carteiras implementados. Carteiras selecionam contas únicas por usuário/instituição; substituem titulares. JPA/MySQL, contexto pelo Bearer, transações, catálogo inicial e modais funcionais. Autenticação real será externa. A CI do PR #11 refere-se ao login; esta entrega está no [PR #12](https://github.com/jaimeNafer/mvp-invest/pull/12), com validação local aprovada e checks remotos no próprio PR. Marcos 3–6 permanecem pendentes. Ordem por dependências, sem calendário fixo.
 
-**Etapa concluída por Jaime em 02/11/2026:** conversão de Titulares em Carteiras, incluindo contas compartilhadas, catálogo inicial, V8, testes e documentação. Encerrar esta funcionalidade; próximos trabalhos devem partir do contrato vigente. Publicação solicitada em PR para `main`, sem merge automático. As pendências futuras do marco 2 não reabrem esta entrega.
+**Etapa concluída por Jaime em 02/11/2026:** conversão de Titulares em Carteiras, incluindo contas compartilhadas, catálogo inicial, V8, testes e documentação. Encerrar esta funcionalidade; próximos trabalhos devem partir do contrato vigente. Código publicado no PR #12 para `main`, sem merge automático. As pendências futuras do marco 2 não reabrem esta entrega.
 
 ## Marco 1 — Fundação reproduzível
 

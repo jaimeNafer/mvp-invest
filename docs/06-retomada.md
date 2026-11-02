@@ -2,7 +2,7 @@
 
 ## Estado vigente — 02/11/2026
 
-**Etapa concluída e encerrada por Jaime em 02/11/2026.** Solicitada a publicação do código em PR para `main`, sem merge automático. O próximo trabalho é especificar o primeiro lançamento; não reabrir este cadastro sem novo requisito.
+**Etapa concluída e encerrada por Jaime em 02/11/2026.** Código publicado na branch `codex/carteiras-investimento`, com [PR #12](https://github.com/jaimeNafer/mvp-invest/pull/12) para `main`, aberto para revisão e sem merge automático. O próximo trabalho é especificar o primeiro lançamento; não reabrir este cadastro sem novo requisito.
 
 Cadastro de titulares substituído por **Carteiras** no menu, página, modais, serviços e API. Cada carteira tem nome e instituições selecionadas. Uma conta é única por usuário/instituição e pode compor várias carteiras por `carteira_contas`, sem cópia de dados. O usuário vem exclusivamente de `UsuarioAtual.id()`, carregado pelo Bearer. Login/JWT/armazenamento continuam nos serviços existentes, sem gestão de usuários no backend.
 
@@ -29,7 +29,7 @@ Aplicação integrada em [http://127.0.0.1:8080/](http://127.0.0.1:8080/), inici
 
 Operações futuras pertencem à conta. Carteiras representam seleções atuais de contas completas, sem divisão por operações, quantidades ou períodos. Consultas de várias carteiras deduplicam contas por ID. Próxima decisão: especificar o primeiro lançamento e detalhar política decimal/ativos antes do livro. Importação, motor, relatórios, backoffice, integração com corretoras e autenticação real permanecem fora desta entrega.
 
-Publicação desta entrega solicitada em PR para `main`; os resultados remotos devem ser conferidos nos checks desse PR. A CI do PR #11 abaixo refere-se ao login. O histórico a seguir registra decisões e verificações anteriores, substituídas pelo estado vigente acima.
+Publicação desta entrega no [PR #12](https://github.com/jaimeNafer/mvp-invest/pull/12); resultados remotos devem ser conferidos nos checks do PR, pois acompanham o último commit publicado. A CI do PR #11 abaixo refere-se ao login. O histórico a seguir registra decisões e verificações anteriores, substituídas pelo estado vigente acima.
 
 ## Histórico — cadastro anterior e documentação V5–V7
 
