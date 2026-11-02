@@ -6,9 +6,9 @@
 
 **Build confirmado em 01/11/2026:** Gradle com wrapper, por preferência de Jaime, substituindo a proposta anterior de Maven. Usar Groovy DSL (`build.gradle` e `settings.gradle`) como padrão inicial; isso não altera a linguagem Java do backend.
 
-**Propostas para revisão:** Java 21 como baseline; Spring MVC e Spring Data JPA; monólito organizado por funcionalidade; empacotamento do frontend estático no backend para uso local. Versões exatas de Spring Boot, Gradle, Node, React, Vite, driver e Flyway serão fixadas juntas no marco 1, após verificar compatibilidade e a versão do MySQL instalado.
+**Base implementada:** Java 21, Spring MVC e Spring Data JPA, backend organizado por funcionalidade e frontend estático empacotado para uso local. Versões efetivamente utilizadas estão na nota de retomada e no registro do marco 1. Novas responsabilidades e camadas devem ser discutidas antes de expandir o escopo.
 
-Baseline efetivamente usada e tarefas de comprovação: [marco 1 detalhado](05-marco-1.md). A estrutura Spring Boot/Gradle e React já passou por testes e build locais. A CI remota ainda não foi executada.
+Baseline efetivamente usada e tarefas de comprovação: [marco 1 detalhado](05-marco-1.md). A estrutura Spring Boot/Gradle e React já passou por testes e build locais. A CI remota foi [executada com sucesso](https://github.com/jaimeNafer/mvp-invest/actions/runs/41355920250) no PR #11.
 
 ## Estrutura alvo
 
@@ -36,24 +36,28 @@ flowchart LR
 | --- | --- | --- |
 | ARQ-01 — confirmada | Monorepositório, com frontend e backend separados por diretórios. | Mudanças de uma funcionalidade podem ser revisadas juntas; builds continuam independentes. |
 | ARQ-02 — proposta | Um backend modular por funcionalidade, com domínio financeiro separado de controllers e entidades de transporte. | Implantação simples e testes do cálculo sem depender de HTTP; evitar microserviços, filas e infraestrutura adicional neste estágio. |
-| ARQ-03 — decisão vigente de 01/11/2026 | Autenticação em backend externo específico, a implementar depois. Hoje o serviço do frontend valida Jaime/Eliane mockados, com senha vazia. | Nenhum controle de usuários, identificação ou sessão no backend de negócio. A futura integração fica concentrada no serviço frontend. |
+| ARQ-03 — decisão vigente de 01/11/2026 | Autenticação real será externa. Hoje o frontend valida Jaime/Eliane mockados; por novo pedido, o backend lê o Bearer para identificar a requisição. | Sem cadastro de usuários, senhas, emissão de tokens ou sessões no backend de negócio. Filter/contexto centralizam identificação, com validação real a integrar depois. |
 | ARQ-04 — confirmada | Fatos preservados, correções por substituição e cancelamento auditável. | Recalcular projeções; não corrigir saldo diretamente nem expor exclusão física de operações confirmadas. |
 | ARQ-05 — confirmada em 01/11/2026 | Um motor financeiro no backend Java com BigDecimal, inclusive para as prévias; transporte decimal como strings para preservar valores no frontend. | React apresenta os resultados do backend e não mantém um segundo motor financeiro. Política de precisão/arredondamento permanece em revisão separada. |
 | ARQ-06 — proposta | Flyway como único mecanismo de alteração do schema; JPA valida o mapeamento. | Não usar atualização automática do schema pelo Hibernate; validar migrations no MySQL. |
 | ARQ-07 — confirmada em 01/11/2026 | MySQL/Testcontainers para integração de persistência e domínio sem banco; não incluir H2 nesta etapa. | Docker é necessário para a suíte de integração; não manter dependência, perfil ou schema H2. Reavaliar somente se surgir uma necessidade concreta. |
-| ARQ-08 — proposta | Recalcular sincronamente o histórico de um espaço na primeira versão. | Menos infraestrutura. Medir até 5.000 operações antes de introduzir processamento assíncrono ou otimizações. |
+| ARQ-08 — proposta revisada | Recalcular sincronamente o histórico do usuário na primeira versão, com operações vinculadas às contas e regras detalhadas antes do motor. | Carteiras não criam livros independentes. Medir até 5.000 operações antes de introduzir processamento assíncrono ou otimizações. |
 | ARQ-09 — confirmada em 01/11/2026 | Quantidade/preço/câmbio até 18 casas; BRL persistido até 8 casas e exibido com 2; HALF_EVEN e política versionada. | Não reduzir intermediários a centavos ou truncar entradas inválidas. Fronteiras de arredondamento e precisão de divisão serão especificadas e testadas antes do motor. |
 | ARQ-10 — confirmada em 01/11/2026 | Gradle com wrapper no backend, por preferência de Jaime. | Versionar scripts e arquivos do wrapper; build local e CI usam a mesma distribuição. Não criar POM ou exigir Maven/Gradle global. |
+| ARQ-11 — confirmada em 01/11/2026 | Spring Data JPA para os cadastros, conforme escolha de Jaime. | Controller, service transacional, repository e entity onde necessários. `@EntityGraph` carrega contas/instituições dos DTOs; sem exclusão em cascata. |
+| ARQ-12 — substituída em 02/11/2026 | A decisão anterior de titulares independentes de espaços foi substituída por carteiras e contas do usuário. | V5 removeu espaços; V8 remove titulares e recria contas, exigindo cadastros vazios e backup. V1–V7 são imutáveis. [Modelo vigente](10-modelagem-de-carteiras.md). |
+| ARQ-13 — revisada em 02/11/2026 | Carteiras são visões das contas completas do usuário; operações futuras pertencem às contas. | Várias carteiras reutilizam uma conta, única por usuário/instituição. Consultas de várias carteiras deduplicam contas por ID; não dividem operações, quantidades ou períodos. |
+| ARQ-14 — confirmada em 01/11/2026 | Filter lê o Bearer e carrega `UsuarioAtual` com ID, nome e role, em escopo de requisição. Services recebem o contexto pelo construtor. | Controllers/frontend não passam perfil; sem estado global ou ThreadLocal manual. Leitura do JWT sem assinatura permanece mockada, com 401 para token ausente/malformado e sem autenticar credenciais. |
 
 ## Implementação atual e próxima revisão
 
-O backend contém somente a classe de inicialização; nenhum endpoint de negócio foi implementado. O controle de identificação foi removido. O frontend chama `entrar(login, senha)` em `services/autenticacao.ts`, sem HTTP, retornando um perfil mockado. O estado do perfil exibido existe na memória React. O serviço grava um JWT mockado sem assinatura na localStorage (`lastro.token`), com nome, role `acesso_total`, `sub` e `iat`; sair remove o token. [Responsabilidades e operação](07-acesso-local.md).
+O backend implementa carteiras com controller, service, repository JPA e entity; contas possuem entity/repository e instituições oferecem catálogo somente de leitura. `perfil_ref` vem de `UsuarioAtual.id()`, correspondente ao `sub` lido do Bearer pelo filter. O contexto tem escopo de requisição, injetado na service, sem parâmetros de perfil no controller. O cliente HTTP envia o token obtido por `autenticacao`, sem `X-Perfil-Id`. Login, JWT e armazenamento mantêm serviços próprios no frontend. [Responsabilidades e operação](07-acesso-local.md).
 
-V1–V3 permanecem imutáveis; V4 remove usuários, membros e o vínculo de criador do espaço. Espaços e demais estruturas de negócio são preservados. A senha técnica do MySQL continua privada e necessária.
+V1–V7 permanecem imutáveis. V4 retirou controle de usuários e V5 removeu espaços. V8 exige titulares/contas/instituições vazios, remove titulares, recria contas e cria carteiras/vínculos, preservando ativos. Binance e BitGet são provisionadas por migration. A senha técnica do MySQL continua privada e necessária.
 
-A organização por funcionalidades permanece uma proposta; a criação de camadas internas será discutida com Jaime antes de implementar cadastros. Não criar diretórios vazios, uma interface para cada classe ou infraestrutura por antecipação. O mock de acesso não define como regras financeiras serão implementadas.
+A organização por funcionalidade está aplicada a carteiras, contas e instituições. Criar/editar, criar contas ausentes e atualizar associações ocorre em uma transação. Unicidade e conflitos concorrentes retornam 409 após rollback; nova tentativa reutiliza a conta existente. Arquivar ou remover vínculo não exclui contas. Novas camadas devem atender a responsabilidades concretas, sem diretórios vazios ou uma interface para cada classe.
 
-Pontos a decidir na conversa: responsabilidades de controller e persistência, quando extrair serviço, convenções de nomes e como revisar o tamanho das mudanças. Não implementar uma reorganização adicional antes desse alinhamento.
+Controller trata HTTP/validação, service coordena transações e regras, repository persiste e entity representa o registro. Manter esses limites e revisar o tamanho das mudanças a cada funcionalidade, sem reorganizações adicionais por antecipação.
 
 ## Execução local
 
@@ -65,13 +69,13 @@ Pontos a decidir na conversa: responsabilidades de controller e persistência, q
 
 ## Domínio e contratos propostos
 
-- Reutilizar os conceitos do modelo v1, não adotar automaticamente todas as suas tabelas. Usuário, espaço, titular, conta, ativo, operação e movimento são conceitos distintos.
+- Reutilizar somente os conceitos pertinentes do modelo v1. Usuário, carteira, conta, instituição, ativo, operação e movimento são distintos. Titulares e espaços não fazem parte do schema vigente; carteiras não são donas dos fatos financeiros.
 - O modelo histórico OIDC não é o schema ativo. V3 remove as credenciais e V4 remove o controle de usuários. Integração com identidade externa permanece futura.
-- Custo médio móvel por espaço/titular/ativo; quantidade disponível por conta. Transferência entre contas próprias preserva custo do principal. As regras detalhadas de taxas e câmbio estão em `REGRAS_DO_BACKEND.md` do modelo v1 e precisam de testes Java próprios.
+- Cálculo por usuário e ativo, com regras detalhadas antes do motor; quantidade disponível por conta. Transferência entre contas do mesmo usuário preserva custo do principal. Regras de taxas/câmbio do modelo v1 são referência a revisar e testar em Java. Carteiras selecionam contas completas e consultas combinadas deduplicam IDs, sem criar outra base de custo.
 - Saldo inicial exige custo conhecido no serviço. Se o banco continuar permitindo NULL para evolução futura, a API do MVP deve recusá-lo. Custo zero exige confirmação explícita da origem; BRL tem custo igual à quantidade.
-- Correção/cancelamento: transação bloqueia a revisão do espaço, valida todo o histórico candidato, grava fatos/status/auditoria e publica projeções coerentes. Falha reverte tudo. Substituição preserva o desempate temporal; não alterar os valores da versão anterior.
+- Correção/cancelamento futuro: transação controla a revisão do histórico do usuário, valida o histórico candidato, grava fatos/status/auditoria e publica projeções coerentes. Falha reverte tudo. Substituição preserva o desempate temporal. Definir revisão/concorrência ao implementar o motor, sem antecipar agora `revisao_livro` no cadastro.
 - Datas persistidas em UTC, com data de negócio e fuso explícitos. Proposta inicial de entrada/exibição: `America/Fortaleza`, compatível com o contexto dos participantes; revisar dados históricos que tenham outro fuso. Ordenação por instante, ordem do livro e identificador.
-- API REST sob `/api/v1`, com DTOs próprios, validação de entrada e erros legíveis. Famílias futuras: titulares/contas, operações/prévia/histórico/cancelamento, posições/resultados, conferências e relatórios/exportações. Contratos de cada família serão detalhados antes de seu marco, sem expor entidades JPA diretamente.
+- API REST sob `/api/v1`, com DTOs próprios, validação e erros legíveis. Atuais: carteiras e catálogo de instituições; rotas de titulares removidas. Famílias futuras: operações/prévia/histórico/cancelamento, posições/resultados, conferências e relatórios/exportações. Detalhar cada contrato antes de seu marco, sem expor entidades JPA diretamente.
 - Quantidades, preços, câmbio e dinheiro trafegam como strings decimais; IDs como strings para evitar perda de precisão no JavaScript. Datas ISO; valores formatados em pt-BR somente na apresentação.
 - Listagens de operações paginadas no servidor, com filtros e ordenação determinística. Proposta: 50 linhas por página, limite 100. Totais e relatórios usam o histórico completo autorizado, nunca apenas a página carregada.
 - Frontend organizado por funcionalidades e componentes reutilizáveis; CSS do protótipo como referência. Proposta: React Router, cliente HTTP central com fetch e estado local/contexto para sessão/filtros. Adicionar outras bibliotecas somente por necessidade documentada.
@@ -99,20 +103,20 @@ O SQL v1 é uma referência física, não uma migration pronta para o MVP atual.
 
 | Etapa | Estruturas necessárias | Ajustes em relação ao modelo inicial |
 | --- | --- | --- |
-| Fundação de negócio | Espaços e cadastros | Preservar os dados de negócio; V4 remove controle de usuários e vínculos de acesso. Integração com identidade externa será definida depois. |
-| Cadastros | Titulares, instituições, ativos e contas | Isolamento por espaço/titular; não exigir CPF/CNPJ ou cifragem de documentos para um fluxo que não utiliza esses dados. |
+| Fundação de negócio | Cadastros independentes de espaços | V4 remove controle de usuários; V5 remove espaços, preservando registros e a associação por referência de perfil. Identidade externa validada será integrada depois. |
+| Cadastros | Carteiras, contas, vínculos, instituições e ativos | Contas únicas por usuário/instituição e M:N com carteiras. Usuário obtido exclusivamente pelo contexto. Identificação fiscal será definida antes de uma capacidade fiscal real. |
 | Livro e cálculo | Operações, movimentos, pagamentos, auditoria, execuções e projeções | Custo inicial obrigatório para o lançamento; correções preservadas; resultados vinculados à revisão e versão do motor. |
 | Conferência | Comparações de saldo | Referência textual do documento; diferença calculada, sem armazenar um selo definitivo de conferência. |
 | Evolução futura | Arquivos, importações e linhas de origem | Adiar tabelas e FKs exclusivas de importação até a implementação do primeiro importador; preservar possibilidade de evolução por nova migration. |
 
-As tabelas de operações não devem exigir tabelas de importação ausentes. A primeira versão pode registrar somente origem manual; adicionar origem CSV e seus vínculos com a funcionalidade futura. Manter atomicidade e chaves de isolamento nos vínculos entre conta, titular e espaço.
+As tabelas de operações não devem exigir tabelas de importação ausentes. A primeira versão pode registrar somente origem manual; adicionar origem CSV e vínculos com a funcionalidade futura. Manter atomicidade e consistência entre usuário, conta e operação, sem depender de uma carteira para registrar fatos.
 
 Após uma migration ser aplicada e compartilhada, corrigir por uma nova migration; não reescrever seu conteúdo para alterar um banco existente. Flyway controla o schema; não há usuários ou credenciais no schema final. Os dois perfis do mock existem somente no frontend. Validar criação em banco vazio e atualização entre versões com MySQL/Testcontainers. A quantidade final de tabelas decorrerá dos requisitos, não de uma meta de manter as 20 originais.
 
 ## Recuperação — proposta a revisar antes do marco 5
 
-- Exportação JSON versionada do próprio espaço contém fatos e conferências, sem senhas ou sessões. Não é compatível automaticamente com o backup v3.
-- Restauração por usuário no próprio espaço: validar arquivo completo, mostrar resumo e exigir confirmação da substituição; recalcular, auditar e aplicar atomicamente. IDs externos são remapeados; campos de proprietário não concedem acesso a outro espaço.
+- Exportação JSON versionada das contas do usuário contém fatos e conferências, sem duplicação por carteira e sem senhas ou sessões. Não é compatível automaticamente com o backup v3.
+- Restauração do usuário: validar arquivo completo, mostrar resumo e exigir confirmação da substituição; recalcular, auditar e aplicar atomicamente. IDs externos são remapeados; referências recebidas no arquivo não concedem acesso. Não misturar históricos de usuários diferentes.
 - Backup técnico do banco por procedimento local documentado; restauração testada em banco separado. Fazer backup antes de migrations e restaurações; manter cópia fora do disco principal, com proteção compatível com dados financeiros.
 - Demonstrativos CSV/HTML são exportações para uso humano, não substitutos de um backup recuperável. Tratar conteúdo informado pelo usuário como texto também nesses arquivos.
 

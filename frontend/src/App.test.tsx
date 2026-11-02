@@ -15,7 +15,7 @@ describe("login pelo serviço local do frontend", () => {
     render(<App />);
     expect(screen.getByLabelText("Senha")).toHaveValue("");
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: " Jaime " } });
-    fireEvent.click(screen.getByRole("button", { name: /Entrar no meu espaço/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
     expect(await screen.findByRole("heading", { name: "Olá, Jaime." })).toBeVisible();
     const tokenJaime = armazenamentoLocal.obter("lastro.token");
     expect(tokenJaime).not.toBeNull();
@@ -33,7 +33,7 @@ describe("login pelo serviço local do frontend", () => {
     expect(screen.getByLabelText("Usuário")).toHaveValue("");
     expect(screen.getByLabelText("Senha")).toHaveValue("");
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: "eliane" } });
-    fireEvent.click(screen.getByRole("button", { name: /Entrar no meu espaço/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
     expect(await screen.findByRole("heading", { name: "Olá, Eliane." })).toBeVisible();
     const payloadEliane = (armazenamentoLocal.obter("lastro.token") ?? "").split(".")[1];
     expect(JSON.parse(atob(payloadEliane))).toMatchObject({
@@ -52,7 +52,7 @@ describe("login pelo serviço local do frontend", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: login } });
     fireEvent.change(screen.getByLabelText("Senha"), { target: { value: senha } });
-    fireEvent.click(screen.getByRole("button", { name: /Entrar no meu espaço/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Usuário ou senha inválidos.");
     expect(screen.getByLabelText("Senha")).toHaveValue("");
     expect(screen.queryByRole("heading", { name: /Olá,/ })).not.toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("login pelo serviço local do frontend", () => {
   it("preserva o token na recarga sem restaurar o perfil automaticamente", async () => {
     const { unmount } = render(<App />);
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: "jaime" } });
-    fireEvent.click(screen.getByRole("button", { name: /Entrar no meu espaço/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
     await screen.findByRole("heading", { name: "Olá, Jaime." });
     const token = armazenamentoLocal.obter("lastro.token");
     unmount();

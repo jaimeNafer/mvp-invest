@@ -18,6 +18,9 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 | [Nota de retomada](06-retomada.md) | O que foi verificado e qual é a próxima tarefa concreta? |
 | [Acesso local](07-acesso-local.md) | Como funciona o serviço mockado e qual responsabilidade será externa? |
 | [Acordos de qualidade](08-acordos-de-qualidade.md) | Qual padrão de código e experiência deve ser preservado em todas as entregas? |
+| [Cadastro de carteiras](09-cadastro-de-carteiras.md) | Como usar o cadastro, quais são seus contratos e como foi verificado? |
+| [Modelagem de carteiras](10-modelagem-de-carteiras.md) | Como reutilizar contas do usuário em várias carteiras sem duplicar dados? |
+| [Dicionário de dados vigente](11-dicionario-de-dados.md) | Qual o significado, tipo, default e relacionamento de cada campo do banco atual? |
 
 ## Situação atual
 
@@ -26,9 +29,9 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 - Existem testes do motor JavaScript. Eles são uma referência de comportamento, não uma validação contábil independente.
 - A proposta original MySQL com 20 tabelas foi preservada. As primeiras migrations próprias de acesso/cadastros estão em `backend/src/main/resources/db/migration/` e foram verificadas em MySQL 8.0.42 descartável.
 - As sete capturas PNG estão em `prototype/screenshots/`, com nomes legíveis. O protótipo executável complementa os estados e interações que as imagens não mostram.
-- Spring Boot/Gradle e React/TypeScript estão estruturados. O login usa um serviço mockado no frontend, com Jaime e Eliane. Autenticação real será externa; o backend de negócio não gerencia usuários ou sessões. Cadastros e funcionalidades financeiras ainda não existem.
-- Verificações atuais e evidências estão na [nota de retomada](06-retomada.md). A configuração de CI existe; sua execução remota não foi verificada.
-- O ambiente de uso está configurado em `lastro_local` no MySQL instalado; estruturas de negócio persistidas; controle de usuários removido por V4. Início por `scripts/Start-Lastro.ps1`. Bancos descartáveis são exclusivos de verificações isoladas.
+- Spring Boot/Gradle e React/TypeScript estão estruturados. Login mockado no frontend; autenticação real será externa. O backend lê o Bearer em um filter e disponibiliza `UsuarioAtual` por requisição. Carteiras e contas usam JPA/MySQL, separadas por `UsuarioAtual.id()`, sem `X-Perfil-Id`. Operações e motor financeiro permanecem pendentes.
+- Verificações atuais e evidências estão na [nota de retomada](06-retomada.md). A CI foi executada com sucesso no [PR #11](https://github.com/jaimeNafer/mvp-invest/pull/11), incluindo protótipo, frontend e backend/MySQL.
+- O ambiente de uso está configurado em `lastro_local` no MySQL instalado; V4 removeu controle de usuários, V5 removeu espaços e V8 substituiu titulares por carteiras/contas compartilhadas, após conferência dos cadastros vazios e backup. Início por `scripts/Start-Lastro.ps1`. Bancos descartáveis são exclusivos de verificações isoladas.
 - O `PLAN.md` da raiz documenta a fase anterior do protótipo. Para a nova etapa local, prevalecem as decisões confirmadas nesta pasta; o experimento anterior com prazo de 30 dias e usuários externos não é o compromisso desta entrega.
 
 ## Como conduzir o trabalho
@@ -47,12 +50,13 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 | Critério de aceite | Evidência observável que permite dizer que uma entrega funciona. |
 | Marco | Conjunto de tarefas que deixa uma capacidade utilizável. |
 | Usuário | Perfil retornado hoje pelo serviço mockado do frontend; no futuro, pelo backend externo de autenticação. |
-| Espaço | Agrupamento de dados de negócio, sem gestão de usuários ou autenticação neste backend. |
-| Titular | Dono dos investimentos; seu custo é calculado separadamente. |
-| Conta | Local de custódia de um titular, como uma conta em corretora. |
+| Referência do perfil | Identificador externo do usuário proprietário das carteiras e contas; não é credencial. |
+| Carteira | Seleção atual de contas completas do usuário; não é proprietária de operações. |
+| Conta | Custódia única por usuário e instituição, reutilizável em várias carteiras. |
+| Instituição | Entrada do catálogo de custodiantes, compartilhada entre usuários. |
 | Projeção | Saldo ou resultado calculado a partir do histórico e que pode ser reconstruído. |
 | Migration | Alteração versionada da estrutura do banco. |
 
-## Próxima conversa
+## Próxima entrega
 
-Discutir com Jaime os limites da arquitetura do backend: responsabilidades, consultas, critérios de extração de classes e revisão das próximas mudanças. Fazer esse alinhamento antes de implementar cadastros ou novas camadas. O login está encerrado; o envio do token nas chamadas de negócio permanece para a integração correspondente. A implementação atual está documentada em [acesso no frontend](07-acesso-local.md).
+Detalhar o primeiro lançamento e a política decimal antes de implementar o livro. Operações serão vinculadas às contas; visões de várias carteiras deduplicarão contas por ID. O cadastro de carteiras segue o [contrato](09-cadastro-de-carteiras.md) e a [modelagem vigente](10-modelagem-de-carteiras.md). Autenticação real permanece futura.

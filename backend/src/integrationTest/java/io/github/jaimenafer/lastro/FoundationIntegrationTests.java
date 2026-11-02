@@ -25,19 +25,19 @@ class FoundationIntegrationTests {
     @Autowired TransactionTemplate transactions;
 
     @Test void migrationsCriamBancoSemDadosReaisEReexecucaoNaoAlteraSchema() {
-        assertThat(flyway.info().applied()).hasSize(4);
+        assertThat(flyway.info().applied()).hasSize(8);
         assertThat(flyway.migrate().migrationsExecuted).isZero();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM espacos", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteiras", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM instituicoes", Integer.class)).isEqualTo(2);
     }
 
-    @Test void bancoRejeitaContaComTitularDeOutroEspacoETodaTransacaoReverte() {
+    @Test void bancoRejeitaContaSemInstituicaoETodaTransacaoReverte() {
         assertThatThrownBy(() -> transactions.executeWithoutResult(transaction -> {
-            jdbc.update("INSERT INTO espacos(id, nome) VALUES (101, 'A'), (102, 'B')");
-            jdbc.update("INSERT INTO titulares(id, espaco_id, nome) VALUES (101, 101, 'Titular A')");
-            jdbc.update("INSERT INTO contas(espaco_id, titular_id, nome, tipo) VALUES (102, 101, 'Conta inválida', 'CORRETORA')");
+            jdbc.update("INSERT INTO carteiras(id, perfil_ref, nome) VALUES (101, 'perfil-a', 'Carteira A')");
+            jdbc.update("INSERT INTO contas(perfil_ref, instituicao_id) VALUES ('perfil-a', 999999)");
         })).isInstanceOf(DataIntegrityViolationException.class);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM espacos WHERE id IN (101, 102)", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteiras WHERE id = 101", Integer.class)).isZero();
     }
 
     @Test void bancoRejeitaPrecisaoDeAtivoAcimaDoLimite() {
@@ -47,8 +47,8 @@ class FoundationIntegrationTests {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ativos WHERE codigo = 'teste:X'", Integer.class)).isZero();
     }
 
-    @Test void schemaNaoMantemControleDeUsuarios() {
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('usuarios', 'membros_espaco', 'credenciais_locais')", Integer.class)).isZero();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'espacos' AND column_name = 'criado_por'", Integer.class)).isZero();
+    @Test void schemaNaoMantemEspacosOuControleDeUsuarios() {
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('titulares', 'espacos', 'usuarios', 'membros_espaco', 'credenciais_locais')", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND column_name IN ('espaco_id', 'revisao_livro')", Integer.class)).isZero();
     }
 }

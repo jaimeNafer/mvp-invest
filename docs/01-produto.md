@@ -4,7 +4,7 @@
 
 Manter operações em controles dispersos dificulta entender custos e resultados e organizar informações para o contador. A hipótese é que registrar uma vez e conseguir rastrear os números até cada operação economiza trabalho e aumenta a compreensão do histórico.
 
-Fluxo de valor: **entrar → cadastrar titulares e contas → registrar saldos iniciais e operações → entender resultados → comparar com extratos → exportar informações**.
+Fluxo de valor: **entrar → criar carteiras selecionando instituições → registrar saldos iniciais e operações nas contas → entender resultados → comparar com extratos → exportar informações**.
 
 ## Decisões confirmadas
 
@@ -13,7 +13,7 @@ Fluxo de valor: **entrar → cadastrar titulares e contas → registrar saldos i
 | Participantes | Jaime e Eliane, alternando no mesmo computador. |
 | Ambiente | Somente local; publicação em nuvem fica para outra etapa. |
 | Acesso | Usuário e senha recebidos na tela, validados por serviço mockado no frontend com Jaime e Eliane e senha vazia. Autenticação real será externa; backend de negócio sem gestão de usuários. |
-| Organização | Cada usuário tem seu espaço, com possibilidade de vários titulares e contas. Sem compartilhamento de espaço. |
+| Organização | Contas únicas por usuário/instituição, reutilizadas entre várias carteiras. Carteiras representam visões dos dados das contas e não duplicam operações. Sem entidade de titulares. [Modelagem vigente](10-modelagem-de-carteiras.md). |
 | Contas | Poucas, aproximadamente 4–5; Binance, Bybit e Bitget são exemplos iniciais. Treasure/DeFi fica fora. |
 | Dados | Livro novo e entrada manual; não importar o JSON antigo nem CSV de corretoras nesta entrega. |
 | Volume de referência | Até 5.000 operações para dimensionamento inicial. Interpretação provisória: total do piloto; revisar se necessário. |
@@ -28,20 +28,20 @@ Fluxo de valor: **entrar → cadastrar titulares e contas → registrar saldos i
 | Área | Capacidade e evidência de aceite |
 | --- | --- |
 | Acesso | Login com Jaime ou Eliane pelo serviço mockado do frontend e saída para trocar de perfil. Sem chamadas ao backend. Contrato externo e separação dos cadastros serão detalhados depois. |
-| Cadastros | Cadastrar e consultar titulares e contas. Evitar variações de texto que criem contas involuntariamente; arquivar sem apagar o histórico. |
+| Cadastros | Criar/editar carteiras com uma ou várias instituições. Contas criadas/reutilizadas automaticamente, sem nome/tipo próprios. Arquivar carteiras preserva contas. Instituições mantidas pelo sistema, iniciando com Binance/BitGet. |
 | Operações | Registrar saldo inicial, aporte, compra, venda, conversão, retirada, transferência própria e pagamento de imposto. Validar e persistir antes de apresentar sucesso. |
 | Visão geral | Mostrar saldos a custo, resultados e taxas com rastreabilidade. Filtrar o período sem perder o custo formado antes dele. |
 | Correções | Consultar versões anteriores, corrigir por substituição e cancelar com motivo; histórico e resultados permanecem coerentes após reinício. |
-| Conferência | Registrar quantidade de extrato por titular/conta/ativo/data; mostrar diferenças e pendências e recalculá-las após correções. |
+| Conferência | Registrar quantidade de extrato por usuário/conta/ativo/data; mostrar diferenças e pendências e recalculá-las após correções. |
 | Organização fiscal | Compilado mensal, posições anuais a custo, pagamentos registrados, CSVs e relatório HTML para impressão/compartilhamento. |
-| Dados e backup | Exportar os dados do próprio espaço e comprovar recuperação. Distinguir exportação de dados de backup técnico do MySQL. |
+| Dados e backup | Exportar dados das contas permitidas e comprovar recuperação, preservando o proprietário e os vínculos das carteiras. Distinguir exportação de dados de backup técnico do MySQL. |
 
 As sete imagens e o protótipo são a referência visual. Login, cadastros estruturados, histórico de alterações e estados de erro/carregamento/vazio precisam de especificação complementar. Textos de armazenamento local no navegador e ações de restaurar demonstração não devem ser copiados para o livro real.
 
 ## Limites
 
 - Sem importação CSV, sincronização de APIs, migração do backup v3 ou cotações ao vivo.
-- Sem DeFi, staking, rendimentos, derivativos, alavancagem ou transferências entre titulares.
+- Sem DeFi, staking, rendimentos, derivativos, alavancagem ou transferências entre usuários.
 - Sem recomendações de investimento, cálculo de imposto devido, emissão de DARF ou entrega de declarações.
 - Sem cadastro público, recuperação automática de senha, convites, permissões compartilhadas ou publicação em nuvem.
 - País e referências ajudam na conferência; não determinam automaticamente o enquadramento tributário.

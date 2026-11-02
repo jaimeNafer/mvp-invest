@@ -4,9 +4,11 @@ Aplicação para organizar operações de cripto à vista, entender custos e res
 
 ## Estado da entrega
 
-Etapa de tela de login e mock de JWT concluída. Serviços separados para autenticação mockada, construção do token e armazenamento local; usuários Jaime e Eliane. O backend não gerencia usuários ou sessões; autenticação real será feita por um backend externo específico. O token está disponível para futura integração HTTP, ainda não implementada. MySQL permanece para o domínio de negócio. Cadastros e motor financeiro ainda não foram implementados.
+Cadastro de carteiras com nome e seleção de instituições persistido no MySQL. Cada usuário possui uma conta por instituição; várias carteiras reutilizam essa conta, sem duplicar dados. Criação/edição por modal e arquivamento/reativação na mesma lista. Titulares foram removidos pela V8. Chamadas enviam Bearer; o filter carrega `UsuarioAtual` por requisição e seu `id()` separa os registros. Login de Jaime/Eliane, JWT e armazenamento mantêm serviços próprios no frontend; autenticação real será externa. Operações e motor financeiro permanecem pendentes. [Contrato das carteiras](docs/09-cadastro-de-carteiras.md), [contexto do usuário](docs/07-acesso-local.md) e [modelagem vigente](docs/10-modelagem-de-carteiras.md).
 
 Acordos obrigatórios de desenvolvimento: [AGENTS.md](AGENTS.md). Planejamento e estado de execução: [docs/README.md](docs/README.md).
+
+Documentação campo a campo do banco atual: [dicionário de dados](docs/11-dicionario-de-dados.md). Schema V8 com cinco tabelas de negócio e 23 campos comentados. Binance e BitGet integram o catálogo inicial. V1–V7 permanecem imutáveis; V8 exige titulares, contas e instituições vazios e backup antes da aplicação.
 
 ## Executar o aplicativo
 
@@ -57,7 +59,7 @@ npm ci
 npm run dev
 ```
 
-Abra [frontend de desenvolvimento](http://127.0.0.1:5173/). O login funciona mesmo com o backend desligado. Vite encaminha futuras chamadas de negócio em `/api` ao backend persistente em 8080. Ambos escutam em loopback. Não execute `bootRun` e o JAR simultaneamente na mesma porta.
+Abra [frontend de desenvolvimento](http://127.0.0.1:5173/). O login funciona mesmo com o backend desligado. Vite encaminha as chamadas de negócio em `/api` ao backend persistente em 8080. Ambos escutam em loopback. Não execute `bootRun` e o JAR simultaneamente na mesma porta.
 
 ## Verificar o projeto
 
@@ -82,7 +84,7 @@ Dentro de `backend`, com Docker Desktop ativo:
 .\gradlew.bat check bootJar -PincludeFrontend
 ```
 
-`check` inclui testes de migrations e integridade do banco com MySQL/Testcontainers. Os testes de acesso ficam no frontend. Esses testes desabilitam a importação da configuração privada e não usam o banco persistente. Docker indisponível faz a suíte integrada falhar; não há H2 nem descarte silencioso dos testes. Em Linux/CI, usar `bash gradlew`.
+`check` inclui testes unitários de leitura/contexto do Bearer e testes de migrations/integridade com MySQL/Testcontainers. A emissão do mock também é testada no frontend. Os testes integrados desabilitam a importação da configuração privada e não usam o banco persistente. Docker indisponível faz a suíte falhar; não há H2 nem descarte silencioso. Em Linux/CI, usar `bash gradlew`.
 
 `localTestRun` existe apenas para verificações isoladas e não preserva dados. Para o fluxo real, usar a conexão persistente.
 
@@ -103,4 +105,4 @@ Versionar código, testes, migrations, documentação, lockfile npm, Gradle Wrap
 
 O `.gitignore` mantém fora do repositório configurações privadas em `.local/`, arquivos de ambiente pessoais, backups locais, dependências, caches, builds, cobertura, logs e metadados de ferramentas. O ZIP original do modelo é uma cópia duplicada: permanece no computador e não é enviado. Não ignorar genericamente imagens, SQL ou JAR, pois existem referências, migrations e arquivos do wrapper necessários nessas extensões.
 
-Próximo passo: discutir o controle da arquitetura antes de implementar cadastros reais de titulares e contas por perfil. Importação CSV, recomendações de investimentos e cálculo automático de tributos permanecem fora do MVP atual.
+Próxima decisão: detalhar o primeiro lançamento e as regras decimais antes de implementar o livro. Operações pertencerão às contas do usuário; carteiras serão visões de contas completas. Consultas de várias carteiras deverão deduplicar contas por ID. Sem cadastro independente de contas nesta entrega. Importação CSV, recomendações de investimentos e cálculo automático de tributos permanecem fora do MVP atual.
