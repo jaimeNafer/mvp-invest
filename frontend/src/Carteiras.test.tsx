@@ -27,9 +27,10 @@ describe("cadastro de carteiras", () => {
       const token = new Headers(opcoes?.headers).get("Authorization")?.slice(7) ?? "";
       const perfil = JSON.parse(atob(token.split(".")[1])).sub as string;
       const id = url.split("/")[4];
+      const carteiraId = id ?? String(registros.length + 1);
       const entrada = opcoes?.body ? JSON.parse(String(opcoes.body)) : null;
       const contas = entrada?.instituicaoIds?.map((instituicaoId: string) => ({
-        id: `${perfil}-${instituicaoId}`,
+        id: `${perfil}-${carteiraId}-${instituicaoId}`,
         instituicaoId,
         instituicaoNome: catalogo.find((item) => item.id === instituicaoId)?.nome,
       }));

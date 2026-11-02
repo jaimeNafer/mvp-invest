@@ -7,7 +7,7 @@ $privateConfiguration = if ($env:LASTRO_CONFIG_PATH) { $env:LASTRO_CONFIG_PATH }
 if (-not (Test-Path -LiteralPath $privateConfiguration)) {
     throw 'Configure .local/mysql.properties antes de iniciar o Lastro persistente.'
 }
-$jarPath = Join-Path $backendPath 'build/libs/lastro-backend-0.0.1-SNAPSHOT.jar'
+$jarPath = Join-Path $backendPath 'build/libs/lastro-0.0.1-SNAPSHOT.jar'
 Push-Location $backendPath
 try {
     if ($Build) {

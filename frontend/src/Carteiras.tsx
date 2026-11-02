@@ -86,9 +86,7 @@ export default function Carteiras() {
       <div className="intro">
         <p className="eyebrow">CADASTROS</p>
         <h1 id="page-title">Carteiras</h1>
-        <p className="intro-text">
-          Reúna suas contas e organize diferentes visões dos seus investimentos.
-        </p>
+        <p className="intro-text">Organize suas contas em carteiras de investimento.</p>
       </div>
       {aviso && (
         <p className="message-success" role="status">

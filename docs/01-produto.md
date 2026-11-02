@@ -4,7 +4,7 @@
 
 Manter operações em controles dispersos dificulta entender custos e resultados e organizar informações para o contador. A hipótese é que registrar uma vez e conseguir rastrear os números até cada operação economiza trabalho e aumenta a compreensão do histórico.
 
-Fluxo de valor: **entrar → criar carteiras selecionando instituições → registrar saldos iniciais e operações nas contas → entender resultados → comparar com extratos → exportar informações**.
+Fluxo de valor: **entrar → criar carteiras selecionando instituições → registrar saldos iniciais e operações do usuário por instituição → entender resultados → comparar com extratos → exportar informações**.
 
 ## Decisões confirmadas
 
@@ -13,7 +13,7 @@ Fluxo de valor: **entrar → criar carteiras selecionando instituições → reg
 | Participantes | Jaime e Eliane, alternando no mesmo computador. |
 | Ambiente | Somente local; publicação em nuvem fica para outra etapa. |
 | Acesso | Usuário e senha recebidos na tela, validados por serviço mockado no frontend com Jaime e Eliane e senha vazia. Autenticação real será externa; backend de negócio sem gestão de usuários. |
-| Organização | Contas únicas por usuário/instituição, reutilizadas entre várias carteiras. Carteiras representam visões dos dados das contas e não duplicam operações. Sem entidade de titulares. [Modelagem vigente](10-modelagem-de-carteiras.md). |
+| Organização | Carteiras selecionam instituições por vínculos em `contas`. Carteiras com a mesma instituição mostram as mesmas operações do usuário, registradas uma única vez. Sem titulares. [Modelo](10-modelagem-de-carteiras.md). |
 | Contas | Poucas, aproximadamente 4–5; Binance, Bybit e Bitget são exemplos iniciais. Treasure/DeFi fica fora. |
 | Dados | Livro novo e entrada manual; não importar o JSON antigo nem CSV de corretoras nesta entrega. |
 | Volume de referência | Até 5.000 operações para dimensionamento inicial. Interpretação provisória: total do piloto; revisar se necessário. |
@@ -28,7 +28,7 @@ Fluxo de valor: **entrar → criar carteiras selecionando instituições → reg
 | Área | Capacidade e evidência de aceite |
 | --- | --- |
 | Acesso | Login com Jaime ou Eliane pelo serviço mockado do frontend e saída para trocar de perfil. Sem chamadas ao backend. Contrato externo e separação dos cadastros serão detalhados depois. |
-| Cadastros | Criar/editar carteiras com uma ou várias instituições. Contas criadas/reutilizadas automaticamente, sem nome/tipo próprios. Arquivar carteiras preserva contas. Instituições mantidas pelo sistema, iniciando com Binance/BitGet. |
+| Cadastros | Criar/editar carteiras com uma ou várias instituições. Manter/criar/remover somente vínculos da carteira editada; preservar operações futuras. Arquivar mantém vínculos. Catálogo mantido pelo sistema, iniciando com Binance/BitGet. |
 | Operações | Registrar saldo inicial, aporte, compra, venda, conversão, retirada, transferência própria e pagamento de imposto. Validar e persistir antes de apresentar sucesso. |
 | Visão geral | Mostrar saldos a custo, resultados e taxas com rastreabilidade. Filtrar o período sem perder o custo formado antes dele. |
 | Correções | Consultar versões anteriores, corrigir por substituição e cancelar com motivo; histórico e resultados permanecem coerentes após reinício. |

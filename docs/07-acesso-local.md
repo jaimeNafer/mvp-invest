@@ -58,7 +58,7 @@ Referências da implementação: [escopo de requisição do Spring](https://docs
 
 V1–V4 permanecem como histórico imutável. V4 removeu `usuarios`, `membros_espaco` e a coluna/FK `espacos.criado_por`; credenciais já haviam sido removidas por V3. V5 remove espaços/`espaco_id`/`revisao_livro`, preserva titulares e contas e migra a associação antiga para `perfil_ref`. A referência não é um cadastro de usuários ou uma credencial.
 
-V8 substitui titulares por carteiras e contas do usuário. `carteiras.perfil_ref` e `contas.perfil_ref` usam a mesma referência externa; os registros são separados pelo contexto. Carteiras reutilizam contas por instituição, sem nova responsabilidade de autenticação no backend de negócio.
+V8 mantém `carteiras.perfil_ref` e os vínculos N:N em `contas(carteira_id,instituicao_id)`. Consultas/alterações dos vínculos passam pela carteira do usuário atual. Operações futuras terão referência própria ao usuário e à instituição, sem depender de carteira ou vínculo. A mesma instituição em carteiras do mesmo usuário apresenta os mesmos registros; outro usuário mantém histórico separado.
 
 Antes de aplicar V4, foi preservado um backup privado em `.local/banco-antes-remover-usuarios.sql`. Não ler/imprimir backups ou o antigo arquivo de senhas em inspeções gerais, nem versioná-los. Não são usados pelo login.
 

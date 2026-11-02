@@ -35,7 +35,7 @@ class FoundationIntegrationTests {
     @Test void bancoRejeitaContaSemInstituicaoETodaTransacaoReverte() {
         assertThatThrownBy(() -> transactions.executeWithoutResult(transaction -> {
             jdbc.update("INSERT INTO carteiras(id, perfil_ref, nome) VALUES (101, 'perfil-a', 'Carteira A')");
-            jdbc.update("INSERT INTO contas(perfil_ref, instituicao_id) VALUES ('perfil-a', 999999)");
+            jdbc.update("INSERT INTO contas(carteira_id, instituicao_id) VALUES (101, 999999)");
         })).isInstanceOf(DataIntegrityViolationException.class);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteiras WHERE id = 101", Integer.class)).isZero();
     }

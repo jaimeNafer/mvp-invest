@@ -1,6 +1,5 @@
 package io.github.jaimenafer.lastro;
 
-import com.jayway.jsonpath.JsonPath;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +37,8 @@ class CarteirasIntegrationTests {
     private long bitget;
 
     @BeforeEach void preparar() {
-        jdbc.update("DELETE FROM carteira_contas");
-        jdbc.update("DELETE FROM carteiras");
         jdbc.update("DELETE FROM contas");
+        jdbc.update("DELETE FROM carteiras");
         jdbc.update("UPDATE instituicoes SET ativo = TRUE");
         binance = jdbc.queryForObject("SELECT id FROM instituicoes WHERE codigo = 'binance'", Long.class);
         bitget = jdbc.queryForObject("SELECT id FROM instituicoes WHERE codigo = 'bitget'", Long.class);
@@ -69,40 +67,48 @@ class CarteirasIntegrationTests {
             .andExpect(jsonPath("$.id").isString()).andExpect(jsonPath("$.ativo").value(true))
             .andExpect(jsonPath("$.contas.length()").value(2)).andExpect(jsonPath("$.contas[0].id").isString());
         assertThat(jdbc.queryForObject("SELECT perfil_ref FROM carteiras", String.class)).isEqualTo("a");
-        assertThat(jdbc.queryForList("SELECT DISTINCT perfil_ref FROM contas", String.class)).containsExactly("a");
+        assertThat(jdbc.queryForList("SELECT DISTINCT ca.perfil_ref FROM contas co JOIN carteiras ca ON ca.id = co.carteira_id", String.class)).containsExactly("a");
         mvc.perform(get("/api/v1/carteiras").header("Authorization", bearer("b"))).andExpect(content().json("[]"));
     }
 
-    @Test void carteirasReutilizamContasDoUsuarioSemCompartilharComOutroUsuario() throws Exception {
+    @Test void contasPertencemAUmaUnicaCarteiraMesmoComAMesmaInstituicao() throws Exception {
         var principal = cadastrar("a", "Principal", binance, bitget);
         var recorte = cadastrar("a", "Binance", binance);
         var outraPessoa = cadastrar("b", "Principal", binance);
         assertThat(principal.get("contas").get(0).get("id").stringValue())
-            .isEqualTo(recorte.get("contas").get(0).get("id").stringValue())
+            .isNotEqualTo(recorte.get("contas").get(0).get("id").stringValue())
             .isNotEqualTo(outraPessoa.get("contas").get(0).get("id").stringValue());
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteira_contas", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("SELECT COUNT(DISTINCT carteira_id) FROM contas", Integer.class)).isEqualTo(3);
         mvc.perform(get("/api/v1/carteiras").header("Authorization", bearer("a")))
             .andExpect(jsonPath("$.length()").value(2)).andExpect(jsonPath("$[0].nome").value("Binance"));
     }
 
-    @Test void edicaoRemoveSomenteVinculoEReutilizaContaAoVincularNovamente() throws Exception {
+    @Test void edicaoPreservaContaMantidaERemoveSomenteContaDaCarteiraEditada() throws Exception {
         var primeira = cadastrar("a", "Primeira", binance);
-        cadastrar("a", "Compartilhada", binance);
+        var outra = cadastrar("a", "Outra", binance);
         var contaOriginal = primeira.get("contas").get(0).get("id").stringValue();
+        var contaOutra = outra.get("contas").get(0).get("id").stringValue();
         var id = primeira.get("id").stringValue();
+        mvc.perform(put("/api/v1/carteiras/" + id).header("Authorization", bearer("a"))
+            .contentType("application/json").content(cadastro("Renomeada", binance, bitget)))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.contas[0].id").value(contaOriginal));
         mvc.perform(put("/api/v1/carteiras/" + id).header("Authorization", bearer("a"))
             .contentType("application/json").content(cadastro("Alterada", bitget)))
             .andExpect(status().isOk()).andExpect(jsonPath("$.contas[0].instituicaoNome").value("BitGet"));
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(2);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteira_contas WHERE conta_id = ?", Integer.class, contaOriginal)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas WHERE id = ?", Integer.class, contaOriginal)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas WHERE id = ? AND carteira_id = ?", Integer.class,
+            contaOutra, outra.get("id").stringValue())).isEqualTo(1);
         mvc.perform(put("/api/v1/carteiras/" + id).header("Authorization", bearer("a"))
             .contentType("application/json").content(cadastro("Alterada", binance)))
-            .andExpect(status().isOk()).andExpect(jsonPath("$.contas[0].id").value(contaOriginal));
+            .andExpect(status().isOk()).andExpect(jsonPath("$.contas[0].instituicaoNome").value("Binance"));
+        assertThat(jdbc.queryForObject("SELECT id FROM contas WHERE carteira_id = ?", String.class, id))
+            .isNotEqualTo(contaOriginal).isNotEqualTo(contaOutra);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(2);
     }
 
-    @Test void arquivamentoPreservaContasCompartilhadasEReativacao() throws Exception {
+    @Test void arquivamentoPreservaContasDaCarteiraEReativacao() throws Exception {
         var id = cadastrar("a", "A", binance).get("id").stringValue();
         cadastrar("a", "B", binance);
         mvc.perform(patch("/api/v1/carteiras/" + id + "/situacao").header("Authorization", bearer("a"))
@@ -118,8 +124,7 @@ class CarteirasIntegrationTests {
         mvc.perform(patch("/api/v1/carteiras/" + id + "/situacao").header("Authorization", bearer("a"))
             .contentType("application/json").content("{\"ativo\":true}"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.ativo").value(true));
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteira_contas", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(2);
     }
 
     @Test void recusaCadastrosInvalidosSemGravacaoParcial() throws Exception {
@@ -146,10 +151,10 @@ class CarteirasIntegrationTests {
             .contentType("application/json").content(cadastro("Existente", bitget))).andExpect(status().isOk());
         mvc.perform(put("/api/v1/carteiras/" + id).header("Authorization", bearer("a"))
             .contentType("application/json").content(cadastro("Existente", binance))).andExpect(status().isBadRequest());
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(1);
     }
 
-    @Test void conflitoDeNomeReverteCarteiraContasEVinculos() throws Exception {
+    @Test void conflitoDeNomeReverteCarteiraEContas() throws Exception {
         cadastrar("a", "Principal", binance);
         var outra = cadastrar("a", "Outra", binance).get("id").stringValue();
         mvc.perform(post("/api/v1/carteiras").header("Authorization", bearer("a"))
@@ -158,8 +163,8 @@ class CarteirasIntegrationTests {
             .contentType("application/json").content(cadastro("Principal", bitget))).andExpect(status().isConflict());
         assertThat(jdbc.queryForObject("SELECT nome FROM carteiras WHERE id = ?", String.class, outra)).isEqualTo("Outra");
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteiras", Integer.class)).isEqualTo(2);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteira_contas", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas WHERE instituicao_id = ?", Integer.class, bitget)).isZero();
     }
 
     @Test void carteiraDeOutroUsuarioNaoPodeSerAlteradaOuArquivada() throws Exception {
@@ -191,26 +196,22 @@ class CarteirasIntegrationTests {
         mvc.perform(get("/api/v1/carteiras")).andExpect(status().isUnauthorized());
     }
 
-    @Test void concorrenciaNaoDuplicaContaEPermiteRepetirRequisicaoConflitante() throws Exception {
+    @Test void concorrenciaDeNomeNaoGravaCarteiraOuContaParcial() throws Exception {
         var inicio = new CountDownLatch(1);
         var token = bearer("a");
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var tarefas = java.util.stream.IntStream.range(0, 2).mapToObj(indice -> executor.submit(() -> {
                 inicio.await(5, TimeUnit.SECONDS);
                 var resposta = mvc.perform(post("/api/v1/carteiras").header("Authorization", token)
-                    .contentType("application/json").content(cadastro("Concorrente " + indice, binance))).andReturn();
+                    .contentType("application/json").content(cadastro("Concorrente", binance))).andReturn();
                 return resposta.getResponse().getStatus();
             })).toList();
             inicio.countDown();
-            for (int indice = 0; indice < tarefas.size(); indice++) {
-                int status = tarefas.get(indice).get(15, TimeUnit.SECONDS);
-                assertThat(status).isIn(201, 409);
-                if (status == 409) cadastrar("a", "Concorrente " + indice, binance);
-            }
+            assertThat(List.of(tarefas.get(0).get(15, TimeUnit.SECONDS), tarefas.get(1).get(15, TimeUnit.SECONDS)))
+                .containsExactlyInAnyOrder(201, 409);
         }
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteiras", Integer.class)).isEqualTo(2);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteira_contas", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteiras", Integer.class)).isEqualTo(1);
     }
 
     private tools.jackson.databind.JsonNode cadastrar(String perfil, String nome, Long... ids) throws Exception {

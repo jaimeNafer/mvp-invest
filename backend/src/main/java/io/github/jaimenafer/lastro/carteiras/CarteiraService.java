@@ -1,8 +1,7 @@
 package io.github.jaimenafer.lastro.carteiras;
 
 import io.github.jaimenafer.lastro.acesso.UsuarioAtual;
-import io.github.jaimenafer.lastro.contas.Conta;
-import io.github.jaimenafer.lastro.contas.ContaRepository;
+import io.github.jaimenafer.lastro.instituicoes.Instituicao;
 import io.github.jaimenafer.lastro.instituicoes.InstituicaoRepository;
 import java.util.HashSet;
 import java.util.List;
@@ -14,14 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CarteiraService {
     private final CarteiraRepository carteiras;
-    private final ContaRepository contas;
     private final InstituicaoRepository instituicoes;
     private final UsuarioAtual usuarioAtual;
 
-    public CarteiraService(CarteiraRepository carteiras, ContaRepository contas,
+    public CarteiraService(CarteiraRepository carteiras,
                           InstituicaoRepository instituicoes, UsuarioAtual usuarioAtual) {
         this.carteiras = carteiras;
-        this.contas = contas;
         this.instituicoes = instituicoes;
         this.usuarioAtual = usuarioAtual;
     }
@@ -34,7 +31,7 @@ public class CarteiraService {
     @Transactional
     public Carteira cadastrar(String nome, List<Long> instituicaoIds) {
         var carteira = new Carteira(usuarioAtual.id(), nome);
-        carteira.alterar(nome, selecionarContas(instituicaoIds, Set.of()));
+        carteira.alterar(nome, selecionarInstituicoes(instituicaoIds, Set.of()));
         return carteiras.saveAndFlush(carteira);
     }
 
@@ -44,7 +41,7 @@ public class CarteiraService {
         if (!carteira.isAtivo()) throw new DadosInvalidos("Reative a carteira para editá-la.");
         var anteriores = carteira.getContas().stream().map(conta -> conta.getInstituicao().getId())
             .collect(java.util.stream.Collectors.toSet());
-        carteira.alterar(nome, selecionarContas(instituicaoIds, anteriores));
+        carteira.alterar(nome, selecionarInstituicoes(instituicaoIds, anteriores));
         return carteiras.saveAndFlush(carteira);
     }
 
@@ -55,7 +52,7 @@ public class CarteiraService {
         return carteira;
     }
 
-    private List<Conta> selecionarContas(List<Long> ids, Set<Long> anteriores) {
+    private List<Instituicao> selecionarInstituicoes(List<Long> ids, Set<Long> anteriores) {
         if (ids.isEmpty() || new HashSet<>(ids).size() != ids.size()) {
             throw new DadosInvalidos("Selecione pelo menos uma instituição, sem repetições.");
         }
@@ -64,10 +61,7 @@ public class CarteiraService {
             || selecionadas.stream().anyMatch(instituicao -> !instituicao.isAtivo() && !anteriores.contains(instituicao.getId()))) {
             throw new DadosInvalidos("Selecione instituições disponíveis no catálogo.");
         }
-        var existentes = contas.findAllByPerfilRefAndInstituicaoIdIn(usuarioAtual.id(), ids);
-        return selecionadas.stream().map(instituicao -> existentes.stream()
-            .filter(conta -> conta.getInstituicao().getId().equals(instituicao.getId())).findFirst()
-            .orElseGet(() -> contas.save(new Conta(usuarioAtual.id(), instituicao)))).toList();
+        return selecionadas;
     }
 
     private Carteira buscar(long id) {

@@ -82,7 +82,7 @@ export default function CarteiraForm({
       />
       <fieldset className="instituicoes-selecao" disabled={salvando}>
         <legend>Instituições</legend>
-        <p className="field-hint">Selecione as contas que deseja reunir nesta carteira.</p>
+        <p className="field-hint">Selecione as instituições das contas desta carteira.</p>
         {carregando ? (
           <p role="status">Carregando instituições…</p>
         ) : erroCatalogo ? (

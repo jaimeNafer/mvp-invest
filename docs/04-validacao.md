@@ -59,12 +59,19 @@ Cada linha poderá gerar mais de um teste. Completar esta matriz antes de implem
 | T22 | Históricos sintéticos crescentes até 5.000 eventos | Paginação correta, totais independentes da página e resultados reproduzíveis. |
 | T23 | Prévia no backend, edição, respostas fora de ordem e confirmação após mudança do livro | Mesmo motor na prévia/confirmação; nenhuma gravação na prévia; edição substitui o evento; resposta antiga não sobrescreve dados atuais; revisão desatualizada exige atualização. |
 | T24 | Carteiras com uma/várias instituições, edição, nome duplicado e seleção vazia/repetida/inválida | Nome normalizado até 160 caracteres; seleção obrigatória; 400/409 legíveis; falha preserva formulário e não deixa gravação parcial. |
-| T25 | Duas carteiras de um usuário selecionam Binance; outro usuário também seleciona Binance | Duas primeiras compartilham ID de conta; outro usuário recebe conta distinta e não consulta/altera carteiras alheias. |
-| T26 | Remover vínculo, arquivar/reativar carteira e instituição inativada | Conta/vínculos de outras carteiras preservados; arquivada continua na lista com somente reativar; vínculo inativo existente pode ser mantido/removido, novo é recusado. |
-| T27 | Concorrência de criação da mesma conta e rollback | Uma conta por usuário/instituição; requisição conflitante retorna 409, reverte tudo e permite nova tentativa reutilizando a conta. |
+| T25 | Duas carteiras selecionam Binance | IDs de vínculos distintos apontam à mesma instituição; não significam históricos diferentes. Usuários continuam isolados pelo contexto. |
+| T26 | Editar instituições, arquivar/reativar e inativar instituição | Edição mantém/cria/remove somente vínculos da carteira; arquivar os preserva. Instituição inativa existente pode ser mantida/removida, nova seleção é recusada. |
+| T27 | Concorrência do mesmo nome e rollback | Uma carteira por nome/usuário; respostas 201/409 sem conta órfã ou gravação parcial. |
 | T28 | V7 → V8, cadastros antigos não vazios e reaplicação | Recusar dados antigos antes de alterar tabelas; com cadastros vazios preservar ativos, criar constraints/comentários e catálogo; segunda aplicação não muda dados. Testes históricos até V7 preservados. |
 
-T24–T28 foram implementados com JPA/MockMvc/MySQL e testes React. Resultados executados e fluxo local: [nota de retomada](06-retomada.md). As futuras consultas combinadas devem deduplicar contas por ID; nenhum motor financeiro é declarado pronto por esta entrega.
+T24–T28 usam JPA/MockMvc/MySQL e testes React. [Resultados executados](06-retomada.md). Cenários financeiros abaixo são critérios futuros, ainda sem implementação.
+
+| ID | Cenário futuro do livro | Resultado esperado |
+| --- | --- | --- |
+| T29 | Mesmo lançamento Binance apresentado em duas carteiras do usuário | Uma operação persistida, com mesmo ID/dados nas duas visões; alteração refletida em ambas. |
+| T30 | Visão combinada de carteiras com Binance repetida | Cada operação/saldo/resultado considerado uma vez, usando a união das instituições do usuário. |
+| T31 | Remover vínculo, arquivar ou reassociar Binance | Histórico/custos preservados; reassociação mostra os registros existentes sem reimportar. |
+| T32 | Jaime e Eliane na mesma instituição | Operações filtradas pelo usuário e instituição; nenhum compartilhamento de histórico entre usuários. |
 
 Não prometer cobertura de todos os casos possíveis. A matriz cobre as regras conhecidas e deve evoluir com o histórico real.
 
