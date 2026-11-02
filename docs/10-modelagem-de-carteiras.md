@@ -1,14 +1,15 @@
-# Modelagem vigente — carteiras e contas do usuário
+# Modelagem vigente — carteiras como visões de instituições
 
-Decisão de Jaime em 02/11/2026. Substitui a entidade de titulares e seu cadastro. Um usuário acompanha seus próprios investimentos; carteiras são visões de contas completas, não proprietários independentes de operações.
+Esclarecimento de Jaime em 02/11/2026: carteiras que incluem Binance mostram os mesmos registros da Binance do usuário. Operações devem ser únicas. Isso substitui a interpretação anterior de históricos independentes por carteira.
 
-## Relações
+## Associação entre carteira e instituição
+
+A tabela `contas` representa a associação muitos-para-muitos entre carteiras e instituições. Cada linha é um vínculo, com ID próprio e unicidade `(carteira_id,instituicao_id)`. O mesmo ID de instituição pode aparecer em várias carteiras. Não existe outra tabela `carteira_contas`.
 
 ```mermaid
 erDiagram
-    CARTEIRAS ||--|{ CARTEIRA_CONTAS : reunem
-    CONTAS ||--o{ CARTEIRA_CONTAS : aparecem
-    INSTITUICOES ||--o{ CONTAS : custodiam
+    CARTEIRAS ||--|{ CONTAS : selecionam
+    INSTITUICOES ||--o{ CONTAS : aparecem
     CARTEIRAS {
         bigint id PK
         varchar perfil_ref
@@ -18,43 +19,39 @@ erDiagram
     }
     CONTAS {
         bigint id PK
-        varchar perfil_ref
+        bigint carteira_id FK
         bigint instituicao_id FK
         datetime criado_em
     }
-    CARTEIRA_CONTAS {
-        bigint carteira_id PK,FK
-        bigint conta_id PK,FK
-    }
 ```
 
-`perfil_ref` em carteira e conta identifica o usuário proprietário, obtido pela service por `UsuarioAtual.id()`. O provedor de identidade é externo; não existe tabela de usuários neste schema. Cada usuário tem no máximo uma conta por instituição. A instituição pertence ao catálogo compartilhado; a conta pertence ao usuário.
+`carteiras.perfil_ref` vem de `UsuarioAtual.id()`. Consultas e alterações dos vínculos passam pela carteira do usuário atual; o backend não cadastra usuários. Uma carteira exige ao menos uma instituição na API.
 
-Uma carteira exige pelo menos uma conta na API. Uma conta pode compor várias carteiras ou permanecer sem carteira após a remoção de seus vínculos. A conta é preservada para reutilização e para o futuro histórico financeiro.
+Exemplo: Principal inclui Binance/BitGet e Reserva inclui Binance. São três linhas de associação em `contas`. As duas linhas Binance selecionam a mesma instituição e o mesmo histórico de Jaime. Seus IDs distintos identificam apenas os vínculos. A Binance de Eliane utiliza o mesmo catálogo, mas suas operações são separadas pela referência do usuário.
 
-Exemplo: Jaime tem uma conta Binance e uma BitGet. A carteira Principal reúne as duas; a carteira Binance reutiliza a primeira. Eliane tem outra conta Binance, com ID próprio. Nenhuma conta ou operação é copiada ao criar uma visão.
+## Histórico financeiro futuro
 
-## Regras de integridade
+- Cada operação será registrada uma única vez, identificada por seu próprio ID e vinculada ao usuário e à instituição.
+- Não associar a propriedade das operações a `contas.id` ou `carteira_id`: esses IDs representam organização de visualização, que pode ser alterada.
+- Várias operações podem pertencer ao mesmo usuário/instituição. Essa combinação determina o histórico; não é uma restrição que permita apenas uma operação. Idempotência de submissão/importação será detalhada no contrato do livro.
+- Carteira seleciona todas as operações das instituições associadas para o usuário atual. Nova operação Binance aparece nas carteiras que selecionam Binance, sem cópia adicional.
+- Selecionar várias carteiras corresponde à união das instituições daquele usuário. Cada operação entra uma única vez nos totais, mesmo quando a instituição está em várias carteiras. Preferir filtro por existência/conjunto de instituições, evitando multiplicar operações pelos vínculos.
+- Remover associação ou arquivar carteira não apaga operações, bases de custo ou resultados. Reassociar a instituição permite consultar o histórico existente, sem reimportação.
+- Alterar a seleção de instituições é organização de visualização; não registra transferência financeira ou movimento de custódia.
+- Não misturar usuários pelo catálogo compartilhado: filtrar sempre a referência do usuário, obtida do contexto, além da instituição. Regras de cálculo seguem o usuário/ativo, sem criar custo médio independente por carteira.
 
-- Carteira: nome único por usuário, inclusive arquivada. A API limita nome normalizado a 160 caracteres e valida seleção não vazia/sem repetições.
-- Conta: unicidade `(perfil_ref,instituicao_id)`, sem nome, tipo ou situação próprios. A interface identifica a conta pelo nome da instituição.
-- Vínculo: PK `(carteira_id,conta_id)` e FKs sem exclusão em cascata. A service seleciona contas somente do usuário atual; o cliente fornece instituições, não IDs arbitrários de contas.
-- Criar/editar carteira e atualizar contas/vínculos é atômico. Conflitos de unicidade ou bloqueio concorrente retornam 409 e permitem nova tentativa após rollback.
-- Desvincular remove somente a associação. Arquivar uma carteira mantém suas contas/vínculos e não afeta outras carteiras. Carteira arquivada precisa ser reativada antes de editar.
-- Novos vínculos usam instituições ativas. Vínculos existentes podem ser preservados quando a instituição for inativada.
+Operações e consultas financeiras ainda não existem nesta etapa. A estrutura atual de carteiras/instituições já representa os vínculos; o contrato de persistência do livro deverá aplicar as regras acima.
 
-## Origem dos dados e cálculos futuros
+## Cadastro e edição atuais
 
-Operações futuras devem referenciar a conta do usuário. Vinculá-las apenas à instituição misturaria usuários; vinculá-las à carteira duplicaria fatos ao criar novas visões.
+Nome obrigatório, normalizado nas extremidades, até 160 caracteres e único por usuário, inclusive arquivadas. Instituição única dentro da carteira. Edição mantém IDs dos vínculos preservados, cria os novos e remove os retirados somente daquela carteira. Remover e adicionar novamente pode gerar outro ID de vínculo, sem definir um novo histórico financeiro.
 
-Selecionar carteiras corresponde à união de suas contas por ID. Uma conta presente em duas carteiras entra uma única vez nos totais da seleção. Alterar uma carteira muda a seleção de contas apresentada, sem copiar/mover operações ou alterar suas bases de cálculo.
+Arquivar/reativar preserva vínculos; arquivada precisa ser reativada antes de editar. Novas associações exigem instituições ativas; existentes podem ser mantidas/removidas após inativação. Gravações são transacionais; falhas não deixam dados parciais.
 
-A carteira não divide operações, posições ou datas de uma conta. Revisões, concorrência e regras financeiras serão especificadas na etapa do motor, considerando o usuário proprietário e as contas reais; o agrupamento de visualização não cria uma unidade de apuração independente.
+JPA mantém a associação como entidade explícita: `Carteira` tem `@OneToMany` de `Conta` e esta referencia carteira/instituição. Persistência/merge e remoção de órfãs afetam as linhas de vínculo; `@EntityGraph` carrega os dados dos DTOs. Não adicionar cascade de exclusão de operações aos vínculos.
 
-## Evolução e limites
+## Evolução
 
-V8 requer os cadastros antigos vazios, preserva V1–V7 e o catálogo de ativos, substitui titulares e a estrutura antiga de contas e insere Binance/BitGet. Instituições são mantidas pelo sistema, sem CRUD para o usuário. País da sede não é inferido.
+V8 corrigida e reaplicada localmente na etapa anterior por autorização explícita de limpeza após backup. Este esclarecimento altera a documentação do significado e do livro futuro; não requer refazer vínculos ou limpar o banco. V1–V8 aplicadas permanecem preservadas; evoluções futuras usam nova migration.
 
-O mock de acesso permanece como documentado em [contexto de usuário](07-acesso-local.md). Não há publicação em nuvem, importação, integração com corretoras, motor ou relatórios nesta entrega.
-
-[Contrato do cadastro](09-cadastro-de-carteiras.md) · [Dicionário de dados](11-dicionario-de-dados.md)
+[Contrato](09-cadastro-de-carteiras.md) · [Dicionário](11-dicionario-de-dados.md) · [Retomada](06-retomada.md)

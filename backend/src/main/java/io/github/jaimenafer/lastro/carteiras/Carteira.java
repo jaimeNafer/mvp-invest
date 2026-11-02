@@ -1,14 +1,14 @@
 package io.github.jaimenafer.lastro.carteiras;
 
 import io.github.jaimenafer.lastro.contas.Conta;
+import io.github.jaimenafer.lastro.instituicoes.Instituicao;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,9 +25,7 @@ public class Carteira {
     private String nome;
     @Column(nullable = false)
     private boolean ativo = true;
-    @ManyToMany
-    @JoinTable(name = "carteira_contas", joinColumns = @JoinColumn(name = "carteira_id"),
-        inverseJoinColumns = @JoinColumn(name = "conta_id"))
+    @OneToMany(mappedBy = "carteira", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private Set<Conta> contas = new HashSet<>();
 
     protected Carteira() {}
@@ -42,10 +40,15 @@ public class Carteira {
     public boolean isAtivo() { return ativo; }
     public Set<Conta> getContas() { return Set.copyOf(contas); }
 
-    void alterar(String nome, Collection<Conta> contas) {
+    void alterar(String nome, Collection<Instituicao> instituicoes) {
         this.nome = nome;
-        this.contas.clear();
-        this.contas.addAll(contas);
+        var ids = instituicoes.stream().map(Instituicao::getId).collect(java.util.stream.Collectors.toSet());
+        contas.removeIf(conta -> !ids.contains(conta.getInstituicao().getId()));
+        for (var instituicao : instituicoes) {
+            if (contas.stream().noneMatch(conta -> conta.getInstituicao().getId().equals(instituicao.getId()))) {
+                contas.add(new Conta(this, instituicao));
+            }
+        }
     }
 
     void alterarSituacao(boolean ativo) { this.ativo = ativo; }

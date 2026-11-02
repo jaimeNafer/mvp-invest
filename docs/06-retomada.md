@@ -1,4 +1,66 @@
-# Retomada — carteiras e contas compartilhadas
+# Retomada — operações únicas e carteiras como visões
+
+## Decisão vigente — esclarecimento final de 02/11/2026
+
+Jaime confirmou que Binance em duas carteiras apresenta **os mesmos registros**, persistidos uma única vez. `contas` é a tabela de associação N:N entre carteira e instituição. Seus IDs distintos identificam vínculos, não contas com livros financeiros independentes.
+
+Operações futuras terão identidade própria e referência ao usuário/instituição; não devem pertencer a `contas.id` ou à carteira. O usuário virá exclusivamente de `UsuarioAtual.id()`. Mesma instituição para Eliane e Jaime mantém históricos separados. Carteiras selecionam instituições para apresentar os registros; selecionar várias carteiras deve usar a união de instituições do usuário e contar cada operação uma única vez.
+
+Editar/remover vínculos ou arquivar carteira não apaga operações, custos ou resultados. Reassociar uma instituição mostra seu histórico existente, sem reimportar ou copiar fatos. Isso substitui a interpretação anterior de históricos independentes por carteira.
+
+Esclarecimento registrado nos acordos, produto, arquitetura, contrato, modelo, dicionário e critérios futuros T29–T32. Nesta atualização foram alterados somente documentos; schema V8, código e cadastros foram preservados. Nenhuma nova execução de testes é declarada: resultados da correção Java 27 estão no histórico abaixo. Operações/motor continuam futuros.
+
+Próximo passo: especificar o primeiro lançamento e a política decimal, com persistência única por evento, isolamento por usuário e filtros sem multiplicação de operações por vínculos. A API atual mantém o nome `contas` no DTO, representando as associações selecionadas.
+
+## Publicação da revisão — 02/11/2026
+
+Jaime solicitou enviar as alterações ao Git. O PR #12 já foi integrado em `main`; esta revisão foi publicada na branch `codex/java27-vinculos-carteiras`, com [PR #13](https://github.com/jaimeNafer/mvp-invest/pull/13) para revisão, sem merge automático. Reúne a correção Java 27/V8 e o esclarecimento de que carteiras apresentam os mesmos registros do usuário/instituição.
+
+Evidências locais preservadas: `check` com 24 testes backend (5 unitários e 19 MySQL/Testcontainers), 13 testes frontend, lint, build, pacote integrado e HTTP real aprovados na correção anterior. O esclarecimento posterior alterou documentos; não implementou o motor. A CI do PR #12 refere-se à entrega anterior; os checks da nova revisão devem ser conferidos no próprio PR. Credenciais, backups e dados locais permanecem excluídos do Git.
+
+## Histórico — recuperação Java 27 e interpretação anterior
+
+As descrições anteriores de históricos independentes por carteira foram substituídas pela decisão acima. As evidências da execução e recuperação permanecem válidas; IDs diferentes verificados eram IDs de vínculos.
+
+# Retomada — Java 27 e contas exclusivas por carteira
+
+## Estado vigente — revisão posterior de 02/11/2026
+
+Jaime alterou o backend para Java 27/Spring Boot 4.2.0-SNAPSHOT e confirmou mudar a modelagem: **cada conta pertence a uma única carteira**. Autorizou zerar carteiras, contas e vínculos locais após backup para corrigir/reaplicar V8; instituições e ativos devem ser preservados. Esta decisão substitui o compartilhamento de contas da entrega anterior.
+
+Schema: `carteiras`, `contas`, `instituicoes`, `ativos`. Conta tem `carteira_id`, sem `perfil_ref`; unicidade `(carteira_id,instituicao_id)`. Sem tabela `carteira_contas`. A carteira guarda o usuário obtido de `UsuarioAtual.id()`; todas as consultas/alterações continuam separadas pelo contexto do Bearer.
+
+JPA um-para-muitos com persistência/merge e remoção de órfãs. Edição preserva contas das instituições mantidas, cria as novas e exclui as retiradas apenas daquela carteira. Arquivar preserva contas. Não há operações nesta etapa; antes do livro, definir proteção contra exclusão de contas com histórico. Conta não é compartilhada ou reaproveitada de outra carteira.
+
+## Correções e recuperação
+
+- V8 referenciava `perfil_ref` no índice após remover a coluna. Unicidade corrigida para carteira/instituição; JPA, service, testes e dicionário alinhados. Repository independente de contas removido.
+- O script ainda apontava para o JAR antigo após `rootProject.name` mudar para `lastro`. Agora inicia `backend/build/libs/lastro-0.0.1-SNAPSHOT.jar`. CI usa Java 27; README exige `JAVA_HOME` no JDK 27. Projeto utilizado é `backend/`; a cópia não versionada em `lastro/` não foi alterada.
+- O histórico Flyway havia sido reduzido a V7, mas o schema já continha carteiras e contas. Alterar somente o histórico não refaz o banco. A tentativa inicial de startup foi bloqueada pela revisão automática por risco aos dados; nenhuma migration foi executada nessa tentativa.
+- Após autorização explícita de limpeza, aplicação antiga parada, backup privado renovado em `.local/banco-antes-reset-v8-java27-20261102-024407.sql`. Removidas somente carteiras/contas/vínculos autorizados. Definições V7 originais de titulares/contas restauradas vazias a partir do backup anterior, preparando o schema para reaplicação. Catálogos comparados antes/depois e preservados; não alteramos o histórico Flyway.
+- V8 corrigida aplicada pelo Flyway na inicialização Java 27.0.1, com validação das oito migrations. Catálogos existentes preservados e seeds inseridos somente quando ausentes. Quatro tabelas e 21/21 campos comentados; FKs e unicidade por carteira conferidas.
+
+Esta reaplicação é uma exceção local autorizada, não um procedimento automático. V1–V7 permaneceram imutáveis. Em outros bancos já migrados, não apagar registros do Flyway ou executar limpeza; planejar nova migration e preservação dos dados.
+
+## Evidências verificadas
+
+- Java Corretto 27.0.1, Spring Boot 4.2.0-SNAPSHOT e Gradle Wrapper 9.8.2: pacote integrado aprovado e aplicação iniciada em 8080.
+- `check` aprovado: **24 testes backend**, 5 unitários e 19 integrados MySQL/Testcontainers (11 carteiras, 3 V8, 4 fundação e 1 histórico até V7). Sem falhas/ignorados. Cobre propriedade exclusiva, IDs mantidos na edição, exclusão somente da conta retirada, isolamento, arquivamento, rollback e concorrência de nome.
+- Frontend: lint, **13 testes**, TypeScript/build aprovados; textos e fixture ajustados ao novo modelo. Pacote reconstruído com os assets finais.
+- HTTP real: frontend atualizado 200, Bearer ausente 401, duas carteiras na mesma instituição com contas distintas, edição mantendo ID existente e arquivamento preservando contas. Dados temporários de verificação removidos por IDs exatos de perfil exclusivo; nenhum cadastro de usuário foi criado no backend.
+- Após conferência: carteiras e contas vazias, duas instituições preservadas. Aplicação disponível em [http://127.0.0.1:8080/](http://127.0.0.1:8080/).
+
+## Continuidade
+
+Correções atuais locais, sem novo commit/push. O [PR #12](https://github.com/jaimeNafer/mvp-invest/pull/12) contém a entrega anterior; sua CI não comprova esta revisão. Modelo/contrato/dicionário/acordos foram atualizados para a decisão vigente.
+
+Executar `scripts/Start-Lastro.ps1` com `JAVA_HOME` no JDK 27. Configuração MySQL permanece privada em `.local/mysql.properties`. A versão SNAPSHOT foi mantida conforme alteração de Jaime; requisitos oficiais: [Spring Boot 4.2](https://docs.spring.io/spring-boot/4.2-SNAPSHOT/system-requirements.html) e [Gradle](https://docs.gradle.org/current/userguide/compatibility.html).
+
+Próximo trabalho: definir primeiro lançamento, ativos e política decimal, incluindo proteção de contas com histórico. Login/JWT mockados permanecem no frontend; autenticação real externa, importação e motor não entram nesta correção.
+
+## Histórico — entrega anterior de carteiras compartilhadas
+
+Os registros seguintes preservam a cronologia e são substituídos pelo estado vigente acima.
 
 ## Estado vigente — 02/11/2026
 

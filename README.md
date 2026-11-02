@@ -4,11 +4,11 @@ Aplicação para organizar operações de cripto à vista, entender custos e res
 
 ## Estado da entrega
 
-Cadastro de carteiras com nome e seleção de instituições persistido no MySQL. Cada usuário possui uma conta por instituição; várias carteiras reutilizam essa conta, sem duplicar dados. Criação/edição por modal e arquivamento/reativação na mesma lista. Titulares foram removidos pela V8. Chamadas enviam Bearer; o filter carrega `UsuarioAtual` por requisição e seu `id()` separa os registros. Login de Jaime/Eliane, JWT e armazenamento mantêm serviços próprios no frontend; autenticação real será externa. Operações e motor financeiro permanecem pendentes. [Contrato das carteiras](docs/09-cadastro-de-carteiras.md), [contexto do usuário](docs/07-acesso-local.md) e [modelagem vigente](docs/10-modelagem-de-carteiras.md).
+Carteiras organizam visões dos investimentos do usuário. `contas` associa carteiras e instituições: duas carteiras com Binance selecionam o mesmo histórico do usuário, sem duplicar operações. Cada vínculo possui ID próprio. Bearer identifica `UsuarioAtual`; autenticação real será externa. Cadastro e modais estão implementados; operações e motor permanecem futuros. [Contrato](docs/09-cadastro-de-carteiras.md), [acesso](docs/07-acesso-local.md) e [modelo](docs/10-modelagem-de-carteiras.md).
 
 Acordos obrigatórios de desenvolvimento: [AGENTS.md](AGENTS.md). Planejamento e estado de execução: [docs/README.md](docs/README.md).
 
-Documentação campo a campo do banco atual: [dicionário de dados](docs/11-dicionario-de-dados.md). Schema V8 com cinco tabelas de negócio e 23 campos comentados. Binance e BitGet integram o catálogo inicial. V1–V7 permanecem imutáveis; V8 exige titulares, contas e instituições vazios e backup antes da aplicação.
+Documentação campo a campo: [dicionário](docs/11-dicionario-de-dados.md). V8 revisada com quatro tabelas de negócio e 21 campos comentados. V1–V7 imutáveis; V8 exige titulares/contas antigos vazios e preserva catálogos. Binance/BitGet são inseridas somente quando ausentes. A reaplicação local foi explicitamente autorizada após backup; não apagar registros do Flyway ou reaplicar a migration sobre outros bancos existentes.
 
 ## Executar o aplicativo
 
@@ -26,7 +26,7 @@ Para reconstruir o pacote antes de iniciar:
 .\scripts\Start-Lastro.ps1 -Build
 ```
 
-Requisitos: Java 21, serviço MySQL ativo e configuração privada. Para build do frontend, Node 22.23.4 recomendado e npm. Gradle é fornecido pelo wrapper.
+Requisitos: Java 27, serviço MySQL ativo e configuração privada. Defina `JAVA_HOME` para o JDK 27 antes de executar o script ou o Gradle. Para build do frontend, Node 22.23.4 recomendado e npm. Gradle é fornecido pelo wrapper.
 
 ## Conexão e acessos locais
 
@@ -90,7 +90,7 @@ Dentro de `backend`, com Docker Desktop ativo:
 
 ## Organização
 
-- `backend/`: Java 21, Spring Boot, Gradle e Flyway/MySQL.
+- `backend/`: Java 27, Spring Boot, Gradle e Flyway/MySQL.
 - `frontend/`: React, TypeScript, Vite, Biome e testes de componentes.
 - `prototype/`: protótipo original, testes e capturas de referência preservados.
 - `docs/`: escopo, arquitetura, acordos, entregas e validação.
@@ -105,4 +105,4 @@ Versionar código, testes, migrations, documentação, lockfile npm, Gradle Wrap
 
 O `.gitignore` mantém fora do repositório configurações privadas em `.local/`, arquivos de ambiente pessoais, backups locais, dependências, caches, builds, cobertura, logs e metadados de ferramentas. O ZIP original do modelo é uma cópia duplicada: permanece no computador e não é enviado. Não ignorar genericamente imagens, SQL ou JAR, pois existem referências, migrations e arquivos do wrapper necessários nessas extensões.
 
-Próxima decisão: detalhar o primeiro lançamento e as regras decimais antes de implementar o livro. Operações pertencerão às contas do usuário; carteiras serão visões de contas completas. Consultas de várias carteiras deverão deduplicar contas por ID. Sem cadastro independente de contas nesta entrega. Importação CSV, recomendações de investimentos e cálculo automático de tributos permanecem fora do MVP atual.
+Próxima decisão: detalhar o primeiro lançamento e a política decimal. Operações serão únicas por evento e vinculadas ao usuário/instituição, independentes dos vínculos das carteiras. Consultas de várias carteiras devem contar cada operação uma única vez; remover vínculos ou arquivar preserva o histórico. Importação e motor permanecem futuros.

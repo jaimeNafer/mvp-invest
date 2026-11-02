@@ -1,6 +1,6 @@
 # Dicionário de dados — schema vigente
 
-Schema V1–V8. Cinco tabelas de negócio e 23 campos, todos documentados com comentários breves. V8 substitui titulares por carteiras e contas do usuário; instituições e ativos são preservados.
+Schema V1–V8 revisado por decisão de Jaime em 02/11/2026. Quatro tabelas de negócio e 21 campos, todos documentados com comentários breves. Cada conta pertence a uma carteira; instituições e ativos são preservados.
 
 Tipos, nulabilidade e defaults estão na coluna Definição. Os campos `tipo` usam VARCHAR com CHECK para restringir as opções. `flyway_schema_history` é infraestrutura gerenciada pelo Flyway.
 
@@ -50,27 +50,16 @@ Chaves: PK `id`; UNIQUE `codigo`; CHECK para `tipo` e `casas_decimais`.
 
 ## contas
 
-Contas de custódia do usuário.
+Associações entre carteiras e instituições. O ID identifica o vínculo; duas associações à mesma instituição não representam históricos financeiros diferentes. Operações futuras pertencem ao usuário/instituição e não devem usar este vínculo como proprietário. Os comentários de schema abaixo refletem a V8 aplicada, preservada neste esclarecimento.
 
 | Campo | Definição | Finalidade |
 | --- | --- | --- |
 | `id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | Identificador da conta. |
-| `perfil_ref` | `VARCHAR(120) COLLATE utf8mb4_bin NOT NULL` | Referência do usuário proprietário da conta. |
+| `carteira_id` | `BIGINT UNSIGNED NOT NULL` | Carteira proprietária da conta. |
 | `instituicao_id` | `BIGINT UNSIGNED NOT NULL` | Instituição de custódia da conta. |
 | `criado_em` | `DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)` | Data e hora de criação do cadastro em UTC. |
 
-Chaves: PK `id`; UNIQUE `uk_conta_usuario_instituicao(perfil_ref, instituicao_id)`; FK para `instituicoes.id`. Uma mesma conta pode compor várias carteiras.
-
-## carteira_contas
-
-Contas que compõem cada carteira.
-
-| Campo | Definição | Finalidade |
-| --- | --- | --- |
-| `carteira_id` | `BIGINT UNSIGNED NOT NULL` | Carteira que reúne a conta. |
-| `conta_id` | `BIGINT UNSIGNED NOT NULL` | Conta vinculada à carteira. |
-
-Chaves: PK composta `(carteira_id, conta_id)`; FKs para `carteiras.id` e `contas.id`, sem exclusão em cascata. A service só associa contas do mesmo usuário da carteira.
+Chaves: PK `id`; UNIQUE `uk_conta_carteira_instituicao(carteira_id, instituicao_id)`; FKs para `carteiras.id` e `instituicoes.id`, sem exclusão em cascata no banco. Não há `contas.perfil_ref` ou tabela `carteira_contas`; o usuário proprietário é obtido pela carteira.
 
 ## Consultar no MySQL Workbench
 

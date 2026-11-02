@@ -1,8 +1,8 @@
 # Roteiro de entregas
 
-Estado em 02/11/2026: login/JWT e cadastro de carteiras implementados. Carteiras selecionam contas únicas por usuário/instituição; substituem titulares. JPA/MySQL, contexto pelo Bearer, transações, catálogo inicial e modais funcionais. Autenticação real será externa. A CI do PR #11 refere-se ao login; esta entrega está no [PR #12](https://github.com/jaimeNafer/mvp-invest/pull/12), com validação local aprovada e checks remotos no próprio PR. Marcos 3–6 permanecem pendentes. Ordem por dependências, sem calendário fixo.
+Estado em 02/11/2026: cadastro de carteiras e execução Java 27 implementados. Esclarecimento vigente: `contas` associa carteiras e instituições; operações serão únicas por evento, pertencentes ao usuário/instituição e compartilhadas na visualização das carteiras. PR #12 integrado em `main`; revisão Java 27/V8/modelagem publicada no [PR #13](https://github.com/jaimeNafer/mvp-invest/pull/13), branch `codex/java27-vinculos-carteiras`. [Retomada](06-retomada.md).
 
-**Etapa concluída por Jaime em 02/11/2026:** conversão de Titulares em Carteiras, incluindo contas compartilhadas, catálogo inicial, V8, testes e documentação. Encerrar esta funcionalidade; próximos trabalhos devem partir do contrato vigente. Código publicado no PR #12 para `main`, sem merge automático. As pendências futuras do marco 2 não reabrem esta entrega.
+**Etapa de carteiras concluída por Jaime em 02/11/2026**, originalmente publicada no PR #12. O novo requisito altera a propriedade das contas e a execução em Java 27; a [modelagem vigente](10-modelagem-de-carteiras.md) substitui a anterior. Pendências de ativos/identidade externa não estão incluídas nesta correção.
 
 ## Marco 1 — Fundação reproduzível
 
@@ -31,14 +31,14 @@ Backlog e evidências: [F01–F07, baseline técnica e diagnóstico do ambiente]
 - [x] Obter a identificação do Bearer no backend por filter e contexto por requisição injetável nas services; substituir `X-Perfil-Id`, mantendo emissão mockada e autenticação real futura.
 - [x] Alinhar JPA e responsabilidades. Decisão vigente substitui titulares por carteiras; senhas permanecem fora do backend de negócio.
 - [x] Criar, consultar, editar, arquivar e reativar carteiras no MySQL. Modal com nome e instituições. [Contrato e verificações](09-cadastro-de-carteiras.md).
-- [x] Criar/reutilizar contas únicas por usuário/instituição em uma transação, sem cadastro independente. Várias carteiras compartilham uma conta sem copiar dados.
+- [x] Cadastro de associações entre carteiras e instituições em `contas`, com unicidade por carteira/instituição e transação na edição. IDs diferentes representam vínculos; o histórico financeiro futuro não será duplicado por carteira.
 - [x] Disponibilizar catálogo inicial de instituições: Binance e BitGet, por migration e sem tela de manutenção.
 - [ ] Definir os ativos suportados e provisionar o catálogo para o primeiro lançamento; a tabela existente é preservada.
-- [x] Separar carteiras/contas por `perfil_ref` obtido de `UsuarioAtual.id()`. V8 exige cadastros antigos vazios e backup, preservando V1–V7 e ativos.
+- [x] Separar carteiras por `perfil_ref` de `UsuarioAtual.id()`; contas herdam o proprietário via carteira. V8 exige cadastros antigos vazios e backup, preservando V1–V7 e catálogos.
 - [ ] Aplicar o contexto aos próximos cadastros e definir o contrato de identidade externa antes da integração real; não confiar nos IDs do mock como autorização.
 - [x] Entregar navegação entre Meu perfil e Carteiras, identificação do perfil, saída e estados de carregamento/erro/vazio no cadastro.
 
-**Aceite dos cadastros:** registrar carteiras com instituições e encontrá-las no usuário correspondente. A troca de usuário não mistura listagens. Duas carteiras reutilizam a conta do usuário; outro usuário possui uma conta distinta. Remover vínculo/arquivar preserva contas. Entrada inválida ou conflito não grava parcialmente. O mock de acesso não comprova identidade nem autorização.
+**Aceite dos cadastros:** vínculos separados pela carteira do usuário, com uma instituição por vínculo. Editar mantém IDs preservados e altera somente os vínculos daquela carteira; arquivar os mantém. Operações futuras do usuário/instituição são únicas e sobrevivem à remoção de vínculos. Falhas não gravam parcialmente.
 
 **Aprendizado:** o backend de negócio não gerencia autenticação. O serviço mockado no frontend permite evoluir a interface enquanto o backend externo específico permanece fora do escopo atual.
 
@@ -50,7 +50,7 @@ Backlog e evidências: [F01–F07, baseline técnica e diagnóstico do ambiente]
 - [ ] Criar migrations do livro, auditoria e projeções, validando evolução a partir do schema do marco anterior.
 - [ ] Usar o mesmo motor Java na prévia e na confirmação; não duplicar regras financeiras no React. Tratar respostas de prévia fora de ordem e mudança de revisão antes de salvar.
 - [ ] Implementar primeiro saldo inicial/aporte, compra e venda, completos entre React e MySQL; em seguida conversão, retirada, transferência e pagamento de imposto.
-- [ ] Implementar taxas nas moedas suportadas, custo médio contínuo, custódia por conta, parcelas de resultado e regras de saldo suficiente.
+- [ ] Implementar taxas, custo médio contínuo por usuário/ativo, custódia por usuário/instituição, parcelas de resultado e saldo suficiente; nunca vincular o histórico ao ID da associação da carteira.
 - [ ] Implementar correção por substituição, cancelamento com motivo e histórico consultável. Recalcular de forma transacional e impedir conflito de revisão e repetição da mesma submissão.
 - [ ] Entregar listagem paginada, detalhe do lançamento/cálculo, visão geral, composição e detalhe da posição; preservar o tratamento honesto do gráfico de referências históricas.
 
