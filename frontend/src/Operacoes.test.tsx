@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import Operacoes from "./Operacoes";
+import Operacoes from "./SaldosIniciais";
 import SaldoInicialForm from "./SaldoInicialForm";
 import type { Ativo, Saldo } from "./services/saldosIniciais";
 

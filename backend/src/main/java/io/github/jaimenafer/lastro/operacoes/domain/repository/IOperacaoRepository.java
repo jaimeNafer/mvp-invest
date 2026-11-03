@@ -19,6 +19,8 @@ public interface IOperacaoRepository {
 
   Operacao saveAndFlush(Operacao operacao);
 
+  List<Operacao> historico(String perfilRef);
+
   void flush();
 
   PaginaOperacoes consultar(FiltroOperacoes filtro);

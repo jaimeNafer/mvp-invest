@@ -36,7 +36,8 @@ public class OperacaoPersistenceAdapter implements IOperacaoRepository {
   @Override
   public List<Operacao> findByPerfilRefAndSituacaoOrderByIdAsc(
       String perfilRef, SituacaoOperacao situacao) {
-    return jpa.findByPerfilRefAndSituacaoOrderByIdAsc(perfilRef, situacao);
+    return jpa.findByPerfilRefAndTipoAndSituacaoOrderByIdAsc(
+        perfilRef, TipoOperacao.SALDO_INICIAL, situacao);
   }
 
   @Override
@@ -57,6 +58,11 @@ public class OperacaoPersistenceAdapter implements IOperacaoRepository {
             erro);
       throw erro;
     }
+  }
+
+  @Override
+  public List<Operacao> historico(String perfilRef) {
+    return jpa.findByPerfilRefOrderByOcorridaEmAscOrdemLivroAscIdAsc(perfilRef);
   }
 
   @Override

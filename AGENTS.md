@@ -141,3 +141,12 @@ Estas instruções se aplicam ao repositório inteiro. Foram solicitadas por Jai
 - Manter repositories, filtros internos e comparações tipados. Conversões textuais ficam nas fronteiras apropriadas, preservando nomes JSON, mensagens de erro e regras; TODAS é opção de filtro, não estado persistido.
 - Renomear constante persistida exige avaliar compatibilidade e estratégia de migração. Não acrescentar estados ou tipos de operação ainda não implementados.
 - Cobrir persistência/leitura de textos existentes, JSON, filtros válidos/inválidos e regras. Inventário e justificativas em docs/15-enums-de-dominio.md.
+
+## Livro de negociações — implementação de 03/11/2026
+
+- Usar MotorLivro para saldo inicial, aporte BRL, compra e venda. Regras/contratos em docs/16-negociacoes.md. Custo global por usuário/ativo, custódia por instituição. Carteiras apenas filtram a união de instituições.
+- Prévia não grava nem reserva. Novas confirmações usam revisão e recálculo sob lock do ponto de partida/READ_COMMITTED. Toda escrita financeira, inclusive a API legada de saldo inicial, participa do motor e incrementa revisão somente quando há novo efeito.
+- Confirmar a repetição antes de recusar revisão antiga. Após resposta incerta, preservar corpo/chave e impedir edição/saída silenciosa, inclusive durante o primeiro POST pendente. Não persistir informações financeiras em localStorage.
+- Aceitar quantidade e total bruto; derivar preço no domínio. Taxas somente nas moedas do par; BNB fica no backlog. Preservar 18/8/36 casas e HALF_EVEN nas fronteiras documentadas, sem dupla dedução de taxa ou quantidade negativa.
+- APIs legadas consultam somente SALDO_INICIAL. Posições atuais são derivadas do histórico confirmado; versões inativas preservam fatos, sem apresentar cálculo como vigente. Consultas de lista/posição não podem exibir revisões incompatíveis como um mesmo retrato.
+- V10 preserva cadeias e campos anteriores. Testar migração acima de mil versões; ajustar temporariamente a sessão da CTE ao volume de dados e restaurá-la, sem alterar configuração global. Migrations aplicadas continuam imutáveis.

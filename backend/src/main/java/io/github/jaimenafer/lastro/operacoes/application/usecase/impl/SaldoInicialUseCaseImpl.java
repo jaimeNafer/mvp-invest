@@ -11,6 +11,7 @@ import io.github.jaimenafer.lastro.carteiras.application.contract.IConsultaCarte
 import io.github.jaimenafer.lastro.instituicoes.application.contract.IConsultaInstituicoes;
 import io.github.jaimenafer.lastro.instituicoes.application.contract.InstituicaoResumo;
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
+import io.github.jaimenafer.lastro.operacoes.application.mapper.LivroMapper;
 import io.github.jaimenafer.lastro.operacoes.application.mapper.SaldoInicialMapper;
 import io.github.jaimenafer.lastro.operacoes.application.usecase.ISaldoInicialUseCase;
 import io.github.jaimenafer.lastro.operacoes.domain.exception.SaldoInicialConflitanteException;
@@ -21,11 +22,13 @@ import io.github.jaimenafer.lastro.operacoes.domain.model.FiltroOperacoes;
 import io.github.jaimenafer.lastro.operacoes.domain.model.Operacao;
 import io.github.jaimenafer.lastro.operacoes.domain.model.PontoPartida;
 import io.github.jaimenafer.lastro.operacoes.domain.model.SituacaoOperacao;
+import io.github.jaimenafer.lastro.operacoes.domain.model.TipoOperacao;
 import io.github.jaimenafer.lastro.operacoes.domain.repository.IOperacaoRepository;
 import io.github.jaimenafer.lastro.operacoes.domain.repository.IPontoPartidaRepository;
 import io.github.jaimenafer.lastro.operacoes.domain.service.CalculoPosicaoInicial;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +78,9 @@ public class SaldoInicialUseCaseImpl implements ISaldoInicialUseCase {
         tamanho,
         dados.total(),
         pontos.findById(usuario.id()).map(PontoPartida::getDataReferencia).orElse(null),
-        operacoes.existsByPerfilRefAndSituacao(usuario.id(), SituacaoOperacao.CONFIRMADA));
+        !operacoes
+            .findByPerfilRefAndSituacaoOrderByIdAsc(usuario.id(), SituacaoOperacao.CONFIRMADA)
+            .isEmpty());
   }
 
   private SituacaoOperacao validarFiltros(
@@ -91,7 +96,10 @@ public class SaldoInicialUseCaseImpl implements ISaldoInicialUseCase {
 
   private Operacao buscarOperacao(long id) {
     idValido(id);
-    return operacoes.buscarObrigatoria(id, usuario.id());
+    var operacao = operacoes.buscarObrigatoria(id, usuario.id());
+    if (operacao.getTipo() != TipoOperacao.SALDO_INICIAL)
+      throw new SaldoInicialNaoEncontradoException("Saldo inicial não encontrado.");
+    return operacao;
   }
 
   @Override
@@ -158,22 +166,43 @@ public class SaldoInicialUseCaseImpl implements ISaldoInicialUseCase {
             chave,
             fingerprint,
             agora);
-    return new ResultadoGravacaoSaldo(
-        SaldoInicialMapper.de(operacoes.saveAndFlush(novo), instituicao, ativo), false);
+    var historico = operacoes.historico(usuario.id());
+    novo.ordenar(
+        anterior == null
+            ? historico.stream().mapToLong(Operacao::getOrdemLivro).max().orElse(0) + 1
+            : anterior.getOrdemLivro());
+    validarHistorico(historico, anterior, novo);
+    var salvo = operacoes.saveAndFlush(novo);
+    ponto.avancarRevisao(usuario.id(), agora);
+    return new ResultadoGravacaoSaldo(SaldoInicialMapper.de(salvo, instituicao, ativo), false);
   }
 
   @Transactional(isolation = Isolation.READ_COMMITTED)
   public SaldoInicialResponse cancelar(long id, String motivo) {
-    pontos
-        .bloquear(usuario.id())
-        .orElseThrow(() -> new SaldoInicialNaoEncontradoException("Saldo inicial não encontrado."));
+    var ponto =
+        pontos
+            .bloquear(usuario.id())
+            .orElseThrow(
+                () -> new SaldoInicialNaoEncontradoException("Saldo inicial não encontrado."));
     var operacao = buscarOperacao(id);
     if (operacao.getSituacao() == SituacaoOperacao.CANCELADA
         && motivo.equals(operacao.getMotivoAlteracao())) return responder(operacao);
     validarSaldoConfirmado(operacao);
+    validarHistorico(operacoes.historico(usuario.id()), operacao, null);
     operacao.encerrar(SituacaoOperacao.CANCELADA, motivo, usuario.id(), agora());
+    ponto.avancarRevisao(usuario.id(), agora());
     operacoes.flush();
     return responder(operacao);
+  }
+
+  private void validarHistorico(List<Operacao> historico, Operacao anterior, Operacao nova) {
+    var candidato =
+        new ArrayList<>(
+            historico.stream()
+                .filter(o -> anterior == null || !o.getId().equals(anterior.getId()))
+                .toList());
+    if (nova != null) candidato.add(nova);
+    LivroMapper.calcular(candidato, ativos.buscarPorIds(LivroMapper.ativosDoHistorico(candidato)));
   }
 
   private InstituicaoResumo buscarInstituicaoAtiva(Long instituicaoId) {

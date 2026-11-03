@@ -26,6 +26,12 @@ Fluxo de valor: **entrar → criar carteiras selecionando instituições → reg
 
 Estado em 02/11/2026: carteiras e saldo inicial disponíveis localmente. Aberturas permitem cadastro, consulta, correção/cancelamento com histórico e posição global. As demais capacidades abaixo são o escopo incremental do MVP, ainda não concluído.
 
+## Fatia de negociações — 03/11/2026
+
+Aporte em BRL, compra e venda à vista de BTC/ETH/USDT/USDC, cotadas em BRL/USDT/USDC, com taxas somente nas moedas da negociação. Quantidade e total bruto são informados; preço é derivado. Cotação histórica em reais é informada para stablecoins. Prévia e confirmação usam o mesmo motor Java; alterações antigas inválidas são recusadas por inteiro. Posição atual mostra quantidade/custo/custódia, e não valor de mercado.
+
+O [contrato](16-negociacoes.md) descreve revisão, repetição, histórico e precisão. BNB e ordens com múltiplas execuções seguem os estados do [backlog](ideias-futuras/README.md); transferências, retiradas, outros pares e importação permanecem futuros. Evidências finais de execução ficam em [Validação](04-validacao.md).
+
 ## Capacidades da primeira entrega
 
 | Área | Capacidade e evidência de aceite |

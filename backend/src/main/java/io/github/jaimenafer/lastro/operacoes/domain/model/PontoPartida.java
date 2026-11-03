@@ -20,6 +20,7 @@ public class PontoPartida {
   private String perfilRef;
 
   private LocalDate dataReferencia;
+  private long revisao;
   private Instant criadoEm;
   private String criadoPor;
   private Instant alteradoEm;
@@ -32,6 +33,12 @@ public class PontoPartida {
     pontoPartida.criadoEm = pontoPartida.alteradoEm = agora;
     pontoPartida.criadoPor = pontoPartida.alteradoPor = usuario;
     return pontoPartida;
+  }
+
+  public void avancarRevisao(String autor, Instant agora) {
+    revisao = Math.addExact(revisao, 1);
+    alteradoPor = autor;
+    alteradoEm = agora;
   }
 
   public void redefinir(LocalDate data, Instant agora, String autor) {

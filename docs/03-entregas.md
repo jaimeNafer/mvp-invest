@@ -1,8 +1,16 @@
 # Roteiro de entregas
 
-Estado em 02/11/2026: cadastro de carteiras, execução Java 27 e saldo inicial implementados localmente. Saldo inicial ainda sem publicação Git/CI desta alteração. Esclarecimento vigente: `contas` associa carteiras e instituições; operações serão únicas por evento, pertencentes ao usuário/instituição e compartilhadas na visualização das carteiras. PR #12 integrado em `main`; revisão Java 27/V8/modelagem publicada no [PR #13](https://github.com/jaimeNafer/mvp-invest/pull/13), branch `codex/java27-vinculos-carteiras`. [Retomada](06-retomada.md).
+Estado em 03/11/2026: carteiras, execução Java 27 e saldo inicial implementados. Saldo inicial e refatorações publicados no [PR #14](https://github.com/jaimeNafer/mvp-invest/pull/14), com CI aprovada. Esclarecimento vigente: `contas` associa carteiras e instituições; operações são únicas por evento, pertencentes ao usuário/instituição e compartilhadas na visualização das carteiras. PR #12 e revisão Java 27/V8/modelagem do PR #13 integrados em `main`. [Retomada](06-retomada.md).
 
 **Etapa de carteiras concluída por Jaime em 02/11/2026**, originalmente publicada no PR #12. O novo requisito altera a propriedade das contas e a execução em Java 27; a [modelagem vigente](10-modelagem-de-carteiras.md) substitui a anterior. Pendências de ativos/identidade externa não estão incluídas nesta correção.
+
+## Entrega de negociações e complementos
+
+Concluído conforme o plano de Jaime em 03/11/2026: ciclo de aporte em BRL, compra e venda à vista, com BRL/USDT/USDC como moedas de cotação. Taxas somente em uma das duas moedas da própria negociação. A fatia inclui prévia, resultados explicados, correção e cancelamento; com contratos e regras em [Negociações](16-negociacoes.md).
+
+[Taxas da Binance pagas em BNB](ideias-futuras/taxas-em-bnb/README.md) são um requisito confirmado para o futuro, fora dessa fatia. Dependem de BNB no catálogo, saldo/custo conhecidos e suporte do motor à taxa em terceira moeda. Não adaptar lançamentos com taxa em BNB para outra moeda.
+
+O [backlog de evolução](ideias-futuras/README.md) vincula os complementos já previstos nos marcos abaixo, sem duplicá-los. [Ordens com múltiplas execuções](ideias-futuras/ordens-com-multiplas-execucoes/README.md) são uma oportunidade a avaliar com extrato real, sem aprovação de consolidação automática. O simulador de risco permanece para avaliação após o MVP.
 
 ## Marco 1 — Fundação reproduzível
 
@@ -52,12 +60,14 @@ Primeira fatia: [saldo inicial — contrato e exemplos](12-saldo-inicial.md). Pl
 - [x] Implementar o contrato autorizado de saldo inicial, registrando as escolhas técnicas adotadas.
 - [x] Entregar saldo inicial completo: catálogo, ponto de partida, fatos únicos, API, correção/cancelamento, posição inicial global e interface. Backend: 44 testes; frontend: 20 testes. V9 aplicada localmente com backup e cadastros preservados; fluxo e persistência conferidos no navegador.
 
-- [ ] Detalhar a política decimal já aprovada (18/8/2 casas, HALF_EVEN e versão): fronteiras de arredondamento, precisão de divisão e resíduos, com fixtures. Documentar os contratos de prévia, confirmação, consulta e correção.
-- [ ] Criar migrations do livro, auditoria e projeções, validando evolução a partir do schema do marco anterior.
-- [ ] Usar o mesmo motor Java na prévia e na confirmação; não duplicar regras financeiras no React. Tratar respostas de prévia fora de ordem e mudança de revisão antes de salvar.
-- [ ] Após saldo inicial, especificar/implementar aporte, compra e venda entre React e MySQL; em seguida conversão, retirada, transferência e pagamento de imposto.
-- [ ] Implementar taxas, custo médio contínuo por usuário/ativo, custódia por usuário/instituição, parcelas de resultado e saldo suficiente; nunca vincular o histórico ao ID da associação da carteira.
-- [ ] Implementar correção por substituição, cancelamento com motivo e histórico consultável. Recalcular de forma transacional e impedir conflito de revisão e repetição da mesma submissão.
+- [x] Detalhar a política decimal já aprovada (18/8/2 casas, HALF_EVEN e versão): fronteiras de arredondamento, precisão de divisão e resíduos, com fixtures. Documentar os contratos de prévia, confirmação, consulta e correção.
+- [x] Criar V10 para negociações, auditoria e revisão do livro, preservando dados e versões. Resultados e posições são calculados, sem projeções persistidas nesta entrega.
+- [x] Usar o mesmo motor Java na prévia e na confirmação; não duplicar regras financeiras no React. Tratar respostas de prévia fora de ordem e mudança de revisão antes de salvar.
+- [x] Implementar aporte em BRL, compra e venda entre React e MySQL, prévia e confirmação pelo mesmo motor, revisão, idempotência e posição atual. [Contrato](16-negociacoes.md).
+- [ ] Delimitar conversões/outros pares, retirada em BRL, transferência própria e pagamento de imposto.
+- [ ] Nas transferências entre instituições do próprio usuário, preservar custo global e alterar custódia, considerando a taxa de rede e o suporte à moeda em que ela foi cobrada. Não representar transferência como compra, venda ou aporte.
+- [x] Implementar taxas nas moedas da negociação, custo médio contínuo por usuário/ativo, custódia por usuário/instituição, parcelas de resultado e saldo suficiente; nunca vincular o histórico ao ID da associação da carteira.
+- [x] Implementar correção por substituição, cancelamento com motivo e histórico consultável para saldo inicial, aporte, compra e venda. Recalcular de forma transacional e impedir conflito de revisão e repetição da mesma submissão.
 - [ ] Entregar listagem paginada, detalhe do lançamento/cálculo, visão geral, composição e detalhe da posição; preservar o tratamento honesto do gráfico de referências históricas.
 
 **Aceite:** fixtures conferidas batem nos valores esperados; trocar o filtro mensal não altera custo histórico. Uma correção antiga válida atualiza resultados; uma inválida não muda o livro. Salvar duas vezes a mesma requisição não duplica operação. Tudo permanece após reiniciar.
@@ -84,6 +94,8 @@ Primeira fatia: [saldo inicial — contrato e exemplos](12-saldo-inicial.md). Pl
 - [ ] Entregar CSVs e relatório HTML autossuficiente com conteúdo escapado, impressão e totais compatíveis com a interface.
 - [ ] Revisar o contrato de JSON versionado, implementar exportação/restauração das contas do usuário e testar falhas sem perda parcial.
 - [ ] Documentar backup MySQL e executar recuperação em banco separado; adaptar os textos de Dados e backup ao novo armazenamento.
+
+Recomendação de planejamento: realizar o ensaio de recuperação antes do piloto com dados reais. Isso não aprova uma nova prioridade nem antecipa automaticamente toda a entrega do Marco 5.
 
 **Aceite:** posição anual usa todo o histórico até a data relevante; ausência de histórico anterior não inventa saldo zero. Exportações reproduzem os filtros aplicáveis. Recuperação preserva fatos, titularidade, conferências e rastreabilidade. Arquivo inválido não altera dados. Consolidação é gerencial, sem misturar cálculos individuais ou compensar tributos entre usuários.
 

@@ -16,20 +16,29 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 @Slf4j
 @RestControllerAdvice
 public class TratamentoGlobalException {
-  @ExceptionHandler({CarteiraInvalidaException.class, SaldoInicialInvalidoException.class})
+  @ExceptionHandler({
+    CarteiraInvalidaException.class,
+    SaldoInicialInvalidoException.class,
+    OperacaoInvalidaException.class
+  })
   public ResponseEntity<ProblemDetail> entrada(RuntimeException erro) {
     return responder(erro.getMessage(), HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler({
     CarteiraNaoEncontradaException.class,
-    SaldoInicialNaoEncontradoException.class
+    SaldoInicialNaoEncontradoException.class,
+    OperacaoNaoEncontradaException.class
   })
   public ResponseEntity<ProblemDetail> ausente(RuntimeException erro) {
     return responder(erro.getMessage(), HttpStatus.NOT_FOUND);
   }
 
-  @ExceptionHandler({CarteiraConflitanteException.class, SaldoInicialConflitanteException.class})
+  @ExceptionHandler({
+    CarteiraConflitanteException.class,
+    SaldoInicialConflitanteException.class,
+    OperacaoConflitanteException.class
+  })
   public ResponseEntity<ProblemDetail> conflito(RuntimeException erro) {
     return responder(erro.getMessage(), HttpStatus.CONFLICT);
   }
