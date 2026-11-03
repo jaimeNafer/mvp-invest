@@ -1,3 +1,31 @@
+## Publicação da entrega de negociações — 03/11/2026
+
+[PR #15 — aportes e negociações com livro financeiro](https://github.com/jaimeNafer/mvp-invest/pull/15) aberto de `codex/negociacoes-livro` para `main`, sem merge automático. Commit da implementação: `9506083`. Validações locais repetidas antes da publicação: 104 testes do backend, 44 do frontend, 1 do protótipo, lint/build e pacote integrado aprovados. CI remota deve ser consultada no PR; esta nota não declara seu resultado.
+
+## Entrega de negociações concluída — 03/11/2026
+
+Implementados aporte em BRL, compra e venda com BRL/USDT/USDC como cotação, taxas nas moedas do par, prévia/confirmação pelo motor Java, revisão/idempotência, histórico por versões, correção/cancelamento e posição atual global com custódia. Saldo inicial continua acessível e participa do mesmo recálculo ao ser alterado. [Contrato e regras](16-negociacoes.md).
+
+Validação: backend check aprovado com **104 testes** (55 unitários/arquiteturais e 49 integrações MySQL), incluindo 5.000 eventos sintéticos e V9→V10 com 1.105 versões históricas. Frontend aprovado em lint, **44 testes**, typecheck/build; protótipo preservado com **1 teste** aprovado. Pacote integrado reconstruído com o bundle final.
+
+V10 aplicada no MySQL local após backup privado. Comparação de snapshots das seis tabelas confirmou preservação integral dos campos e fatos anteriores; comentários dos campos conferidos, sem ausências. Reinicialização validou dez migrations sem reaplicação. Aplicação integrada disponível em http://127.0.0.1:8080/.
+
+No navegador: acesso, listagem unificada, posição atual, abertura do formulário, campos específicos de aporte e prévia calculada sem gravação. Consultas novas e legadas retornaram 200 para os dois perfis. Nenhuma operação fictícia foi gravada no banco pessoal. Escritas/correções/cancelamentos e concorrência foram exercitados em MySQL descartável nos testes.
+
+Revisões corrigidas: limite temporário da CTE na migração; autoria no DTO; proteção contra saída no primeiro POST pendente; rejeição de consulta com revisões divergentes; moeda negativa HALF_EVEN e duas casas com valor exato acessível. Nenhum achado material aberto dessas revisões.
+
+Branch de publicação: codex/negociacoes-livro. Alterações do backlog anteriores incluídas na entrega; publicação do PR solicitada por Jaime, sem merge automático. BNB permanece confirmado para o futuro. Próximo passo de produto: validar um recorte real do ciclo e escolher os complementos do backlog com base nessa conferência.
+
+As notas abaixo são históricas; o estado acima é o atual.
+
+
+## Backlog complementar registrado — 03/11/2026
+
+Atualização exclusivamente documental. O [índice de evolução](ideias-futuras/README.md) distingue complementos operacionais e ideias pós-MVP. [Taxas pagas em BNB](ideias-futuras/taxas-em-bnb/README.md) são um requisito futuro confirmado; [ordens com múltiplas execuções](ideias-futuras/ordens-com-multiplas-execucoes/README.md) permanecem a avaliar com extrato real. O simulador de risco continua como oportunidade após o MVP.
+
+O [roteiro](03-entregas.md) mantém a sequência e os registros de transferências próprias/taxas de rede, retirada em BRL, conversões/outros pares, conferência, backup/recuperação e importação CSV adiada. Não foram criadas fichas duplicadas para esses itens. Ensaio de recuperação antes do piloto é recomendação, não prioridade aprovada.
+
+Próxima entrega planejada preservada: aporte em BRL, compra e venda, com taxas somente nas moedas da negociação. Não implementar BNB agora nem adaptar sua taxa para outra moeda. Nenhuma alteração em código, banco ou migrations nesta atualização.
 
 ## Conferência frontend/backend para publicação — 03/11/2026
 

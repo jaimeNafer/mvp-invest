@@ -757,3 +757,21 @@ h2 {
     margin-bottom: 8px;
   }
 }
+
+.operations-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.operation-preview {
+  padding: 1rem;
+  border: 1px solid #d9e1e3;
+  border-radius: 12px;
+}
+.operation-preview details {
+  margin-top: 1rem;
+}
+.operation-preview summary {
+  cursor: pointer;
+}

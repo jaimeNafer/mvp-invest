@@ -67,3 +67,5 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 - [Revisão Clean Code do backend](14-clean-code-backend.md).
 
 - [Enums de domínio e compatibilidade](15-enums-de-dominio.md).
+
+- [Aporte, compra e venda: contrato e cálculo](16-negociacoes.md).

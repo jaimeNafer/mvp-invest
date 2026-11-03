@@ -2,6 +2,7 @@ package io.github.jaimenafer.lastro.operacoes.domain.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -64,6 +65,26 @@ public class Operacao {
   @Column(length = 64)
   private String fingerprint;
 
+  @Column(name = "moeda_cotacao_id")
+  private Long moedaCotacaoId;
+
+  @Column(precision = 38, scale = 18)
+  private BigDecimal totalBruto;
+
+  @Column(precision = 38, scale = 18)
+  private BigDecimal cotacaoBrl;
+
+  private Long taxaAtivoId;
+
+  @Column(precision = 38, scale = 18)
+  private BigDecimal taxaQuantidade = BigDecimal.ZERO;
+
+  @Column(length = 160)
+  private String referencia;
+
+  private long ordemLivro;
+  private int versaoPolitica = 1;
+
   private Instant criadoEm;
   private String criadoPor;
   private Instant alteradoEm;
@@ -98,6 +119,55 @@ public class Operacao {
     operacao.criadoEm = operacao.alteradoEm = agora;
     operacao.criadoPor = operacao.alteradoPor = usuario;
     return operacao;
+  }
+
+  public static Operacao registrarNegociacao(
+      String usuario,
+      TipoOperacao tipo,
+      Long instituicaoId,
+      Long ativoId,
+      Instant ocorridaEm,
+      BigDecimal quantidade,
+      Long moedaCotacaoId,
+      BigDecimal totalBruto,
+      BigDecimal cotacaoBrl,
+      Long taxaAtivoId,
+      BigDecimal taxaQuantidade,
+      String referencia,
+      String motivo,
+      Long anterior,
+      String chave,
+      String fingerprint,
+      Instant agora) {
+    var operacao = new Operacao();
+    operacao.perfilRef = usuario;
+    operacao.tipo = tipo;
+    operacao.instituicaoId = instituicaoId;
+    operacao.ativoId = ativoId;
+    operacao.ocorridaEm = ocorridaEm;
+    operacao.dataReferencia = ocorridaEm.atZone(ZoneId.of("America/Fortaleza")).toLocalDate();
+    operacao.quantidade = quantidade;
+    operacao.moedaCotacaoId = moedaCotacaoId;
+    operacao.totalBruto = totalBruto;
+    operacao.cotacaoBrl = cotacaoBrl;
+    operacao.taxaAtivoId = taxaAtivoId;
+    operacao.taxaQuantidade = taxaQuantidade;
+    operacao.referencia = referencia;
+    operacao.motivoAlteracao = motivo.isEmpty() ? null : motivo;
+    operacao.substituiId = anterior;
+    operacao.chaveRequisicao = chave;
+    operacao.fingerprint = fingerprint;
+    operacao.criadoEm = operacao.alteradoEm = agora;
+    operacao.criadoPor = operacao.alteradoPor = usuario;
+    return operacao;
+  }
+
+  public void ordenar(long ordemLivro) {
+    this.ordemLivro = ordemLivro;
+  }
+
+  public BigDecimal precoUnitario() {
+    return totalBruto == null ? null : totalBruto.divide(quantidade, 36, RoundingMode.HALF_EVEN);
   }
 
   public boolean confirmada() {

@@ -241,3 +241,13 @@ Após uma migration ser aplicada e compartilhada, corrigir por uma nova migratio
 - Manter repositories, filtros internos e comparações tipados. Conversões textuais ficam nas fronteiras apropriadas, preservando nomes JSON, mensagens de erro e regras; TODAS é opção de filtro, não estado persistido.
 - Renomear constante persistida exige avaliar compatibilidade e estratégia de migração. Não acrescentar estados ou tipos de operação ainda não implementados.
 - Cobrir persistência/leitura de textos existentes, JSON, filtros válidos/inválidos e regras. Inventário e justificativas em docs/15-enums-de-dominio.md.
+
+## Motor do livro — negociações
+
+A evolução autorizada reutiliza o contexto operacoes. MotorLivro é cálculo puro com fatos/posições/resultados imutáveis e código de ativo recebido via contratos públicos na aplicação. Carteiras não criam livros financeiros; média global por usuário/ativo e custódia por instituição têm responsabilidades distintas.
+
+Usecases de negociações e saldos iniciais coordenam o mesmo bloqueio de pontos_partida, READ_COMMITTED, recálculo candidato e revisão. Prévia usa snapshot de leitura e não persiste/reserva. Toda nova confirmação recalcula e compara a revisão; repetição concluída é reconhecida antes de conflitá-la. APIs legadas preservam contrato e passam pelo motor ao alterar o livro.
+
+Resultados e posições são calculados, sem projeções persistidas nesta entrega. DTOs/mappers não expõem JPA. Enums de operação só incluem os quatro tipos efetivamente implementados; não antecipar BNB, transferências ou importação. [Regras, contratos e política decimal](16-negociacoes.md).
+
+Usar imports explícitos do Lombok. O curinga lombok.* importa também tipos de inferência e provocou falha do compilador Java 27 durante esta integração; resolver com imports específicos, sem remover validações ou processors.

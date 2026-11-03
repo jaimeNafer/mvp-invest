@@ -13,16 +13,19 @@ export function decimalPtBr(valor: string): string {
 }
 
 export function moeda(valor: string): string {
-  const [inteira, fracao = ""] = valor.split(".");
+  const negativo = valor.startsWith("-");
+  const absoluto = negativo ? valor.slice(1) : valor;
+  const [inteira, fracao = ""] = absoluto.split(".");
   const unidades = BigInt(inteira + fracao);
-  if (unidades > 0n && BigInt(inteira) === 0n && `${fracao}00`.slice(0, 2) === "00") {
-    return "menor que R$ 0,01";
-  }
   const escala = 10n ** BigInt(fracao.length);
+  if (unidades > 0n && unidades * 100n < escala) {
+    return negativo ? "entre R$ -0,01 e R$ 0,00" : "menor que R$ 0,01";
+  }
   const centavos = (unidades * 100n) / escala;
   const resto = (unidades * 100n) % escala;
   const arredondado =
     centavos + (resto * 2n > escala || (resto * 2n === escala && centavos % 2n === 1n) ? 1n : 0n);
   const texto = arredondado.toString().padStart(3, "0");
-  return `R$ ${texto.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${texto.slice(-2)}`;
+  const sinal = negativo && arredondado > 0n ? "-" : "";
+  return `R$ ${sinal}${texto.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${texto.slice(-2)}`;
 }

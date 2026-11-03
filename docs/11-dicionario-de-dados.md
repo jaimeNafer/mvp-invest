@@ -129,3 +129,22 @@ O [dicionário do modelo v1](../lastro-modelo-mysql-v1/lastro-modelo-v1/DICIONAR
 | operacoes.situacao VARCHAR(12) | operacoes.domain.model.SituacaoOperacao | CONFIRMADA, SUBSTITUIDA, CANCELADA |
 
 Persistência textual pelo nome, sem ORDINAL ou alteração de schema. TODAS existe somente no filtro HTTP. [Análise e compatibilidade](15-enums-de-dominio.md).
+
+## V10 — negociações e revisão do histórico
+
+| Tabela/campo | Tipo | Finalidade |
+|---|---|---|
+| pontos_partida.revisao | BIGINT UNSIGNED | Revisão financeira por usuário, incrementada em alterações efetivas. |
+| operacoes.tipo | VARCHAR(20) | SALDO_INICIAL, APORTE, COMPRA ou VENDA; enum TipoOperacao. |
+| operacoes.custo_total_brl | DECIMAL(38,8), nulo fora do saldo inicial | Custo histórico informado na abertura. Resultados das negociações são calculados. |
+| operacoes.moeda_cotacao_id | BIGINT UNSIGNED, opcional | Ativo utilizado para cotar a negociação. |
+| operacoes.total_bruto | DECIMAL(38,18), opcional | Total bruto executado na moeda de cotação, sem taxa. |
+| operacoes.cotacao_brl | DECIMAL(38,18), opcional | Valor histórico de uma unidade da moeda de cotação em reais. |
+| operacoes.taxa_ativo_id | BIGINT UNSIGNED, opcional | Uma das duas moedas negociadas quando há taxa. |
+| operacoes.taxa_quantidade | DECIMAL(38,18) | Quantidade da taxa; zero quando ausente. |
+| operacoes.referencia | VARCHAR(160), opcional | Referência do documento, sem unicidade obrigatória. |
+| operacoes.ordem_livro | BIGINT UNSIGNED | Desempate estável; preservado entre versões da mesma raiz. |
+| operacoes.versao_politica | INT UNSIGNED | Versão da política de cálculo, inicialmente 1. |
+| operacoes.confirmada | TINYINT gerado | Marcador de unicidade somente do SALDO_INICIAL confirmado. |
+
+Moedas de cotação e taxa têm FKs para ativos; fatos continuam pertencendo ao usuário/instituição, sem FK para carteira ou vínculo. Compra/venda exigem moeda distinta e total/cotação positivos. Aporte e abertura não recebem esses campos. Taxa zero não recebe moeda; taxa positiva usa ativo ou moeda de cotação. Instantes, quantidades, ciclo de vida e cadeia de substituição existentes são preservados. [Contrato das negociações](16-negociacoes.md).

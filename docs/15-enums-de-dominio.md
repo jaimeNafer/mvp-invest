@@ -5,7 +5,7 @@
 | Campo ou valor | Decisão | Motivo |
 |---|---|---|
 | Ativo.tipo e AtivoResponse.tipo | TipoAtivo: FIAT, CRIPTO | Classificação fechada, controlada pelo sistema e restringida no banco |
-| Operacao.tipo | TipoOperacao: SALDO_INICIAL | Único tipo implementado e permitido pela constraint; impede outros textos no modelo sem antecipar operações futuras |
+| Operacao.tipo | TipoOperacao: SALDO_INICIAL, APORTE, COMPRA, VENDA | Tipos implementados; V10 amplia a constraint para a entrega de negociações, sem antecipar operações futuras |
 | Operacao.situacao, SaldoInicialResponse.situacao, filtros e repositories | SituacaoOperacao: CONFIRMADA, SUBSTITUIDA, CANCELADA | Estados fechados utilizados nas transições, consultas e unicidade |
 | Parâmetro HTTP situacao | String na fronteira de entrada, convertida uma vez no mapper | Preserva nomes aceitos, mensagem personalizada de erro e opção TODAS |
 | TODAS | Opção de consulta, não estado da operação | Convertida em ausência de restrição (null) no FiltroOperacoes; jamais persistida |
