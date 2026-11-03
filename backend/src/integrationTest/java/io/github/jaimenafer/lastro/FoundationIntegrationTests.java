@@ -12,7 +12,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = "spring.config.import=")
 @Testcontainers
@@ -25,7 +26,7 @@ class FoundationIntegrationTests {
     @Autowired TransactionTemplate transactions;
 
     @Test void migrationsCriamBancoSemDadosReaisEReexecucaoNaoAlteraSchema() {
-        assertThat(flyway.info().applied()).hasSize(8);
+        assertThat(flyway.info().applied()).hasSize(9);
         assertThat(flyway.migrate().migrationsExecuted).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteiras", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isZero();

@@ -1,6 +1,6 @@
 # Planejamento do Lastro — MVP local
 
-Atualizado em 01/11/2026. Responsável pelo desenvolvimento: Jaime.
+Atualizado em 02/11/2026. Responsável pelo desenvolvimento: Jaime.
 
 ## Objetivo desta documentação
 
@@ -10,6 +10,8 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 
 | Documento | Pergunta que responde |
 | --- | --- |
+| [Auditoria modular](13-auditoria-modular.md) | Quais fronteiras são públicas, quais dependências são permitidas e como são verificadas? |
+| [Backlog de ideias futuras](ideias-futuras/README.md) | Quais oportunidades podemos avaliar depois do MVP? |
 | [Produto e escopo](01-produto.md) | Para quem estamos construindo, qual problema resolvemos e o que entra? |
 | [Arquitetura e decisões](02-arquitetura.md) | Como as partes se relacionam e por que escolher esse desenho? |
 | [Roteiro de entregas](03-entregas.md) | Em qual ordem construir e como comprovar que cada etapa terminou? |
@@ -21,6 +23,7 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 | [Cadastro de carteiras](09-cadastro-de-carteiras.md) | Como usar o cadastro, quais são seus contratos e como foi verificado? |
 | [Modelagem de carteiras](10-modelagem-de-carteiras.md) | Como carteiras selecionam o mesmo histórico de instituições sem duplicar operações? |
 | [Dicionário de dados vigente](11-dicionario-de-dados.md) | Qual o significado, tipo, default e relacionamento de cada campo do banco atual? |
+| [Saldo inicial](12-saldo-inicial.md) | Como registrar a abertura, corrigir/cancelar e conferir sua posição inicial? |
 
 ## Situação atual
 
@@ -29,7 +32,7 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 - Existem testes do motor JavaScript. Eles são uma referência de comportamento, não uma validação contábil independente.
 - A proposta original MySQL com 20 tabelas foi preservada. As primeiras migrations próprias de acesso/cadastros estão em `backend/src/main/resources/db/migration/` e foram verificadas em MySQL 8.0.42 descartável.
 - As sete capturas PNG estão em `prototype/screenshots/`, com nomes legíveis. O protótipo executável complementa os estados e interações que as imagens não mostram.
-- Spring Boot/Gradle e React/TypeScript estão estruturados. Login mockado no frontend; autenticação real será externa. O backend lê o Bearer em um filter e disponibiliza `UsuarioAtual` por requisição. Carteiras e contas usam JPA/MySQL, separadas por `UsuarioAtual.id()`, sem `X-Perfil-Id`. Operações e motor financeiro permanecem pendentes.
+- Spring Boot/Gradle e React/TypeScript estão estruturados. Login mockado no frontend; autenticação real será externa. O backend lê o Bearer em um filter e disponibiliza `IUsuarioAtual` por requisição. Carteiras e contas usam JPA/MySQL, separadas por `IUsuarioAtual.id()`, sem `X-Perfil-Id`. Saldo inicial está implementado; demais operações e motor completo permanecem pendentes.
 - Verificações atuais e evidências estão na [nota de retomada](06-retomada.md). A CI foi executada com sucesso no [PR #11](https://github.com/jaimeNafer/mvp-invest/pull/11), incluindo protótipo, frontend e backend/MySQL.
 - MySQL local `lastro_local`, Java 27 e V8 reaplicada após autorização/backup na etapa anterior. Esclarecimento vigente: `contas` é associação N:N; operações futuras do usuário/instituição serão as mesmas nas carteiras que a selecionam, sem duplicação. Início por `scripts/Start-Lastro.ps1`; projeto em `backend/`. [Retomada](06-retomada.md).
 - O `PLAN.md` da raiz documenta a fase anterior do protótipo. Para a nova etapa local, prevalecem as decisões confirmadas nesta pasta; o experimento anterior com prazo de 30 dias e usuários externos não é o compromisso desta entrega.
@@ -57,6 +60,10 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 | Projeção | Saldo ou resultado calculado a partir do histórico e que pode ser reconstruído. |
 | Migration | Alteração versionada da estrutura do banco. |
 
-## Próxima entrega
+## Entrega atual e próximo passo
 
-Detalhar primeiro lançamento e política decimal. Operações serão vinculadas ao usuário/instituição e apresentadas nas carteiras que a selecionam, sem duplicação. Remover vínculos/arquivar não exclui operações. [Contrato](09-cadastro-de-carteiras.md) e [modelo](10-modelagem-de-carteiras.md).
+[Saldo inicial](12-saldo-inicial.md) implementado: seis ativos, data comum por usuário, custo conhecido, histórico de correções/cancelamentos, repetição segura e posição global. V9 aplicada localmente, 44 testes backend e 20 frontend aprovados. Evidências e limites na [retomada](06-retomada.md). Próximo passo é especificar compra/venda, taxas, custódia e arredondamentos de baixas; implementação e publicação remota serão tarefas posteriores.
+
+- [Revisão Clean Code do backend](14-clean-code-backend.md).
+
+- [Enums de domínio e compatibilidade](15-enums-de-dominio.md).

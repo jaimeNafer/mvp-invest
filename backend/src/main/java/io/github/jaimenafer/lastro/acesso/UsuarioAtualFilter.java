@@ -1,58 +1,50 @@
 package io.github.jaimenafer.lastro.acesso;
 
+import io.github.jaimenafer.lastro.acesso.domain.exception.AcessoInvalidoException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ProblemDetail;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tools.jackson.databind.json.JsonMapper;
 
 @Component
 @Order(0)
+@RequiredArgsConstructor
 public class UsuarioAtualFilter extends OncePerRequestFilter {
-    private final LeitorJwtMock tokens;
-    private final UsuarioAtual usuarioAtual;
-    private final JsonMapper json;
+  private final ILeitorToken tokens;
+  private final UsuarioAtualContexto usuarioAtual;
 
-    public UsuarioAtualFilter(LeitorJwtMock tokens, UsuarioAtual usuarioAtual, JsonMapper json) {
-        this.tokens = tokens;
-        this.usuarioAtual = usuarioAtual;
-        this.json = json;
-    }
+  @Qualifier("handlerExceptionResolver")
+  private final org.springframework.web.servlet.HandlerExceptionResolver erros;
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        var caminho = request.getRequestURI().substring(request.getContextPath().length());
-        return !caminho.equals("/api") && !caminho.startsWith("/api/");
-    }
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    var caminho = request.getRequestURI().substring(request.getContextPath().length());
+    return !caminho.equals("/api") && !caminho.startsWith("/api/");
+  }
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
-        UsuarioAtual.Dados usuario;
-        try {
-            var authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
-            if (authorization == null || !authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {
-                throw new IllegalArgumentException("Bearer ausente.");
-            }
-            usuario = tokens.ler(authorization.substring(7));
-        } catch (IllegalArgumentException erro) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
-            response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-            response.setCharacterEncoding("UTF-8");
-            json.writeValue(response.getOutputStream(), ProblemDetail.forStatusAndDetail(
-                HttpStatus.UNAUTHORIZED, "Token de acesso ausente ou inválido. Entre novamente."));
-            return;
-        }
-        usuarioAtual.carregar(usuario);
-        chain.doFilter(request, response);
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+      throws ServletException, IOException {
+    DadosUsuario usuario;
+    try {
+      var authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+      if (authorization == null || !authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {
+        throw new IllegalArgumentException("Bearer ausente.");
+      }
+      usuario = tokens.ler(authorization.substring(7));
+    } catch (IllegalArgumentException erro) {
+      erros.resolveException(request, response, null, new AcessoInvalidoException());
+      return;
     }
+    usuarioAtual.carregar(usuario);
+    chain.doFilter(request, response);
+  }
 }

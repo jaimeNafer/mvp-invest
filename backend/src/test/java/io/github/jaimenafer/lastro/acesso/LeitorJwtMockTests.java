@@ -1,13 +1,15 @@
 package io.github.jaimenafer.lastro.acesso;
 
+import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.jupiter.api.Test;
-import tools.jackson.databind.json.JsonMapper;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class LeitorJwtMockTests {
     private final JsonMapper json = JsonMapper.builder().build();
@@ -15,7 +17,7 @@ class LeitorJwtMockTests {
 
     @Test void extraiIdentificadorNomeUnicodeERoleSemGuardarToken() {
         var usuario = leitor.ler(token(Map.of("sub", "pessoa-1", "name", "João 日本", "role", "acesso_total")));
-        assertThat(usuario).isEqualTo(new UsuarioAtual.Dados("pessoa-1", "João 日本", "acesso_total"));
+        assertThat(usuario).isEqualTo(new DadosUsuario("pessoa-1", "João 日本", "acesso_total"));
     }
 
     @Test void recusaEstruturaBase64JsonEAlgoritmoIncompativeisComMock() {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Carteiras from "./Carteiras";
+import Operacoes from "./Operacoes";
 import type { Usuario } from "./services/autenticacao";
 
 type HomeProps = {
@@ -8,7 +9,7 @@ type HomeProps = {
 };
 
 export default function Home({ usuario, onLogout }: HomeProps) {
-  const [pagina, setPagina] = useState<"perfil" | "carteiras">("perfil");
+  const [pagina, setPagina] = useState<"perfil" | "carteiras" | "operacoes">("perfil");
   return (
     <div className="layout">
       <aside className="sidebar" aria-label="Lastro">
@@ -33,6 +34,14 @@ export default function Home({ usuario, onLogout }: HomeProps) {
           >
             Carteiras
           </button>
+          <button
+            className={`sidebar-link ${pagina === "operacoes" ? "sidebar-current" : ""}`}
+            type="button"
+            aria-current={pagina === "operacoes" ? "page" : undefined}
+            onClick={() => setPagina("operacoes")}
+          >
+            Operações
+          </button>
         </nav>
         <div className="sidebar-footer account-footer">
           <span>{usuario.name}</span>
@@ -45,10 +54,12 @@ export default function Home({ usuario, onLogout }: HomeProps) {
         <header className="topbar">
           <span>
             Lastro <span className="separator">/</span>{" "}
-            {pagina === "perfil" ? "Perfil" : "Carteiras"}
+            {pagina === "perfil" ? "Perfil" : pagina === "carteiras" ? "Carteiras" : "Operações"}
           </span>
         </header>
-        {pagina === "carteiras" ? (
+        {pagina === "operacoes" ? (
+          <Operacoes />
+        ) : pagina === "carteiras" ? (
           <Carteiras />
         ) : (
           <>

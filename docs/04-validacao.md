@@ -72,6 +72,16 @@ T24–T28 usam JPA/MockMvc/MySQL e testes React. [Resultados executados](06-reto
 | T30 | Visão combinada de carteiras com Binance repetida | Cada operação/saldo/resultado considerado uma vez, usando a união das instituições do usuário. |
 | T31 | Remover vínculo, arquivar ou reassociar Binance | Histórico/custos preservados; reassociação mostra os registros existentes sem reimportar. |
 | T32 | Jaime e Eliane na mesma instituição | Operações filtradas pelo usuário e instituição; nenhum compartilhamento de histórico entre usuários. |
+| T33 | Saldo inicial com seis ativos e data comum por usuário | Regras e resultados fictícios SI01–SI13 do [contrato](12-saldo-inicial.md), incluindo custo conhecido, zero explícito, BRL e precisão. |
+| T34 | Repetição de envio ou primeira abertura concorrente | SI14/SI15/SI19/SI20: nenhum fato duplicado, data comum consistente e rollback integral. |
+| T35 | Corrigir/cancelar abertura e consultar histórico | SI16–SI18: valores anteriores preservados, motivo/autoria e posição baseada somente nos confirmados. |
+| T36 | Reiniciar e consultar várias carteiras/páginas | SI02/SI04/SI21/SI22: histórico único, usuários separados e totais independentes da paginação. |
+
+Saldo inicial implementado e verificado em 02/11/2026: 15 testes integrados de API/transação/concorrência, 3 de migration V9, 2 unitários de cálculo, 5 testes React do fluxo e 2 de decimais. As suítes completas passaram: 44 backend e 20 frontend, além de lint/build/pacote integrado. T29–T36 têm cobertura nesta fatia de abertura; isso não comprova tipos de operação futuros.
+
+Casos cobertos incluem catálogo/contexto, isolamento, união de carteiras sem duplicação, custo médio global, BRL/USD/USDT, precisão/calendário, JSON numérico recusado, zero explícito, repetição após cancelamento/inativação, redefinição de data sem confirmados, correção/cancelamento, rollback e três disputas concorrentes. Banco vazio, atualização V8→V9, reexecução sem mudanças, catálogo incompatível, constraints e comentários também foram exercitados.
+
+No navegador local foram executados cadastro, consulta por duas carteiras, correção, cancelamento e consulta das versões após reiniciar o JAR. As duas versões temporárias foram removidas por identificação exata; dados adicionados pelo usuário durante a conferência e cadastros anteriores foram preservados. Esses ensaios não representam validação fiscal, piloto de utilidade, teste de volume ou CI desta alteração.
 
 Não prometer cobertura de todos os casos possíveis. A matriz cobre as regras conhecidas e deve evoluir com o histórico real.
 
@@ -126,3 +136,58 @@ Próxima ação:
 - [ ] Backup e recuperação foram demonstrados sem usar o banco real como ambiente de teste destrutivo.
 - [ ] Esforço de atualização e dependência de ajuda foram registrados.
 - [ ] Próximo investimento escolhido a partir dessas evidências.
+
+## Evidência da refatoração arquitetural — 02/11/2026
+
+`check` aprovado com 51 testes: 13 unitários e 38 integrados, sem falhas/ignorados. Preserva os casos financeiros e de migrations e acrescenta dois testes arquiteturais, quatro testes do tratamento global/logging e um cenário integrado de limite do nome após normalização.
+
+As verificações arquiteturais inspecionam imports e tipos por reflexão: domínio sem Spring/camadas externas, aplicação sem infraestrutura, controllers dependentes de interfaces de usecase, contratos sem entidades e tipos de produção sem aninhamento. DTOs genéricos e records são inspecionados recursivamente. Isso não substitui revisão de código nem analisa todo acesso possível no bytecode.
+
+Erros exercitados: 400/401/404/409/500/503, mídia 415 e método 405 com Allow preservado, integridade conhecida e inesperada, além de uma emissão de log sem a mensagem sensível da exceção. Frontend lint/20 testes/typecheck/build e pacote integrado passaram. Consulta no navegador e snapshots privados idênticos confirmaram a execução local preservando os dados. Sem nova CI nesta tarefa.
+
+## Lombok e prefixo I
+
+`check` aprovado com 53 testes: 15 unitários e 38 integrados MySQL/Testcontainers. O padrão de interfaces e a ausência de setters em entidades são verificados por reflexão; a coleção de vínculos é testada como snapshot imutável que não acompanha alterações posteriores nem permite mutações externas. Casos existentes continuam cobrindo persistência, IDs, auditoria, UTC, concorrência e contratos HTTP.
+
+Revisão independente confirmou a cópia de @Qualifier para o construtor Lombok e a propagação das mensagens das exceções no bytecode. Pacote integrado e testes unitários finais passaram; inicialização local e consultas HTTP foram conferidas sem modificar dados. Não houve nova execução do frontend ou CI nesta tarefa de backend.
+
+## Auditoria modular
+
+Compilação/check aprovados com **64 testes**: 26 unitários e 38 integrados, sem falhas/ignorados. Sete testes ArchUnit analisam bytecode para contratos públicos/matriz, ciclos, camadas, domínio com exceção JPA limitada, encapsulamento de contratos e tratamento transversal. Três testes de contratos cobrem identidade/união/ausência de carteira alheia, metadados inativos em lote e elegibilidade de ativo sem ocultar histórico. Testes existentes de APIs, decimais, rollback, concorrência, idempotência e migrations foram preservados.
+
+Baseline registrou falha de compilação nas exceções e, após reparo mínimo, três falhas do handler. A auditoria corrigiu essas regressões. Pacote integrado e consultas HTTP dos dois perfis passaram; snapshots privados confirmam preservação integral das seis tabelas. Sem migrations novas, frontend, CI ou publicação Git nesta tarefa. [Diagnóstico e limites](13-auditoria-modular.md).
+
+## Handler mínimo revisado por Jaime
+
+Total validado: 66 testes (28 unitários, 38 integrados), sem falhas/ignorados. Foram preservados os conflitos/concorrência reais e rollback, agora com tradução UNIQUE na origem. Testes HTTP verificam mensagem de negócio/constraint na resposta e no log, ResponseEntity<ProblemDetail> e ausência de catch técnico genérico. Erros MVC não personalizados ficam com Spring. ArchUnit proíbe persistência no pacote do handler. Pacote integrado e respostas locais 400/401 conferidos, sem gravação de cadastro ou mudanças de schema.
+
+## Resultado da verificação — 03/11/2026
+
+- Compilação de produção e testes concluída.
+- 32 testes unitários/arquiteturais executados: 30 aprovados, 2 falhas preexistentes em TratamentoGlobalExceptionTests; nenhum ignorado.
+- 38 testes de integração com MySQL descartável aprovados, incluindo concorrência, atomicidade, migrações e isolamento por usuário.
+- Três novos testes de DTOs/endpoints aprovados: limites após normalização, IDs/coleções/cancelamento e rejeição antes do usecase em criação, substituição e cancelamento.
+- Novo teste de sincronização dos vínculos aprovado, preservando objetos mantidos e unicidade.
+- Check global permanece vermelho pelas duas divergências do handler descritas nas pendências. Não declarar esta suíte integralmente aprovada.
+- Revisão independente da refatoração principal não identificou regressões concretas. Complemento Bean Validation revisado localmente; revisor adicional indisponível por capacidade.
+- Nenhuma alteração em migrations, schema ou dados locais; sem reinício da aplicação, publicação ou commit. Frontend não foi alterado nem revalidado nesta tarefa.
+
+Detalhes em [Revisão de implementação](14-clean-code-backend.md).
+
+## Contrato do handler confirmado — 03/11/2026
+
+Jaime confirmou o comportamento vigente da classe: respostas 401 sem WWW-Authenticate e log descritivo único em ERROR com status HTTP e mensagem da origem. Os testes foram ajustados para verificar esse contrato; a implementação do handler não foi alterada.
+
+`gradlew check --offline --no-daemon --console=plain` aprovado: 70 testes, sendo 32 unitários/arquiteturais e 38 integrados MySQL, sem falhas, erros ou testes ignorados. As duas divergências registradas na execução anterior estão resolvidas. Sem alteração em schema, migrations ou dados, sem publicação e sem reinício da aplicação.
+
+## Verificação concluída — enums, 03/11/2026
+
+Compilação e `gradlew check --offline --no-daemon --console=plain` aprovados: 74 testes, 35 unitários/arquiteturais e 39 integrados MySQL, sem falhas, erros ou ignorados. Revisão independente sem regressões identificadas. Cobertura adicional de enums inclui JSON, filtros e leitura histórica dos três estados; colunas continuam VARCHAR. Nenhuma migration, alteração em dados locais, commit, publicação ou reinício da aplicação.
+
+## Conferência frontend/backend para publicação — 03/11/2026
+
+Contrato HTTP dos enums compatível com o frontend: mesmos campos e valores textuais. Ativo.tipo no TypeScript foi restringido a FIAT | CRIPTO; Saldo.situacao já usava CONFIRMADA | SUBSTITUIDA | CANCELADA. Filtro TODAS preservado, sem alterar payloads, URLs ou representação textual de IDs e decimais.
+
+Frontend aprovado em lint, 20 testes e build/typecheck. Protótipo aprovado em 1 teste. Backend check aprovado com 74 testes (35 unitários/arquiteturais, 39 MySQL), pacote bootJar com frontend reconstruído. Aplicação integrada iniciada em 8080, página e consultas de carteiras, instituições, ativos, saldos e posições com HTTP 200 para os dois perfis. Filtro de histórico conferido no navegador, sem alterar cadastros ou operações locais.
+
+Branch de publicação: codex/saldo-inicial-arquitetura. Escopo reúne saldo inicial e refatorações pendentes desde o merge do PR #13. Credenciais, backups, caches e builds permanecem ignorados. PR deve ficar aberto para revisão, sem merge automático.

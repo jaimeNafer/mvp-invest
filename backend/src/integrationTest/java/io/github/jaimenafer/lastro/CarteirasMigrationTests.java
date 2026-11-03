@@ -3,14 +3,15 @@ package io.github.jaimenafer.lastro;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
 class CarteirasMigrationTests {
@@ -29,7 +30,7 @@ class CarteirasMigrationTests {
     @Test void atualizaV7PreservaAtivosECriaCatalogoEContasPorCarteira() {
         jdbc.update("INSERT INTO ativos(codigo, ticker, nome, tipo, casas_decimais) VALUES ('fiat:BRL', 'BRL', 'Real', 'FIAT', 2)");
         var ativos = jdbc.queryForList("SELECT * FROM ativos");
-        var flyway = Flyway.configure().dataSource(fonte).load();
+        var flyway = Flyway.configure().dataSource(fonte).target("8").load();
         assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
         assertThat(jdbc.queryForList("SELECT * FROM ativos")).isEqualTo(ativos);
         assertThat(jdbc.queryForList("SELECT codigo FROM instituicoes ORDER BY codigo", String.class)).containsExactly("binance", "bitget");
@@ -51,14 +52,14 @@ class CarteirasMigrationTests {
     @Test void preservaInstituicoesExistentesSemDuplicarCatalogo() {
         jdbc.update("INSERT INTO instituicoes(codigo, nome, pais_sede, ativo) VALUES ('binance', 'Binance existente', 'BR', FALSE)");
         var anterior = jdbc.queryForList("SELECT * FROM instituicoes WHERE codigo = 'binance'");
-        Flyway.configure().dataSource(fonte).load().migrate();
+        Flyway.configure().dataSource(fonte).target("8").load().migrate();
         assertThat(jdbc.queryForList("SELECT * FROM instituicoes WHERE codigo = 'binance'")).isEqualTo(anterior);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM instituicoes", Integer.class)).isEqualTo(2);
     }
 
     @Test void recusaConversaoSeExistiremCadastrosSemApagarDados() {
         jdbc.update("INSERT INTO titulares(perfil_ref, nome) VALUES ('a', 'Preservar')");
-        assertThatThrownBy(() -> Flyway.configure().dataSource(fonte).load().migrate())
+        assertThatThrownBy(() -> Flyway.configure().dataSource(fonte).target("8").load().migrate())
             .isInstanceOf(org.flywaydb.core.api.FlywayException.class).hasStackTraceContaining("ck_v8_exige_cadastros_vazios");
         assertThat(jdbc.queryForObject("SELECT nome FROM titulares", String.class)).isEqualTo("Preservar");
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'carteiras'", Integer.class)).isZero();
