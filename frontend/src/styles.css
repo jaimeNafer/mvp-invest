@@ -459,18 +459,22 @@ h2 {
 .table-scroll {
   overflow-x: auto;
 }
-.carteiras-list table {
+.carteiras-list table,
+.operations-panel table {
   border-collapse: collapse;
   width: 100%;
   font-size: 13px;
 }
 .carteiras-list th,
-.carteiras-list td {
+.carteiras-list td,
+.operations-panel th,
+.operations-panel td {
   padding: 16px 10px;
   text-align: left;
   border-bottom: 1px solid #e7edef;
 }
-.carteiras-list th {
+.carteiras-list th,
+.operations-panel th {
   font-weight: 500;
   color: #71818e;
 }
@@ -636,4 +640,120 @@ h2 {
 .instituicao-opcao small {
   color: #71818e;
   font-size: 11px;
+}
+.operations-panel {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--border, #d8e2e8);
+  border-radius: 12px;
+}
+.operations-panel h2 {
+  margin: 0 0 12px;
+}
+.saldo-form {
+  display: grid;
+  gap: 14px;
+}
+.saldo-form .saldo-campos input,
+.saldo-form select,
+.saldo-form textarea,
+.saldo-filtros select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #cad9e1;
+  border-radius: 6px;
+  color: #163b42;
+  background: #fff;
+  font: inherit;
+}
+.saldo-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.saldo-form input:disabled,
+.saldo-form select:disabled,
+.saldo-form textarea:disabled {
+  background: #f3f6f7;
+  color: #667d85;
+}
+.saldo-campos {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  min-width: 0;
+}
+.saldo-resumo {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) 1.6fr;
+  gap: 12px 16px;
+  margin: 8px 0;
+}
+.saldo-resumo dt {
+  color: #657e88;
+}
+.saldo-resumo dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.saldo-filtros {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.saldo-filtros label {
+  display: grid;
+  gap: 8px;
+}
+.saldo-carteiras {
+  border: 0;
+  padding: 0;
+  margin: 0 0 20px;
+}
+.saldo-carteiras legend {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 6px 16px 6px 0;
+}
+.saldo-form .check-label input,
+.saldo-carteiras .check-label input {
+  width: 17px;
+  height: 17px;
+  accent-color: #0b806b;
+  flex-shrink: 0;
+}
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  color: #657e88;
+}
+.pending-request {
+  padding: 16px;
+  border-radius: 8px;
+  background: #fff6df;
+  margin-bottom: 20px;
+}
+@media (max-width: 700px) {
+  .saldo-filtros {
+    grid-template-columns: 1fr;
+  }
+  .saldo-resumo {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .saldo-resumo dd {
+    margin-bottom: 8px;
+  }
 }

@@ -14,7 +14,7 @@ Nome obrigatório, normalizado nas extremidades, até 160 caracteres e único po
 
 ## API
 
-Rotas exigem Bearer; service consulta `UsuarioAtual.id()`, sem ID de perfil em header separado, corpo ou query. Identificação mockada permanece como documentada em [acesso](07-acesso-local.md).
+Rotas exigem Bearer; service consulta `IUsuarioAtual.id()`, sem ID de perfil em header separado, corpo ou query. Identificação mockada permanece como documentada em [acesso](07-acesso-local.md).
 
 | Método e rota | Entrada | Resposta |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ Rotas de titulares removidas. Catálogo somente de leitura. O contrato HTTP é p
 
 ## Organização e banco
 
-`CarteiraService` coordena regras/transações; `CarteiraRepository` usa `@EntityGraph` para vínculos/instituições. `Conta` é entidade explícita da associação N:N: referencia carteira/instituição. Remoção de órfãs afeta apenas vínculos. O contrato HTTP mantém o nome `contas`; não implica propriedade de operações por carteira. Sem repository/controller de contas independente.
+`CarteiraService` coordena regras/transações; `ICarteiraRepository` usa `@EntityGraph` para vínculos/instituições. `Conta` é entidade explícita da associação N:N: referencia carteira/instituição. Remoção de órfãs afeta apenas vínculos. O contrato HTTP mantém o nome `contas`; não implica propriedade de operações por carteira. Sem repository/controller de contas independente.
 
 V8 corrigida exige titulares e contas antigos vazios. Catálogos existentes são preservados; Binance/BitGet são inseridas somente quando ausentes. Não há tabela `carteira_contas` nem `contas.perfil_ref`; unicidade por carteira/instituição. [Dicionário](11-dicionario-de-dados.md).
 

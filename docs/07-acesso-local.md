@@ -33,22 +33,22 @@ O token tem header `{"alg":"none","typ":"JWT"}`, payload com `sub` (ID do usuár
 
 A integração externa e a validação real de acesso serão definidas antes de substituir o mock. Não implementar gestão de usuários ou infraestrutura preventiva neste repositório. A leitura do Bearer e o contexto por requisição foram autorizados explicitamente por Jaime, substituindo a proibição anterior de qualquer identificação no backend.
 
-Carteiras e contas contêm `perfil_ref`, referência do usuário proprietário. A `CarteiraService` obtém essa referência por `UsuarioAtual.id()`, que corresponde ao `sub` do token. O valor não é recebido do corpo, query string, header de perfil ou parâmetro do controller. [Modelagem e limites](10-modelagem-de-carteiras.md).
+Carteiras contêm `perfil_ref`, referência do usuário proprietário; vínculos em contas herdam o proprietário pela carteira. O `CarteiraUseCaseImpl` obtém essa referência por `IUsuarioAtual.id()`, que corresponde ao `sub` do token. O valor não é recebido do corpo, query string, header de perfil ou parâmetro do controller. [Modelagem e limites](10-modelagem-de-carteiras.md).
 
 ## Contexto do usuário por requisição
 
-Fluxo: `Authorization: Bearer` → `UsuarioAtualFilter` → `LeitorJwtMock` → `UsuarioAtual` → service → repository.
+Fluxo: `Authorization: Bearer` → `UsuarioAtualFilter` → `LeitorJwtMock` → `UsuarioAtualContexto` (interface `IUsuarioAtual`) → usecase → contrato de repository → adapter JPA.
 
 | Parte | Responsabilidade |
 | --- | --- |
 | `LeitorJwtMock` | Ler a estrutura JWT/Base64URL/JSON do contrato mockado e extrair `sub`, `name` e `role`. Aceita somente `alg: none` com assinatura vazia; não valida identidade ou implementa criptografia. |
 | `UsuarioAtualFilter` | Executar uma vez na requisição às APIs, carregar o contexto antes do controller/service e responder 401 para Bearer ausente ou inválido. |
-| `UsuarioAtual` | Contexto com escopo de requisição, injetável pelo construtor. Expõe `id()`, `nome()` e `role()`, sem disponibilizar o token bruto. |
+| `IUsuarioAtual` | Contexto com escopo de requisição, injetável pelo construtor. Expõe `id()`, `nome()` e `role()`, sem disponibilizar o token bruto. |
 | Services de negócio | Usar o contexto injetado para obter a referência responsável. Não ler servlet/headers, decodificar JWT ou receber ID de perfil pelos controllers. |
 
 O filter cobre `/api` e `/api/**`. Página inicial, arquivos estáticos e despacho de erro não exigem token. A leitura ocorre antes da cadeia de negócio; falhas de validação/persistência não são capturadas e convertidas em erro de token.
 
-Claims obrigatórias textuais e não vazias: `sub` até 120 caracteres, `name` até 160 e `role` até 120. Tokens acima de 8192 caracteres, estrutura inválida, Base64URL/JSON inválidos, claims inválidas e formatos incompatíveis com o mock retornam 401 com ProblemDetail e `WWW-Authenticate: Bearer`. A mensagem não reproduz token ou detalhes internos. O contrato mockado não implementa expiração ou autorização por role; `role()` apenas disponibiliza a informação recebida.
+Claims obrigatórias textuais e não vazias: `sub` até 120 caracteres, `name` até 160 e `role` até 120. Tokens acima de 8192 caracteres, estrutura inválida, Base64URL/JSON inválidos, claims inválidas e formatos incompatíveis com o mock retornam 401 com ProblemDetail, sem `WWW-Authenticate`. A mensagem não reproduz token ou detalhes internos. O contrato mockado não implementa expiração ou autorização por role; `role()` apenas disponibiliza a informação recebida.
 
 O contexto é criado por requisição, sem singleton de dados do usuário, estado estático ou ThreadLocal manual. Ao terminar a requisição, o escopo é encerrado pelo Spring. Não há contexto de usuário disponível para tarefas de background fora de uma requisição; ao criar essa capacidade, definir explicitamente seus dados de entrada.
 
@@ -73,3 +73,7 @@ Para o pacote integrado, usar `scripts/Start-Lastro.ps1` e acessar [Lastro](http
 Testes React exercitam o serviço local real, entrada dos dois usuários, conteúdo do JWT, gravação/remoção na localStorage, erro de credenciais e ausência de chamadas HTTP. Testes MySQL isolados verificam migrations, ausência das estruturas de controle de usuários e integridade das estruturas de negócio.
 
 Verificação do contexto: 5 testes unitários de leitura/filter e 14 testes MySQL passaram, incluindo 20 requisições simultâneas de dois usuários, claims Unicode, tokens malformados, substituição indevida do perfil, erros de negócio preservados e arquivos estáticos independentes de token. Os 12 testes frontend, lint, TypeScript e build passaram. A API real em 8080 foi conferida com Bearers dos dois perfis e respostas 401 para acesso sem token/inválido, sem alterar dados.
+
+Falhas de identificação do filter são encaminhadas ao HandlerExceptionResolver e respondidas pelo TratamentoGlobalException. O filter não captura erros de negócio da cadeia como 401.
+
+Na auditoria modular, IUsuarioAtual passou a acesso.application.contract. Filter, leitor de token e implementação do contexto permanecem internos; consumidores não importam esses mecanismos.

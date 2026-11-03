@@ -1,6 +1,6 @@
 # Roteiro de entregas
 
-Estado em 02/11/2026: cadastro de carteiras e execução Java 27 implementados. Esclarecimento vigente: `contas` associa carteiras e instituições; operações serão únicas por evento, pertencentes ao usuário/instituição e compartilhadas na visualização das carteiras. PR #12 integrado em `main`; revisão Java 27/V8/modelagem publicada no [PR #13](https://github.com/jaimeNafer/mvp-invest/pull/13), branch `codex/java27-vinculos-carteiras`. [Retomada](06-retomada.md).
+Estado em 02/11/2026: cadastro de carteiras, execução Java 27 e saldo inicial implementados localmente. Saldo inicial ainda sem publicação Git/CI desta alteração. Esclarecimento vigente: `contas` associa carteiras e instituições; operações serão únicas por evento, pertencentes ao usuário/instituição e compartilhadas na visualização das carteiras. PR #12 integrado em `main`; revisão Java 27/V8/modelagem publicada no [PR #13](https://github.com/jaimeNafer/mvp-invest/pull/13), branch `codex/java27-vinculos-carteiras`. [Retomada](06-retomada.md).
 
 **Etapa de carteiras concluída por Jaime em 02/11/2026**, originalmente publicada no PR #12. O novo requisito altera a propriedade das contas e a execução em Java 27; a [modelagem vigente](10-modelagem-de-carteiras.md) substitui a anterior. Pendências de ativos/identidade externa não estão incluídas nesta correção.
 
@@ -33,8 +33,8 @@ Backlog e evidências: [F01–F07, baseline técnica e diagnóstico do ambiente]
 - [x] Criar, consultar, editar, arquivar e reativar carteiras no MySQL. Modal com nome e instituições. [Contrato e verificações](09-cadastro-de-carteiras.md).
 - [x] Cadastro de associações entre carteiras e instituições em `contas`, com unicidade por carteira/instituição e transação na edição. IDs diferentes representam vínculos; o histórico financeiro futuro não será duplicado por carteira.
 - [x] Disponibilizar catálogo inicial de instituições: Binance e BitGet, por migration e sem tela de manutenção.
-- [ ] Definir os ativos suportados e provisionar o catálogo para o primeiro lançamento; a tabela existente é preservada.
-- [x] Separar carteiras por `perfil_ref` de `UsuarioAtual.id()`; contas herdam o proprietário via carteira. V8 exige cadastros antigos vazios e backup, preservando V1–V7 e catálogos.
+- [x] Provisionar BRL, USD, BTC, ETH, USDT e USDC por V9, preservando catálogo compatível.
+- [x] Separar carteiras por `perfil_ref` de `IUsuarioAtual.id()`; contas herdam o proprietário via carteira. V8 exige cadastros antigos vazios e backup, preservando V1–V7 e catálogos.
 - [ ] Aplicar o contexto aos próximos cadastros e definir o contrato de identidade externa antes da integração real; não confiar nos IDs do mock como autorização.
 - [x] Entregar navegação entre Meu perfil e Carteiras, identificação do perfil, saída e estados de carregamento/erro/vazio no cadastro.
 
@@ -46,10 +46,16 @@ Backlog e evidências: [F01–F07, baseline técnica e diagnóstico do ambiente]
 
 **Objetivo:** registrar um período real e explicar seus números.
 
+Primeira fatia: [saldo inicial — contrato e exemplos](12-saldo-inicial.md). Planejamento solicitado por Jaime em 02/11/2026, com BRL/USD/BTC/ETH/USDT/USDC e data comum por usuário confirmados. Contrato implementado, com fluxo React/MySQL e validações registradas. Compra/venda seguem em outra fatia.
+
+- [x] Documentar objetivo, limites, regras e exemplos do saldo inicial, distinguindo decisões confirmadas e propostas técnicas.
+- [x] Implementar o contrato autorizado de saldo inicial, registrando as escolhas técnicas adotadas.
+- [x] Entregar saldo inicial completo: catálogo, ponto de partida, fatos únicos, API, correção/cancelamento, posição inicial global e interface. Backend: 44 testes; frontend: 20 testes. V9 aplicada localmente com backup e cadastros preservados; fluxo e persistência conferidos no navegador.
+
 - [ ] Detalhar a política decimal já aprovada (18/8/2 casas, HALF_EVEN e versão): fronteiras de arredondamento, precisão de divisão e resíduos, com fixtures. Documentar os contratos de prévia, confirmação, consulta e correção.
 - [ ] Criar migrations do livro, auditoria e projeções, validando evolução a partir do schema do marco anterior.
 - [ ] Usar o mesmo motor Java na prévia e na confirmação; não duplicar regras financeiras no React. Tratar respostas de prévia fora de ordem e mudança de revisão antes de salvar.
-- [ ] Implementar primeiro saldo inicial/aporte, compra e venda, completos entre React e MySQL; em seguida conversão, retirada, transferência e pagamento de imposto.
+- [ ] Após saldo inicial, especificar/implementar aporte, compra e venda entre React e MySQL; em seguida conversão, retirada, transferência e pagamento de imposto.
 - [ ] Implementar taxas, custo médio contínuo por usuário/ativo, custódia por usuário/instituição, parcelas de resultado e saldo suficiente; nunca vincular o histórico ao ID da associação da carteira.
 - [ ] Implementar correção por substituição, cancelamento com motivo e histórico consultável. Recalcular de forma transacional e impedir conflito de revisão e repetição da mesma submissão.
 - [ ] Entregar listagem paginada, detalhe do lançamento/cálculo, visão geral, composição e detalhe da posição; preservar o tratamento honesto do gráfico de referências históricas.

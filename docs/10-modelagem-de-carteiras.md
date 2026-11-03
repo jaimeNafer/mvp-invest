@@ -25,7 +25,7 @@ erDiagram
     }
 ```
 
-`carteiras.perfil_ref` vem de `UsuarioAtual.id()`. Consultas e alterações dos vínculos passam pela carteira do usuário atual; o backend não cadastra usuários. Uma carteira exige ao menos uma instituição na API.
+`carteiras.perfil_ref` vem de `IUsuarioAtual.id()`. Consultas e alterações dos vínculos passam pela carteira do usuário atual; o backend não cadastra usuários. Uma carteira exige ao menos uma instituição na API.
 
 Exemplo: Principal inclui Binance/BitGet e Reserva inclui Binance. São três linhas de associação em `contas`. As duas linhas Binance selecionam a mesma instituição e o mesmo histórico de Jaime. Seus IDs distintos identificam apenas os vínculos. A Binance de Eliane utiliza o mesmo catálogo, mas suas operações são separadas pela referência do usuário.
 

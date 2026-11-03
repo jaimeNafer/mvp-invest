@@ -4,11 +4,17 @@ Aplicação para organizar operações de cripto à vista, entender custos e res
 
 ## Estado da entrega
 
-Carteiras organizam visões dos investimentos do usuário. `contas` associa carteiras e instituições: duas carteiras com Binance selecionam o mesmo histórico do usuário, sem duplicar operações. Cada vínculo possui ID próprio. Bearer identifica `UsuarioAtual`; autenticação real será externa. Cadastro e modais estão implementados; operações e motor permanecem futuros. [Contrato](docs/09-cadastro-de-carteiras.md), [acesso](docs/07-acesso-local.md) e [modelo](docs/10-modelagem-de-carteiras.md).
+Carteiras organizam visões dos investimentos do usuário. `contas` associa carteiras e instituições: duas carteiras com Binance selecionam o mesmo histórico do usuário, sem duplicar operações. Cada vínculo possui ID próprio. Bearer identifica `IUsuarioAtual`; autenticação real será externa. Cadastro de carteiras e saldo inicial estão implementados. Em Operações, registre, consulte, corrija ou cancele aberturas e confira a posição inicial global. Compra/venda e motor completo permanecem futuros. [Saldo inicial](docs/12-saldo-inicial.md). [Contrato](docs/09-cadastro-de-carteiras.md), [acesso](docs/07-acesso-local.md) e [modelo](docs/10-modelagem-de-carteiras.md).
+
+Backend organizado por contextos com domain/application/infrastructure/api, modelos JPA e interfaces nas fronteiras. DTOs são mapeados na aplicação e exceções tratadas globalmente. [Padrão e checklist arquitetural](docs/02-arquitetura.md#padrão-arquitetural-obrigatório--decisão-de-02112026). Configuração versionada em `application.yml`, com conexão privada em `.local/mysql.properties`.
+
+Lombok gera o boilerplate do backend; interfaces próprias usam prefixo `I`. Não há setters de entidades: alterações passam por operações de domínio e coleções são expostas por cópias protegidas. [Convenções](docs/02-arquitetura.md#lombok-e-convenção-de-interfaces).
+
+Fronteiras entre contextos são verificadas com ArchUnit: somente `application.contract` é público; repositories e entidades são internos. [Auditoria, matriz de dependências e resultados](docs/13-auditoria-modular.md).
 
 Acordos obrigatórios de desenvolvimento: [AGENTS.md](AGENTS.md). Planejamento e estado de execução: [docs/README.md](docs/README.md).
 
-Documentação campo a campo: [dicionário](docs/11-dicionario-de-dados.md). V8 revisada com quatro tabelas de negócio e 21 campos comentados. V1–V7 imutáveis; V8 exige titulares/contas antigos vazios e preserva catálogos. Binance/BitGet são inseridas somente quando ausentes. A reaplicação local foi explicitamente autorizada após backup; não apagar registros do Flyway ou reaplicar a migration sobre outros bancos existentes.
+Documentação campo a campo: [dicionário](docs/11-dicionario-de-dados.md). V9 aplicada com seis tabelas de negócio e 47 campos comentados. Provisiona seis ativos e acrescenta ponto de partida e operações, preservando os cadastros. Migrations aplicadas são imutáveis; V8 exige titulares/contas antigos vazios e preserva catálogos. Binance/BitGet são inseridas somente quando ausentes. A reaplicação local foi explicitamente autorizada após backup; não apagar registros do Flyway ou reaplicar a migration sobre outros bancos existentes.
 
 ## Executar o aplicativo
 
@@ -105,4 +111,4 @@ Versionar código, testes, migrations, documentação, lockfile npm, Gradle Wrap
 
 O `.gitignore` mantém fora do repositório configurações privadas em `.local/`, arquivos de ambiente pessoais, backups locais, dependências, caches, builds, cobertura, logs e metadados de ferramentas. O ZIP original do modelo é uma cópia duplicada: permanece no computador e não é enviado. Não ignorar genericamente imagens, SQL ou JAR, pois existem referências, migrations e arquivos do wrapper necessários nessas extensões.
 
-Próxima decisão: detalhar o primeiro lançamento e a política decimal. Operações serão únicas por evento e vinculadas ao usuário/instituição, independentes dos vínculos das carteiras. Consultas de várias carteiras devem contar cada operação uma única vez; remover vínculos ou arquivar preserva o histórico. Importação e motor permanecem futuros.
+Saldo inicial entregue com data comum, custo conhecido, histórico de correções/cancelamentos e envio idempotente. As operações são únicas por usuário/instituição, independentes dos vínculos das carteiras. Próximo passo: especificar compra/venda, custódia, taxas e arredondamentos de baixas antes de expandir o motor. Importação permanece futura.

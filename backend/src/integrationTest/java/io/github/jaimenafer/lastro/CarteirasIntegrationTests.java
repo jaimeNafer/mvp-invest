@@ -1,11 +1,5 @@
 package io.github.jaimenafer.lastro;
 
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +13,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
 import tools.jackson.databind.json.JsonMapper;
 
-import static org.assertj.core.api.Assertions.*;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -42,6 +43,13 @@ class CarteirasIntegrationTests {
         jdbc.update("UPDATE instituicoes SET ativo = TRUE");
         binance = jdbc.queryForObject("SELECT id FROM instituicoes WHERE codigo = 'binance'", Long.class);
         bitget = jdbc.queryForObject("SELECT id FROM instituicoes WHERE codigo = 'bitget'", Long.class);
+    }
+
+    @Test void limiteDoNomeConsideraSomenteTextoNormalizado() throws Exception {
+        String nome = "a".repeat(160);
+        mvc.perform(post("/api/v1/carteiras").header("Authorization", bearer("a"))
+            .contentType("application/json").content(json.writeValueAsString(Map.of("nome", "  " + nome + "  ", "instituicaoIds", List.of(Long.toString(binance))))))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.nome").value(nome));
     }
 
     @Test void catalogoMantidoPeloSistemaERotasAntigasRemovidas() throws Exception {

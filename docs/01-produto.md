@@ -19,9 +19,12 @@ Fluxo de valor: **entrar → criar carteiras selecionando instituições → reg
 | Volume de referência | Até 5.000 operações para dimensionamento inicial. Interpretação provisória: total do piloto; revisar se necessário. |
 | Ponto de partida | Recorte real pequeno, extratos e custos históricos disponíveis. |
 | Saldo inicial | Exigir custo histórico conhecido; desconhecido não pode virar zero. Zero explicitamente informado deve ser confirmado e documentado. |
+| Primeira fatia financeira | Saldo inicial com BRL, USD, BTC, ETH, USDT e USDC e uma data de referência por usuário, confirmados por Jaime em 02/11/2026. [Contrato implementado](12-saldo-inicial.md). |
 | Correções | Preservar versões anteriores e autoria, recalcular e recusar alterações que deixem saídas posteriores sem saldo. |
 | Entrega funcional | Incluir as cinco áreas aprovadas, construídas gradualmente. |
 | Prazo e equipe | Sem data fixa; um desenvolvedor, trabalhando conforme disponibilidade. |
+
+Estado em 02/11/2026: carteiras e saldo inicial disponíveis localmente. Aberturas permitem cadastro, consulta, correção/cancelamento com histórico e posição global. As demais capacidades abaixo são o escopo incremental do MVP, ainda não concluído.
 
 ## Capacidades da primeira entrega
 

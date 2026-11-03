@@ -1,16 +1,143 @@
-# Retomada — operações únicas e carteiras como visões
+
+## Conferência frontend/backend para publicação — 03/11/2026
+
+Contrato HTTP dos enums compatível com o frontend: mesmos campos e valores textuais. Ativo.tipo no TypeScript foi restringido a FIAT | CRIPTO; Saldo.situacao já usava CONFIRMADA | SUBSTITUIDA | CANCELADA. Filtro TODAS preservado, sem alterar payloads, URLs ou representação textual de IDs e decimais.
+
+Frontend aprovado em lint, 20 testes e build/typecheck. Protótipo aprovado em 1 teste. Backend check aprovado com 74 testes (35 unitários/arquiteturais, 39 MySQL), pacote bootJar com frontend reconstruído. Aplicação integrada iniciada em 8080, página e consultas de carteiras, instituições, ativos, saldos e posições com HTTP 200 para os dois perfis. Filtro de histórico conferido no navegador, sem alterar cadastros ou operações locais.
+
+Branch de publicação: codex/saldo-inicial-arquitetura. Escopo reúne saldo inicial e refatorações pendentes desde o merge do PR #13. Credenciais, backups, caches e builds permanecem ignorados. PR deve ficar aberto para revisão, sem merge automático.
+
+# Retomada — enums de domínio, 03/11/2026
+
+Implementados TipoAtivo, TipoOperacao e SituacaoOperacao nos respectivos contextos. Entidades e respostas tipadas; repositories/Criteria usam enums. String de filtro é convertida no mapper, preservando TODAS e mensagem de erro. Role, identificadores e catálogos abertos continuam strings. [Inventário e justificativas](15-enums-de-dominio.md).
+
+## Verificação concluída — enums, 03/11/2026
+
+Compilação e `gradlew check --offline --no-daemon --console=plain` aprovados: 74 testes, 35 unitários/arquiteturais e 39 integrados MySQL, sem falhas, erros ou ignorados. Revisão independente sem regressões identificadas. Cobertura adicional de enums inclui JSON, filtros e leitura histórica dos três estados; colunas continuam VARCHAR. Nenhuma migration, alteração em dados locais, commit, publicação ou reinício da aplicação.
+
+
+## Contrato do handler confirmado — 03/11/2026
+
+Jaime confirmou o comportamento vigente da classe: respostas 401 sem WWW-Authenticate e log descritivo único em ERROR com status HTTP e mensagem da origem. Os testes foram ajustados para verificar esse contrato; a implementação do handler não foi alterada.
+
+`gradlew check --offline --no-daemon --console=plain` aprovado: 70 testes, sendo 32 unitários/arquiteturais e 38 integrados MySQL, sem falhas, erros ou testes ignorados. As duas divergências registradas na execução anterior estão resolvidas. Sem alteração em schema, migrations ou dados, sem publicação e sem reinício da aplicação.
+
+As notas abaixo são históricas; o contrato e a validação acima prevalecem.
+
+# Atualização — 03/11/2026: Clean Code e DTOs
+
+Revisão de implementação e padronização Bean Validation aplicadas. Regras permanentes em AGENTS.md, arquitetura e acordos; relatório com classes, exemplos e decisões em [Clean Code](14-clean-code-backend.md).
+
+38 integrações aprovadas; 30/32 testes unitários/arquiteturais aprovados. Essa execução anterior falhou porque os testes ainda exigiam WWW-Authenticate e outro formato de logging. Em 03/11/2026 Jaime confirmou o comportamento da classe: 401 sem esse header e log descritivo em ERROR. As expectativas foram atualizadas, preservando o handler. Não reintroduzir tratamentos técnicos genéricos. Nenhuma mudança em schema/migrations/dados, publicação ou reinício do serviço.
+
+As contagens verdes nas notas históricas abaixo pertencem às execuções anteriores e não substituem este resultado.
+
+# Retomada — backend organizado por contextos
+
+## Handler simplificado — decisão vigente de Jaime
+
+TratamentoGlobalException agora trata apenas negócio, validação de entrada/parâmetros e acesso necessários ao código atual. Todos os retornos são ResponseEntity<ProblemDetail>; responder recebe String mensagem e HttpStatus, sem headers ou Object. A mensagem vem da exceção/constraint de validação, é registrada uma vez e retornada sem substituição por texto genérico.
+
+Removidos UNICIDADES, duplicidadeConhecida, classificação de integridade/concorrência/indisponibilidade no handler, catch genérico e herança de ResponseEntityExceptionHandler. Demais erros são tratados pelo Spring. WWW-Authenticate foi mantido somente no tratamento 401 do filter existente.
+
+Para preservar os conflitos atuais, os adapters de gravação convertem apenas violações UNIQUE reconhecidas pelo Hibernate em exceções do contexto, com mensagens descritivas definidas no ponto de gravação; não há lista de constraints ou utilitário de classificação. Outras falhas propagam. CarteiraConflitanteException cobre o conflito de nome; saldos usam sua exceção existente. Transações e rollback foram preservados.
+
+Validação: check aprovado; testes unitários finais e pacote integrado aprovados. Total **66 testes**, 28 unitários e 38 integrados, sem falhas/ignorados. Os testes do handler foram ajustados ao escopo explicitamente solicitado, incluindo mesma mensagem em log/response, retorno tipado e ausência de catch genérico. ArchUnit impede dependências de persistência no handler. Revisão independente sem achados materiais. Aplicação reiniciada em 8080; respostas reais 400/401 e mensagens de origem conferidas. Nenhum cadastro gravado nessa verificação; schema/migrations preservados. Sem commit/push/PR.
+
+Este acordo substitui o tratamento técnico e fallback descritos nas evidências históricas abaixo.
+
+## Auditoria modular — estado vigente
+
+[Relatório completo, diagnóstico, estrutura e matriz](13-auditoria-modular.md). Jaime reconfirmou JPA nos modelos. Referências cruzadas de entidades/repositories foram substituídas por application.contract e IDs escalares, preservando schema/FKs. Metadados são obtidos em lote; carteira continua seleção de instituições e conta permanece vínculo interno.
+
+Contratos públicos: IUsuarioAtual em acesso; IConsultaAtivos/AtivoResumo; IConsultaInstituicoes/InstituicaoResumo; IConsultaCarteiras para união imutável de IDs sob a identidade atual. Não consumir usecases REST, repositories ou entidades de outro contexto.
+
+Exceções específicas voltaram a domain.exception. A baseline não compilava por falta de construtores de mensagem; essa regressão foi corrigida com StandardException. O handler global foi corrigido para preservar status/headers e não expor mensagens internas ou dados sensíveis. Regras de negócio e contratos REST existentes foram preservados; respostas de erro inseguras/incoerentes foram corrigidas.
+
+ArchUnit core 1.5.1 em testImplementation, sem novo engine ou runtime. Sete regras verificam contratos, matriz, ciclos, camadas, whitelist do domínio (JPA somente nos modelos) e tratamento transversal. Spring Modulith foi avaliado e não adicionado, por falta de benefício necessário nesta entrega.
+
+**Verificação:** compilação/check com 64 testes aprovados (26 unitários, 38 integrados), sem falhas/ignorados; pacote integrado aprovado; HTTP dos dois perfis conferido; dados das seis tabelas preservados integralmente por comparação de snapshots privados. Flyway validou nove migrations, sem reaplicar alterações. Aplicação integrada em 8080. Revisão independente sem achados materiais. Não houve commit/push/PR/CI nesta tarefa.
+
+Próximo desenvolvimento deve seguir a matriz e passar ArquiteturaModularTests. Os registros abaixo são históricos e podem descrever padrões posteriormente substituídos; prevalece a auditoria modular e os acordos atuais.
+
+## Annotations com nomes simples
+
+Normalizadas 11 annotations em oito arquivos: Service, Transactional, Repository, Qualifier e PersistenceContext agora usam imports e nomes simples, preservando argumentos e comportamento. Nenhuma alteração de banco, contrato HTTP ou regras de negócio.
+
+Adicionado ArquiteturaTests.annotationsUtilizamNomesSimplesComImports, que percorre as árvores sintáticas de todos os fontes Java em backend/src (produção e testes) e informa arquivo/linha de annotations qualificadas. O teste falhou com o código anterior; a suíte completa check passou após a correção: 54 testes (16 unitários e 38 integrados), sem falhas/ignorados. Os unitários foram reexecutados após atualizar a chamada do parser para a API vigente do JDK 27. Usa o parser público do JDK sem dependência adicional ou execução de processors. Padrão documentado em AGENTS e arquitetura.
+
+## Lombok e interfaces com prefixo I
+
+Removidos getters e construtores repetitivos do backend em favor de Lombok. Componentes usam @RequiredArgsConstructor com dependências final; entidades mantêm construtor JPA protegido e getters seletivos; utilitários usam construtor privado gerado. Exceções de simples repasse usam @StandardException. AcessoInvalidoException preserva o construtor com mensagem fixa por ser comportamento próprio.
+
+Criação de modelos está em fábricas criar/vincular/iniciar/registrarSaldoInicial, preservando valores iniciais, autoria e UTC. Carteira.contasVinculadas() mantém snapshot imutável, sem expor coleção JPA mutável. DTOs records foram preservados sem Lombok redundante. Nenhum setter foi introduzido.
+
+As 16 interfaces próprias foram renomeadas com prefixo I, incluindo contratos de domínio, JPA, casos de uso e acesso. Consumidores, testes e referências atuais da documentação foram atualizados. backend/lombok.config preserva @Qualifier no construtor gerado do filter; revisão independente confirmou o bytecode e o repasse das mensagens das exceções.
+
+Validação concluída: backend `check` aprovado com **53 testes** (15 unitários e 38 integrados MySQL/Testcontainers), sem falhas/ignorados. Inclui novo teste arquitetural do prefixo I/ausência de setters e teste de snapshot imutável da coleção de vínculos. Pacote integrado e nova execução dos testes unitários aprovados após padronização final das anotações.
+
+Aplicação reiniciada em 8080; página e consultas de carteiras, instituições, ativos, saldos e posições retornaram 200. Bearer ausente preserva 401 e WWW-Authenticate. Flyway validou nove migrations sem aplicar alterações. Sem gravação de dados durante essa conferência e sem mudanças em schema/migrations ou contratos HTTP; alterações locais sem commit/push/PR.
+
+## Refatoração arquitetural — 02/11/2026
+
+Backend organizado por contexto com domain/application/infrastructure/api. Modelos usam JPA por decisão explícita de Jaime; interfaces de domínio são implementadas por adapters Spring Data. Controllers dependem de interfaces de usecases, não conhecem entidades/repositories/mappers e retornam DTOs preparados na aplicação. Tipos de produção separados em arquivos próprios, sem aninhamento.
+
+TratamentoGlobalException centraliza ProblemDetail e logging sanitizado, distinguindo duplicidades conhecidas de falhas internas. O filter encaminha erros de identificação ao resolver global e preserva erros downstream. Configuração versionada migrada para application.yml, mantendo o import privado mysql.properties e as variáveis existentes. Schema e migrations não foram alterados pela refatoração.
+
+Regras permanentes, responsabilidades, exemplos e limites do isolamento estão em [Arquitetura](02-arquitetura.md), [AGENTS](../AGENTS.md) e [acordos de qualidade](08-acordos-de-qualidade.md). Nova funcionalidade deve seguir esse padrão e seus testes arquiteturais.
+
+A revisão independente comparou com snapshot privado das fontes anteriores e não encontrou defeitos materiais.
+
+Validação concluída:
+
+- Backend `check`: **51 testes aprovados**, 13 unitários e 38 integrados MySQL/Testcontainers, sem falhas ou ignorados. Inclui arquitetura, status/headers MVC, integridade conhecida/desconhecida, logging sem mensagem sensível e nome com espaços nas extremidades no limite de tamanho.
+- Frontend: lint, **20 testes**, typecheck e build aprovados. Pacote integrado `bootJar -PincludeFrontend` aprovado.
+- Aplicação integrada reiniciada em 8080 com YAML e conexão privada existente. Flyway validou nove migrations e informou schema atualizado, sem migration necessária.
+- Navegador: login, carteiras, saldo inicial e posição global consultados com sucesso. Nesta conferência não foram criados/editados/cancelados registros.
+- Snapshots privados antes/depois das seis tabelas de negócio têm hashes idênticos; todos os dados preservados. Evidência visual e snapshots em `.local/`, fora do Git.
+- Links locais e diff verificados. Nenhum commit, push, PR ou execução de CI nesta tarefa. Código permanece no checkout atual, junto à entrega anterior ainda não publicada.
+
+## Histórico da entrega de saldo inicial
+
+## Entrega anterior — saldo inicial em 02/11/2026
+
+[Saldo inicial](12-saldo-inicial.md) implementado: BRL, USD, BTC, ETH, USDT e USDC; uma data comum por usuário; cadastro, consulta, revisão antes de confirmar, correção por substituição, cancelamento com motivo, histórico e posição inicial global. Custo histórico obrigatório; zero explícito exige confirmação e justificativa; BRL tem custo igual à quantidade. IDs/decimais trafegam como strings, sem ponto flutuante financeiro no React.
+
+V9 acrescenta `pontos_partida` e `operacoes`. O usuário vem exclusivamente de `IUsuarioAtual.id()`; fatos pertencem ao usuário/instituição e sobrevivem às alterações nas carteiras. Filtros combinados usam a união das instituições, sem duplicar operações. Uma abertura confirmada por usuário/instituição/ativo e uma chave de requisição por usuário são protegidas no banco. Correção/cancelamento preservam fatos e autoria; bloqueio transacional do ponto de partida e READ_COMMITTED coordenam escritas. Instantes Java usam `Instant` e persistência UTC.
+
+Frontend separa serviço HTTP de saldo inicial, decimais reutilizáveis, formulário/revisão, filtros, posição e coordenação da página. Formulários preservam conteúdo em caso de erro. Falha sem resultado definitivo mantém comando/chave em memória para consulta e repetição segura, inclusive ao fechar/reabrir a modal. Nenhum dado financeiro novo é salvo na localStorage.
+
+### Verificações executadas
+
+- Backend `check`: **44 testes** aprovados, 7 unitários e 37 integrados MySQL/Testcontainers. Novos: 2 de cálculo, 15 de API/transação/concorrência e 3 de migration. Testes históricos de V7/V8 preservados e versionados em seus alvos.
+- Frontend: lint, **20 testes** e build aprovados. Novos: 5 de operações e 2 de decimais. Pacote integrado reconstruído com `bootJar -PincludeFrontend`.
+- MySQL local: backup privado antes da V9; migration aplicada e reinicialização sem mudanças. Seis tabelas de negócio e **47/47 campos comentados**. Snapshot privado confirmou carteiras, vínculos e instituições anteriores integralmente preservados. Arquivos em `.local/` permanecem fora do Git.
+- Navegador em 8080: criar abertura, consultar por duas carteiras sem duplicação, corrigir, cancelar e consultar as versões após reiniciar. As duas versões temporárias do ensaio foram removidas por conferência exata de identidade/valores/motivos. Novo saldo adicionado pelo usuário durante a validação foi preservado, assim como o ponto de partida necessário a ele.
+- Teste SQL também verifica UTC do instante de abertura, impedindo dupla conversão de fuso. Foram exercitadas concorrência de primeiras datas, repetição da mesma chave e correção contra cancelamento; falhas não deixam fatos parciais.
+
+Aviso conhecido: MySQL aponta depreciação de BINARY na guarda de compatibilidade do catálogo V9. A execução concluiu; não reescrever a migration aplicada por estilo/aviso. Migrations aplicadas permanecem imutáveis.
+
+### Próximo passo e limites
+
+Aplicação integrada disponível em `http://127.0.0.1:8080/`: entrar e acessar **Operações**. Atualizar a página exige novo login pelo comportamento já existente do mock. Catálogo e dados de negócio usam MySQL real; autenticação continua mockada por acordo.
+
+Próxima tarefa: especificar compra/venda, custódia, taxas, prévia e arredondamentos de baixas/resíduos usando os mesmos fatos. Não ampliar a redefinição da data inicial para novos tipos sem revisar as regras. Compra/venda, importação, relatórios, motor completo e autenticação externa não foram implementados. Não houve commit, push, novo PR ou CI desta alteração; publicação depende de pedido posterior.
+
+## Histórico anterior à implementação do saldo inicial
+
+As evidências e pendências abaixo descrevem suas respectivas etapas anteriores, não o estado atual da fatia acima.
 
 ## Decisão vigente — esclarecimento final de 02/11/2026
 
 Jaime confirmou que Binance em duas carteiras apresenta **os mesmos registros**, persistidos uma única vez. `contas` é a tabela de associação N:N entre carteira e instituição. Seus IDs distintos identificam vínculos, não contas com livros financeiros independentes.
 
-Operações futuras terão identidade própria e referência ao usuário/instituição; não devem pertencer a `contas.id` ou à carteira. O usuário virá exclusivamente de `UsuarioAtual.id()`. Mesma instituição para Eliane e Jaime mantém históricos separados. Carteiras selecionam instituições para apresentar os registros; selecionar várias carteiras deve usar a união de instituições do usuário e contar cada operação uma única vez.
+Operações futuras terão identidade própria e referência ao usuário/instituição; não devem pertencer a `contas.id` ou à carteira. O usuário virá exclusivamente de `IUsuarioAtual.id()`. Mesma instituição para Eliane e Jaime mantém históricos separados. Carteiras selecionam instituições para apresentar os registros; selecionar várias carteiras deve usar a união de instituições do usuário e contar cada operação uma única vez.
 
 Editar/remover vínculos ou arquivar carteira não apaga operações, custos ou resultados. Reassociar uma instituição mostra seu histórico existente, sem reimportar ou copiar fatos. Isso substitui a interpretação anterior de históricos independentes por carteira.
 
 Esclarecimento registrado nos acordos, produto, arquitetura, contrato, modelo, dicionário e critérios futuros T29–T32. Nesta atualização foram alterados somente documentos; schema V8, código e cadastros foram preservados. Nenhuma nova execução de testes é declarada: resultados da correção Java 27 estão no histórico abaixo. Operações/motor continuam futuros.
 
-Próximo passo: especificar o primeiro lançamento e a política decimal, com persistência única por evento, isolamento por usuário e filtros sem multiplicação de operações por vínculos. A API atual mantém o nome `contas` no DTO, representando as associações selecionadas.
+O primeiro lançamento e seu detalhamento decimal estão agora no [contrato proposto](12-saldo-inicial.md). A API atual mantém o nome `contas` no DTO, representando associações; essa estrutura não será proprietária dos fatos do saldo inicial.
 
 ## Publicação da revisão — 02/11/2026
 
@@ -28,7 +155,7 @@ As descrições anteriores de históricos independentes por carteira foram subst
 
 Jaime alterou o backend para Java 27/Spring Boot 4.2.0-SNAPSHOT e confirmou mudar a modelagem: **cada conta pertence a uma única carteira**. Autorizou zerar carteiras, contas e vínculos locais após backup para corrigir/reaplicar V8; instituições e ativos devem ser preservados. Esta decisão substitui o compartilhamento de contas da entrega anterior.
 
-Schema: `carteiras`, `contas`, `instituicoes`, `ativos`. Conta tem `carteira_id`, sem `perfil_ref`; unicidade `(carteira_id,instituicao_id)`. Sem tabela `carteira_contas`. A carteira guarda o usuário obtido de `UsuarioAtual.id()`; todas as consultas/alterações continuam separadas pelo contexto do Bearer.
+Schema: `carteiras`, `contas`, `instituicoes`, `ativos`. Conta tem `carteira_id`, sem `perfil_ref`; unicidade `(carteira_id,instituicao_id)`. Sem tabela `carteira_contas`. A carteira guarda o usuário obtido de `IUsuarioAtual.id()`; todas as consultas/alterações continuam separadas pelo contexto do Bearer.
 
 JPA um-para-muitos com persistência/merge e remoção de órfãs. Edição preserva contas das instituições mantidas, cria as novas e exclui as retiradas apenas daquela carteira. Arquivar preserva contas. Não há operações nesta etapa; antes do livro, definir proteção contra exclusão de contas com histórico. Conta não é compartilhada ou reaproveitada de outra carteira.
 
@@ -66,7 +193,7 @@ Os registros seguintes preservam a cronologia e são substituídos pelo estado v
 
 **Etapa concluída e encerrada por Jaime em 02/11/2026.** Código publicado na branch `codex/carteiras-investimento`, com [PR #12](https://github.com/jaimeNafer/mvp-invest/pull/12) para `main`, aberto para revisão e sem merge automático. O próximo trabalho é especificar o primeiro lançamento; não reabrir este cadastro sem novo requisito.
 
-Cadastro de titulares substituído por **Carteiras** no menu, página, modais, serviços e API. Cada carteira tem nome e instituições selecionadas. Uma conta é única por usuário/instituição e pode compor várias carteiras por `carteira_contas`, sem cópia de dados. O usuário vem exclusivamente de `UsuarioAtual.id()`, carregado pelo Bearer. Login/JWT/armazenamento continuam nos serviços existentes, sem gestão de usuários no backend.
+Cadastro de titulares substituído por **Carteiras** no menu, página, modais, serviços e API. Cada carteira tem nome e instituições selecionadas. Uma conta é única por usuário/instituição e pode compor várias carteiras por `carteira_contas`, sem cópia de dados. O usuário vem exclusivamente de `IUsuarioAtual.id()`, carregado pelo Bearer. Login/JWT/armazenamento continuam nos serviços existentes, sem gestão de usuários no backend.
 
 Criar/editar, criar contas ausentes e atualizar vínculos ocorre em uma transação. Seleção vazia/repetida/inválida é recusada; novo vínculo exige instituição ativa, enquanto vínculo existente inativo pode ser mantido/removido. Nome normalizado até 160 caracteres e único por usuário, inclusive arquivadas. Erros 400/401/404/409; concorrência de criação de conta reverte a requisição conflitante e permite repetir. JPA com `@EntityGraph`, sem exclusão em cascata.
 
@@ -101,7 +228,7 @@ Em 01/11/2026, Jaime aprovou simplificar a modelagem antes do cadastro de contas
 
 V1–V4 permanecem imutáveis. V5 migrou a associação antiga para `titulares.perfil_ref`, removeu `espacos`, `espaco_id` e `revisao_livro`, e recriou a FK de contas diretamente para o titular. Preserva IDs, nomes, situações, datas e vínculos. Não criou usuários, credenciais, grupos ou campos de concorrência antecipados.
 
-Novo requisito posterior de Jaime: identificar a requisição pelo Bearer e disponibilizar contexto injetável nas services. `UsuarioAtualFilter` lê o JWT por `LeitorJwtMock` e carrega `UsuarioAtual` com `id()`, `nome()` e `role()`, em escopo de requisição. `TitularService` obtém a referência diretamente desse contexto; controllers/componentes/serviços frontend não passam ID de perfil. `X-Perfil-Id` foi substituído e não é fallback.
+Novo requisito posterior de Jaime: identificar a requisição pelo Bearer e disponibilizar contexto injetável nas services. `UsuarioAtualFilter` lê o JWT por `LeitorJwtMock` e carrega `IUsuarioAtual` com `id()`, `nome()` e `role()`, em escopo de requisição. `TitularService` obtém a referência diretamente desse contexto; controllers/componentes/serviços frontend não passam ID de perfil. `X-Perfil-Id` foi substituído e não é fallback.
 
 API vigente: `/api/v1/titulares`, com `Authorization: Bearer <token>` obrigatório. `sub` determina o perfil dos registros; `name` e `role` também ficam disponíveis no contexto. Ausência/estrutura inválida retorna 401; entrada de negócio inválida continua 400 e titular inexistente/de outro perfil retorna 404. O mock aceita somente `alg: none`, assinatura vazia e claims textuais válidas, sem comprovar autenticidade ou permissão. Não há gestão de usuários, credenciais ou sessões. [Contrato do contexto](07-acesso-local.md).
 
