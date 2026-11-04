@@ -1,3 +1,33 @@
+## Diagnóstico documental do histórico concluído — 03/11/2026
+
+Concluída análise dos arquivos fornecidos para Eliane, aprofundando os movimentos com data local em 2024 e usando 2025–2026 para identificar complementos. Arquivos, hashes, cópias preservadas, linhas com proveniência, comparações de sobreposição/multiplicidade, deltas observados por fonte e relatório ficam somente em `.local/eliane2024/`. Nenhum nome completo, identificador de origem, valor ou extrato foi incluído na documentação versionada.
+
+Todas as linhas de movimento foram classificadas e preservadas. Contagem independente por células de data confirmou o inventário. A seleção do ano usa a data da linha, não o nome da pasta ou período nominal. Sobreposições, arquivo repetido, linhas fora de período e repetições internas foram registradas sem deduplicação financeira automática. Deltas por fonte não são saldos finais e fontes sobrepostas não são somadas como carteira.
+
+Os [complementos de históricos](ideias-futuras/historico-completo-corretoras/README.md) registram oportunidades de ativos adicionais, Earn, distribuições, contas internas, pequenos saldos em BNB, cotações históricas, identificação de origem/destino, proveniência e eventos especiais. Reutilizados os registros existentes para BNB, execuções, transferências, retirada, conversões e importação; nenhuma prioridade ou implementação nova aprovada.
+
+Menor próxima entrega recomendada, ainda não aprovada: ampliar controladamente os ativos necessários ao prefixo de depósitos/compras em BRL e obter os comprovantes de posição anterior e taxas. Esse prefixo é candidato de teste, não representação do ano inteiro. Não assumir taxa zero, posição anterior zero ou usar o tratamento de taxas de Jaime sem evidência específica.
+
+Somente consultas GET foram feitas à aplicação. Histórico, carteiras, posições e revisão dos dois perfis foram comparados antes/depois e permaneceram iguais. Sem SQL, carga, limpeza, reinício, alteração de código, catálogos, APIs ou migrations. Não foi necessário repetir testes automatizados de produto; foram verificados parser, classificação, contagens, multiconjuntos, hashes, links e exclusões do Git. Sem commit, push ou novo PR nesta tarefa.
+
+O histórico não está importado ou financeiramente reconciliado. Custos, pareamento definitivo, posição de encerramento, dados faltantes e novas regras continuam pendentes; as perguntas e exemplos concretos estão no relatório privado. As alterações documentais anteriores da carga de Jaime foram preservadas.
+
+As notas seguintes são históricas.
+
+## Carga real e conferência local concluídas — 03/11/2026
+
+Executada a carga pontual autorizada do relatório Binance 2024 de Jaime: 20 eventos, sendo 9 aportes e 11 compras. Preparação decimal independente anterior à limpeza, posição anterior zerada confirmada e taxas das compras OCBS tratadas como incluídas no débito, conforme confirmação de Jaime. Nenhuma abertura, aporte compensatório ou lucro foi inventado para fechar o histórico.
+
+Banco local suspenso durante backup e limpeza. Backup integral restaurado em schema separado e conferido por conteúdo e metadados antes de remover, em uma transação, operações, pontos de partida, contas e carteiras de ambos os perfis. Ativos, instituições, Flyway, constraints e sequências preservados. Criada carteira Binance para Jaime; Eliane permanece sem dados de negócio.
+
+Carga pela API existente, com prévia, revisão e chaves estáveis. Comparação por evento de tipos, referências, quantidades, principal, taxas e UTC aprovada; posições/custos/custódia conferidos contra cálculo independente. Os 20 comandos foram repetidos antes e após reiniciar, retornando os mesmos IDs sem alteração da revisão ou duplicidade. Interface conferida com os 20 registros e posições persistidas.
+
+CSV, hashes, backup, preparação, progresso, comparações e captura de tela ficam exclusivamente em `.local/binance2024/`, ignorado pelo Git. Arquivos temporários de credenciais removidos. Aplicação disponível em http://127.0.0.1:8080/. Sem alterações em código de produto, APIs, schema ou migrations; sem commit, push ou novo PR nesta execução.
+
+O recorte comprova o mapeamento e o ciclo de depósitos/compras deste arquivo, não o confronto com um extrato de custódia de encerramento, vendas, BNB, transferências ou apuração fiscal. Próximo passo: avaliação assistida por Jaime e comparação com seu controle; demais participantes e sessões posteriores continuam pendentes. A autorização de limpeza foi específica desta execução e não deve ser repetida automaticamente.
+
+As notas seguintes são históricas.
+
 ## Publicação da entrega de negociações — 03/11/2026
 
 [PR #15 — aportes e negociações com livro financeiro](https://github.com/jaimeNafer/mvp-invest/pull/15) aberto de `codex/negociacoes-livro` para `main`, sem merge automático. Commit da implementação: `9506083`. Validações locais repetidas antes da publicação: 104 testes do backend, 44 do frontend, 1 do protótipo, lint/build e pacote integrado aprovados. CI remota deve ser consultada no PR; esta nota não declara seu resultado.

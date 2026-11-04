@@ -1,5 +1,13 @@
 # Validação, testes e riscos
 
+## Primeiro recorte real conferido — 03/11/2026
+
+Executada carga pontual do relatório Binance 2024 fornecido por Jaime, sem criar importador de produto. Preparação decimal independente, validação dos 20 eventos, backup integral com recuperação comprovada e limpeza local específica autorizada antecederam a carga pela API. Tipos, quantidades, principal, taxas, referências, UTC, posições, custos e custódia conferidos; repetição com mesmas chaves antes/depois do reinício preservou IDs e revisão. Interface consultada após reinício; outro perfil permaneceu vazio.
+
+As taxas das compras OCBS foram separadas do débito total conforme esclarecimento de Jaime, sem desconto duplo; avaliações em BRL do arquivo não substituíram os movimentos efetivos. CSV, valores, identificadores, backup e evidências ficam somente em `.local/binance2024/`. Nenhum dado real foi convertido em fixture ou publicado. Esta execução não altera o comportamento da aplicação e não exigiu repetir a suíte automatizada de produto.
+
+Resultado limitado a depósitos/compras deste recorte e às premissas confirmadas; não comprova saldo de encerramento por evidência externa independente, vendas, taxas em BNB, transferências ou conformidade fiscal. Avaliação de utilidade, outro participante e sessões posteriores seguem pendentes. [Retomada](06-retomada.md#carga-real-e-conferência-local-concluídas--03112026).
+
 ## Estratégia
 
 Três evidências diferentes são necessárias: cálculo correto para casos conhecidos, aplicação funcionando de ponta a ponta e benefício percebido pelos participantes. Uma não substitui as outras.
