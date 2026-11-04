@@ -53,6 +53,8 @@ As regras seguintes são aplicadas pelo fluxo de saldo inicial. Evoluções de o
 
 Catálogo provisionado: `fiat:BRL`, `fiat:USD`, `cripto:BTC`, `cripto:ETH`, `cripto:USDT` e `cripto:USDC`, com códigos únicos, nomes/tickers e situação ativa. FIAT: BRL/USD; CRIPTO: os outros quatro. Precisão de quantidade nesta entrega: 2 casas para FIAT e até 18 para CRIPTO. Essa é uma capacidade de registro gerencial; não é uma regra de blockchain ou de uma rede específica.
 
+Evolução por V11: abertura disponível para todos os criptoativos do catálogo e BRL/USD. O catálogo de seis ativos acima registra a origem em V9, não limita a elegibilidade vigente. [Catálogo e regras atuais](17-catalogo-de-ativos.md).
+
 BRL tem custo preenchido a partir da quantidade e validado novamente no backend. Para USD, USDT e USDC, informar o custo histórico total em reais, como para os demais ativos. Não assumir paridade entre moedas. Não adicionar câmbio automático ou integração de preços nesta entrega.
 
 Criar saldo exige instituição ativa, não a existência de vínculo com uma carteira. A listagem geral do usuário permite encontrar registros fora das seleções atuais. Adicionar/remover instituições nas carteiras muda somente a visualização.

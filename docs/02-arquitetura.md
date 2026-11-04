@@ -251,3 +251,7 @@ Usecases de negociações e saldos iniciais coordenam o mesmo bloqueio de pontos
 Resultados e posições são calculados, sem projeções persistidas nesta entrega. DTOs/mappers não expõem JPA. Enums de operação só incluem os quatro tipos efetivamente implementados; não antecipar BNB, transferências ou importação. [Regras, contratos e política decimal](16-negociacoes.md).
 
 Usar imports explícitos do Lombok. O curinga lombok.* importa também tipos de inferência e provocou falha do compilador Java 27 durante esta integração; resolver com imports específicos, sem remover validações ou processors.
+
+## Catálogo e elegibilidade dos ativos
+
+O catálogo mantido pelo sistema determina os criptoativos elegíveis, sem listas de tickers repetidas nos repositories, validadores ou telas. Classificação e capacidade são expostas por snapshots escalares no contrato público entre contextos; situação ativa é validada nas novas gravações, preservando histórico e idempotência. Cotação continua BRL/USDT/USDC; abertura também aceita BRL/USD. Inclusões são migrations compatíveis, sem sobrescrever registros existentes. [Contrato vigente](17-catalogo-de-ativos.md).

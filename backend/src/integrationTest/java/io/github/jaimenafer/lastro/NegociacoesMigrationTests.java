@@ -48,7 +48,7 @@ class NegociacoesMigrationTests {
     String colunas =
         "id,perfil_ref,instituicao_id,ativo_id,tipo,data_referencia,ocorrida_em,quantidade,custo_total_brl,situacao,substitui_id,chave_requisicao,fingerprint,criado_em,criado_por,alterado_em,alterado_por";
     var antes = jdbc.queryForList("SELECT " + colunas + " FROM operacoes ORDER BY id");
-    var flyway = Flyway.configure().dataSource(fonte).load();
+    var flyway = Flyway.configure().dataSource(fonte).target("10").load();
     assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
     assertThat(jdbc.queryForList("SELECT " + colunas + " FROM operacoes ORDER BY id"))
         .isEqualTo(antes);
@@ -97,6 +97,7 @@ class NegociacoesMigrationTests {
     var flyway =
         Flyway.configure()
             .dataSource(fonte)
+            .target("10")
             .initSql("SET SESSION cte_max_recursion_depth = 1000")
             .load();
     assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);

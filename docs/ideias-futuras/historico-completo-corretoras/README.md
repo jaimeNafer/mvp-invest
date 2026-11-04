@@ -1,6 +1,6 @@
 # Complementos para representar históricos de corretoras
 
-Estado: **oportunidades a avaliar**, identificadas no diagnóstico autorizado em 03/11/2026. Nenhuma implementação, prioridade ou nova regra financeira foi aprovada. Os arquivos reais e suas evidências ficam fora do Git.
+Estado: **ampliação controlada dos ativos implementada**; demais oportunidades continuam **a avaliar**, identificadas no diagnóstico autorizado em 03/11/2026. A entrega de catálogo foi aprovada separadamente; não aprova os demais itens. Os arquivos reais e suas evidências ficam fora do Git.
 
 O ciclo entregue cobre aportes em BRL e negociações delimitadas. Históricos mais amplos contêm produtos, ativos e movimentos que exigem decisões próprias. Não omitir essas linhas e apresentar o restante como histórico completo, nem reinterpretar eventos para caber nos tipos disponíveis.
 
@@ -18,9 +18,9 @@ O ciclo entregue cobre aportes em BRL e negociações delimitadas. Históricos m
 | Conciliação de exportações e proveniência | Períodos sobrepostos e linhas idênticas podem causar duplicação ou descarte de execuções legítimas. Tornar a preparação rastreável e repetível. | Identificação do formato e das ocorrências por arquivo/aba/linha; distinguir referência de ordem, execução e movimento. | Arquivos originais com hashes, intervalos reais, comparação como multiconjuntos e justificativa de cada correspondência. [Reconstrução de execuções](../ordens-com-multiplas-execucoes/README.md) e importação do roteiro permanecem os registros relacionados. |
 | Eventos especiais: Alpha/Web3, recuperação e substituição de tokens | Rótulos de pagamento, recuperação e troca de token não explicam sozinhos o evento econômico. Evitar tratar todos como negociação comum ou renda. | Diagnóstico por tipo, identidade dos ativos, contrapartidas e decisões específicas de representação. | Comprovantes do produto/evento, referências de entrada/saída e eventual relação entre ativos antigos e novos. Oportunidade posterior; não necessária ao recorte inicial de compras. |
 
-## Encaminhamento recomendado, ainda não aprovado
+## Encaminhamento após a entrega de catálogo
 
-A menor evolução candidata é ampliar de forma controlada os ativos necessários a um prefixo de depósitos e compras em BRL, acompanhada dos comprovantes de taxas e posição anterior. Isso permite validar um fluxo restrito antes de implementar todos os produtos de um histórico anual.
+A elegibilidade por catálogo e os oito ativos adicionais foram implementados no [contrato vigente](../../17-catalogo-de-ativos.md). O prefixo de depósitos/compras ainda depende dos comprovantes de taxas e posição anterior. Sua carga não foi executada nem automaticamente aprovada por essa entrega.
 
 Dados faltantes são pré-requisitos de conferência, não funcionalidades a inventar. Não criar saldo inicial compensatório, assumir taxa zero por falta de linha de taxa ou substituir recebimentos por compras fictícias. Nenhum registro real foi carregado neste diagnóstico.
 

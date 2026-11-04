@@ -12,8 +12,8 @@ public class AtivoPersistenceAdapter implements IAtivoRepository {
   private final IAtivoJpaRepository jpa;
 
   @Override
-  public List<Ativo> findAllByCodigoInOrderByTickerAscIdAsc(List<String> codigos) {
-    return jpa.findAllByCodigoInOrderByTickerAscIdAsc(codigos);
+  public List<Ativo> findAllByOrderByTickerAscIdAsc() {
+    return jpa.findAllByOrderByTickerAscIdAsc();
   }
 
   @Override

@@ -69,3 +69,5 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 - [Enums de domínio e compatibilidade](15-enums-de-dominio.md).
 
 - [Aporte, compra e venda: contrato e cálculo](16-negociacoes.md).
+
+- [17 — Catálogo e elegibilidade de criptoativos](17-catalogo-de-ativos.md).

@@ -15,7 +15,7 @@ O [roteiro de entregas](../03-entregas.md) permanece a referência da sequência
 | [Conferência com extratos](../03-entregas.md#marco-4--conferência) | Prevista no Marco 4 | Investigar diferenças de quantidade, operações ausentes e taxas incorretas após as movimentações. |
 | [Backup e recuperação comprovada](../03-entregas.md#marco-5--organização-fiscal-e-recuperação) | Prevista no Marco 5 | Recuperar o histórico cadastrado. Recomenda-se ensaiar recuperação antes do piloto com dados reais; antecipação ainda não é prioridade aprovada. |
 | [Ordens com várias execuções e taxas distintas](ordens-com-multiplas-execucoes/README.md) | A avaliar | Verificar a necessidade com um extrato real, sem presumir consolidação automática. |
-| [Complementos para históricos de corretoras](historico-completo-corretoras/README.md) | Oportunidades a avaliar | Ativos adicionais, Earn, distribuições, contas internas, pequenos saldos em BNB, valoração histórica, origem/destino, proveniência e eventos especiais. Dependências e evidências descritas na ficha; sem prioridade aprovada. |
+| [Complementos para históricos de corretoras](historico-completo-corretoras/README.md) | Parcialmente atendida; demais oportunidades a avaliar | Elegibilidade por catálogo entregue; Earn, distribuições, contas internas, pequenos saldos em BNB, valoração histórica, origem/destino, proveniência e eventos especiais. Dependências e evidências descritas na ficha; sem prioridade aprovada. |
 | [Importação CSV](../03-entregas.md#marco-6--validação-local) | Adiada até validar o fluxo | Reduzir o esforço manual quando necessário; escolher um formato concreto de corretora antes de planejar. |
 
 O ciclo de aporte em BRL, compra e venda foi entregue, com taxas somente em uma das moedas da própria negociação. Os complementos acima continuam sujeitos a planejamento próprio; o diagnóstico de históricos não amplia automaticamente o escopo atendido.
@@ -31,3 +31,7 @@ As [novas oportunidades](historico-completo-corretoras/README.md) complementam o
 | Ideia | Estado | Objetivo |
 | --- | --- | --- |
 | [Simulador de risco](simulador-de-risco/README.md) | Para avaliar após o MVP | Explorar hipóteses de risco e retorno de uma operação acompanhada no Lastro. |
+
+## Evolução do catálogo implementada
+
+A ampliação controlada foi entregue conforme o [contrato de catálogo](../17-catalogo-de-ativos.md), com oito ativos iniciais adicionais. Novos criptoativos cadastrados não exigem outra lista de elegibilidade no Java/React. Demais produtos, importação e carga real continuam dependentes de planejamento e evidências.

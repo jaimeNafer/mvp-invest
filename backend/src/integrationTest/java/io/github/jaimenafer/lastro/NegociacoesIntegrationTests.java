@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -137,6 +139,119 @@ class NegociacoesIntegrationTests {
                 previa(perfil, cadastro).get("revisao").stringValue(),
                 UUID.randomUUID().toString())
             .andExpect(status().isCreated()));
+  }
+
+  @Test
+  void criptoAdicionadaAoCatalogoPermiteAberturaENegociacaoSemListaFixa() throws Exception {
+    jdbc.update(
+        "INSERT INTO ativos(codigo,ticker,nome,tipo,casas_decimais,ativo) VALUES"
+            + " ('cripto:TESTE','TESTE','Cripto de teste','CRIPTO',18,TRUE)");
+    long extra = ativo("TESTE");
+    mvc.perform(get("/api/v1/ativos").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[?(@.ticker == 'TESTE')].id").value(Long.toString(extra)));
+    validarCicloDoCatalogo("TESTE");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"SOL", "LINK", "NEAR", "LDO", "ARKM", "RONIN", "PYTH", "TIA"})
+  void ativosNovosPermitemAberturaCompraVendaEPosicao(String ticker) throws Exception {
+    validarCicloDoCatalogo(ticker);
+  }
+
+  private void validarCicloDoCatalogo(String ticker) throws Exception {
+    long extra = ativo(ticker);
+    mvc.perform(
+            post("/api/v1/saldos-iniciais")
+                .header("Authorization", bearer("a"))
+                .header("Idempotency-Key", UUID.randomUUID().toString())
+                .contentType("application/json")
+                .content(
+                    json.writeValueAsString(
+                        Map.of(
+                            "instituicaoId",
+                            Long.toString(binance),
+                            "ativoId",
+                            Long.toString(extra),
+                            "dataReferencia",
+                            "2026-10-05",
+                            "quantidade",
+                            "1",
+                            "custoTotalBrl",
+                            "100",
+                            "custoZeroConfirmado",
+                            false))))
+        .andExpect(status().isCreated());
+    criar("a", aporte("1000"));
+    var compra = negocio("COMPRA", "1", "200");
+    compra.put("ativoId", Long.toString(extra));
+    criar("a", compra);
+    var venda = negocio("VENDA", "1", "250");
+    venda.put("ativoId", Long.toString(extra));
+    venda.put("ocorridaEm", "2026-10-05T12:00:00-03:00");
+    assertThat(criar("a", venda).get("calculo").get("resultadoTotalBrl").stringValue())
+        .isEqualTo("100");
+    mvc.perform(get("/api/v1/posicoes").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.itens[?(@.ativoTicker == '" + ticker + "')].quantidade").value("1"))
+        .andExpect(
+            jsonPath("$.itens[?(@.ativoTicker == '" + ticker + "')].custoTotalBrl").value("150"));
+  }
+
+  @Test
+  void ativoNovoPreservaTaxasHistoricoERepeticaoAposInativacao() throws Exception {
+    criar("a", aporte("1000"));
+    long sol = ativo("SOL");
+    var compra = negocio("COMPRA", "2", "200");
+    compra.put("ativoId", Long.toString(sol));
+    compra.put("taxaAtivoId", Long.toString(brl));
+    compra.put("taxaQuantidade", "2");
+    String revisao = previa("a", compra).get("revisao").stringValue();
+    String chave = UUID.randomUUID().toString();
+    var criada = corpo(gravar("a", compra, revisao, chave).andExpect(status().isCreated()));
+    mvc.perform(get("/api/v1/posicoes").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.itens[?(@.ativoTicker == 'SOL')].custoTotalBrl").value("202"));
+    jdbc.update("UPDATE ativos SET ativo=FALSE WHERE id=?", sol);
+    var repetida = corpo(gravar("a", compra, revisao, chave).andExpect(status().isOk()));
+    assertThat(repetida.get("id").stringValue()).isEqualTo(criada.get("id").stringValue());
+    postJson("a", "/api/v1/operacoes/previa", Map.of("acao", "CRIAR", "operacao", compra))
+        .andExpect(status().isBadRequest());
+    mvc.perform(
+            get("/api/v1/operacoes/" + criada.get("id").stringValue())
+                .header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ativoTicker").value("SOL"));
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM operacoes", Integer.class)).isEqualTo(2);
+  }
+
+  @Test
+  void catalogoNaoLiberaMoedaFiatComoBaseNemNovasCotacoes() throws Exception {
+    criar("a", aporte("1000"));
+    var compra = negocio("COMPRA", "1", "100");
+    compra.put("ativoId", Long.toString(ativo("USD")));
+    postJson("a", "/api/v1/operacoes/previa", Map.of("acao", "CRIAR", "operacao", compra))
+        .andExpect(status().isBadRequest());
+    compra.put("ativoId", Long.toString(ativo("SOL")));
+    compra.put("moedaCotacaoId", Long.toString(ativo("USD")));
+    postJson("a", "/api/v1/operacoes/previa", Map.of("acao", "CRIAR", "operacao", compra))
+        .andExpect(status().isBadRequest());
+    compra.put("moedaCotacaoId", compra.get("ativoId"));
+    postJson("a", "/api/v1/operacoes/previa", Map.of("acao", "CRIAR", "operacao", compra))
+        .andExpect(status().isBadRequest());
+    compra.put("moedaCotacaoId", Long.toString(brl));
+    compra.put("quantidade", "0.0000000000000000001");
+    postJson("a", "/api/v1/operacoes/previa", Map.of("acao", "CRIAR", "operacao", compra))
+        .andExpect(status().isBadRequest());
+    compra.put("quantidade", "1");
+    compra.put("ativoId", "9223372036854775807");
+    postJson("a", "/api/v1/operacoes/previa", Map.of("acao", "CRIAR", "operacao", compra))
+        .andExpect(status().isBadRequest());
+    var venda = negocio("VENDA", "1", "100");
+    venda.put("ativoId", Long.toString(ativo("SOL")));
+    postJson("a", "/api/v1/operacoes/previa", Map.of("acao", "CRIAR", "operacao", venda))
+        .andExpect(status().isConflict());
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM operacoes", Integer.class)).isEqualTo(1);
   }
 
   @Test

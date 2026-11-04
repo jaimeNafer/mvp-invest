@@ -95,8 +95,8 @@ class SaldosIniciaisIntegrationTests {
         .containsExactly("varchar");
     mvc.perform(get("/api/v1/ativos").header("Authorization", bearer("a")))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].tipo").value("FIAT"))
-        .andExpect(jsonPath("$[1].tipo").value("CRIPTO"));
+        .andExpect(jsonPath("$[?(@.ticker == 'BRL')].tipo").value("FIAT"))
+        .andExpect(jsonPath("$[?(@.ticker == 'BTC')].tipo").value("CRIPTO"));
   }
 
   @Test
@@ -104,9 +104,9 @@ class SaldosIniciaisIntegrationTests {
     mvc.perform(get("/api/v1/ativos")).andExpect(status().isUnauthorized());
     mvc.perform(get("/api/v1/ativos").header("Authorization", bearer("a")))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(6))
+        .andExpect(jsonPath("$.length()").value(14))
         .andExpect(jsonPath("$[0].id").isString())
-        .andExpect(jsonPath("$[0].ticker").value("BRL"));
+        .andExpect(jsonPath("$[0].ticker").value("ARKM"));
     mvc.perform(post("/api/v1/ativos").header("Authorization", bearer("a")))
         .andExpect(status().isMethodNotAllowed());
     mvc.perform(get("/api/v1/saldos-iniciais").header("Authorization", bearer("a")))

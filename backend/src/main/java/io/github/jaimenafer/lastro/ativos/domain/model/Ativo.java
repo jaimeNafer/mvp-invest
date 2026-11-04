@@ -31,4 +31,12 @@ public class Ativo {
   private byte casasDecimais;
 
   private boolean ativo;
+
+  public boolean cripto() {
+    return tipo == TipoAtivo.CRIPTO;
+  }
+
+  public boolean permiteSaldoInicial() {
+    return cripto() || codigo.equals("fiat:BRL") || codigo.equals("fiat:USD");
+  }
 }

@@ -5,10 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IAtivoRepository {
-  List<String> CODIGOS =
-      List.of("fiat:BRL", "fiat:USD", "cripto:BTC", "cripto:ETH", "cripto:USDT", "cripto:USDC");
-
-  List<Ativo> findAllByCodigoInOrderByTickerAscIdAsc(List<String> codigos);
+  List<Ativo> findAllByOrderByTickerAscIdAsc();
 
   Optional<Ativo> findById(Long id);
 

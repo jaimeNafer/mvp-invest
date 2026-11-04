@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.repository.Repository;
 
 public interface IAtivoJpaRepository extends Repository<Ativo, Long> {
-  List<Ativo> findAllByCodigoInOrderByTickerAscIdAsc(List<String> codigos);
+  List<Ativo> findAllByOrderByTickerAscIdAsc();
 
   Optional<Ativo> findById(Long id);
 
