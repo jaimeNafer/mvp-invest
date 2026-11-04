@@ -1,18 +1,25 @@
 package io.github.jaimenafer.lastro;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.doAnswer;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import io.github.jaimenafer.lastro.operacoes.domain.repository.IOperacaoRepository;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.*;
 import org.testcontainers.junit.jupiter.*;
 import org.testcontainers.mysql.MySQLContainer;
@@ -29,6 +36,7 @@ class NegociacoesIntegrationTests {
   @Autowired MockMvc mvc;
   @Autowired JdbcTemplate jdbc;
   @Autowired JsonMapper json;
+  @MockitoSpyBean IOperacaoRepository repositorio;
   long binance, bitget, brl, btc, usdt;
 
   @BeforeEach
@@ -139,6 +147,222 @@ class NegociacoesIntegrationTests {
                 previa(perfil, cadastro).get("revisao").stringValue(),
                 UUID.randomUUID().toString())
             .andExpect(status().isCreated()));
+  }
+
+  @Test
+  void visaoGeralCalculaPeriodoSemPerderCustoAnterior() throws Exception {
+    criar("a", aporte("1000"));
+    var compra = negocio("COMPRA", "2", "200");
+    compra.put("taxaAtivoId", Long.toString(brl));
+    compra.put("taxaQuantidade", "2");
+    criar("a", compra);
+    var venda = negocio("VENDA", "1", "150");
+    venda.put("ocorridaEm", "2026-10-06T12:00:00-03:00");
+    venda.put("taxaAtivoId", Long.toString(brl));
+    venda.put("taxaQuantidade", "1");
+    criar("a", venda);
+    criar("b", aporte("9999"));
+    mvc.perform(
+            get("/api/v1/visao-geral")
+                .header("Authorization", bearer("a"))
+                .param("dataInicio", "2026-10-06")
+                .param("dataFim", "2026-10-06"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.revisao").value("3"))
+        .andExpect(jsonPath("$.dataReferencia").value("2026-10-05"))
+        .andExpect(jsonPath("$.possuiRegistrosAteFim").value(true))
+        .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("1048"))
+        .andExpect(jsonPath("$.resumo.resultadoRealizadoBrl").value("48"))
+        .andExpect(jsonPath("$.resumo.taxasBrl").value("1"))
+        .andExpect(jsonPath("$.resumo.aportesBrl").value("0"))
+        .andExpect(jsonPath("$.resumo.operacoesNoPeriodo").value(1))
+        .andExpect(jsonPath("$.resultado.negociacaoBrl").value("49"))
+        .andExpect(jsonPath("$.resultado.moedaBrl").value("0"))
+        .andExpect(jsonPath("$.resultado.taxaBrl").value("-1"))
+        .andExpect(jsonPath("$.posicoes[?(@.ativoTicker == 'BTC')].custoTotalBrl").value("101"))
+        .andExpect(jsonPath("$.posicoes[?(@.ativoTicker == 'BTC')].ativoNome").value("Bitcoin"));
+    mvc.perform(
+            get("/api/v1/visao-geral")
+                .header("Authorization", bearer("a"))
+                .param("dataInicio", "2026-10-05")
+                .param("dataFim", "2026-10-05"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("1000"))
+        .andExpect(jsonPath("$.resumo.taxasBrl").value("2"))
+        .andExpect(jsonPath("$.resumo.aportesBrl").value("1000"))
+        .andExpect(
+            jsonPath("$.posicoes[?(@.ativoTicker == 'BTC')].participacaoPercentual").value("20.2"));
+  }
+
+  @Test
+  void visaoGeralRespeitaLimiteDoDiaESaldoSemMovimentoNoPeriodo() throws Exception {
+    var ultimo = aporte("10");
+    ultimo.put("ocorridaEm", "2026-10-06T02:59:59.999999Z");
+    criar("a", ultimo);
+    var seguinte = aporte("20");
+    seguinte.put("ocorridaEm", "2026-10-06T03:00:00Z");
+    criar("a", seguinte);
+    mvc.perform(
+            get("/api/v1/visao-geral")
+                .header("Authorization", bearer("a"))
+                .param("dataInicio", "2026-10-01")
+                .param("dataFim", "2026-10-05"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("10"))
+        .andExpect(jsonPath("$.resumo.operacoesNoPeriodo").value(1));
+    mvc.perform(
+            get("/api/v1/visao-geral")
+                .header("Authorization", bearer("a"))
+                .param("dataInicio", "2026-10-07")
+                .param("dataFim", "2026-10-07"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("30"))
+        .andExpect(jsonPath("$.resumo.operacoesNoPeriodo").value(0));
+  }
+
+  @Test
+  void visaoGeralSemHistoricoUsaHojeENaoExigeCarteira() throws Exception {
+    String hoje = java.time.LocalDate.now(java.time.ZoneId.of("America/Fortaleza")).toString();
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.dataInicio").value(hoje))
+        .andExpect(jsonPath("$.dataFim").value(hoje))
+        .andExpect(jsonPath("$.dataReferencia").isEmpty())
+        .andExpect(jsonPath("$.possuiRegistrosAteFim").value(false))
+        .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("0"))
+        .andExpect(jsonPath("$.posicoes").isEmpty());
+    mvc.perform(get("/api/v1/visao-geral")).andExpect(status().isUnauthorized());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "2026-10-01,2026-09-30",
+    "2026-02-30,2026-10-01",
+    "2026-1-01,2026-10-01",
+    "2999-01-01,2999-01-02",
+    "2026-10-01,''",
+    "'',2026-10-01",
+    "0999-01-01,2026-10-01"
+  })
+  void visaoGeralRejeitaPeriodoInvalido(String inicio, String fim) throws Exception {
+    mvc.perform(
+            get("/api/v1/visao-geral")
+                .header("Authorization", bearer("a"))
+                .param("dataInicio", inicio)
+                .param("dataFim", fim))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void visaoGeralMantemSnapshotMesmoComEscritaEntreLeituras() throws Exception {
+    criar("a", aporte("100"));
+    CountDownLatch leuRevisao = new CountDownLatch(1);
+    CountDownLatch gravou = new CountDownLatch(1);
+    AtomicBoolean primeiraLeitura = new AtomicBoolean(true);
+    doAnswer(
+            chamada -> {
+              if (primeiraLeitura.compareAndSet(true, false)) {
+                leuRevisao.countDown();
+                assertThat(gravou.await(20, TimeUnit.SECONDS)).isTrue();
+              }
+              return chamada.callRealMethod();
+            })
+        .when(repositorio)
+        .historico("a");
+    try (var executor = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      var consulta =
+          executor.submit(() ->
+              corpo(
+                  mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer("a")))
+                      .andExpect(status().isOk())));
+      assertThat(leuRevisao.await(20, TimeUnit.SECONDS)).isTrue();
+      try {
+        criar("a", aporte("10"));
+      } finally {
+        gravou.countDown();
+      }
+      var anterior = consulta.get(20, TimeUnit.SECONDS);
+      assertThat(anterior.get("revisao").stringValue()).isEqualTo("1");
+      assertThat(anterior.get("resumo").get("custoSaldosBrl").stringValue()).isEqualTo("100");
+    }
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.revisao").value("2"))
+        .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("110"));
+  }
+
+  @Test
+  void visaoGeralContaAberturaSemConfundirComAporteEMantemCustoZero() throws Exception {
+    mvc.perform(
+            post("/api/v1/saldos-iniciais")
+                .header("Authorization", bearer("a"))
+                .header("Idempotency-Key", UUID.randomUUID().toString())
+                .contentType("application/json")
+                .content(
+                    json.writeValueAsString(
+                        Map.of(
+                            "instituicaoId",
+                            Long.toString(binance),
+                            "ativoId",
+                            Long.toString(btc),
+                            "dataReferencia",
+                            "2026-10-01",
+                            "quantidade",
+                            "1",
+                            "custoTotalBrl",
+                            "0",
+                            "custoZeroConfirmado",
+                            true,
+                            "justificativaCustoZero",
+                            "Origem comprovada"))))
+        .andExpect(status().isCreated());
+    jdbc.update("UPDATE ativos SET ativo=FALSE WHERE id=?", btc);
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.dataInicio").value("2026-10-01"))
+        .andExpect(jsonPath("$.resumo.operacoesNoPeriodo").value(1))
+        .andExpect(jsonPath("$.resumo.aportesBrl").value("0"))
+        .andExpect(jsonPath("$.posicoes[0].quantidade").value("1"))
+        .andExpect(jsonPath("$.posicoes[0].participacaoPercentual").isEmpty());
+    mvc.perform(
+            get("/api/v1/visao-geral")
+                .header("Authorization", bearer("a"))
+                .param("dataInicio", "2026-09-01")
+                .param("dataFim", "2026-09-30"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.dataReferencia").value("2026-10-01"))
+        .andExpect(jsonPath("$.possuiRegistrosAteFim").value(false))
+        .andExpect(jsonPath("$.posicoes").isEmpty());
+  }
+
+  @Test
+  void visaoGeralConsideraSomenteVersoesVigentes() throws Exception {
+    var original = criar("a", aporte("100"));
+    var revisada = aporte("150");
+    revisada.put("motivo", "Valor conferido");
+    var nova =
+        corpo(
+            mvc.perform(
+                    post("/api/v1/operacoes/" + original.get("id").stringValue() + "/substituicoes")
+                        .header("Authorization", bearer("a"))
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
+                        .contentType("application/json")
+                        .content(
+                            json.writeValueAsString(Map.of("revisao", "1", "operacao", revisada))))
+                .andExpect(status().isCreated()));
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("150"))
+        .andExpect(jsonPath("$.resumo.operacoesNoPeriodo").value(1));
+    postJson(
+            "a",
+            "/api/v1/operacoes/" + nova.get("id").stringValue() + "/cancelamento",
+            Map.of("revisao", "2", "motivo", "Evento não ocorreu"))
+        .andExpect(status().isOk());
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("0"))
+        .andExpect(jsonPath("$.resumo.operacoesNoPeriodo").value(0));
   }
 
   @Test

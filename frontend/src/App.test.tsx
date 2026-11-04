@@ -16,7 +16,7 @@ describe("login pelo serviço local do frontend", () => {
     expect(screen.getByLabelText("Senha")).toHaveValue("");
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: " Jaime " } });
     fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
-    expect(await screen.findByRole("heading", { name: "Olá, Jaime." })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Visão geral" })).toBeVisible();
     const tokenJaime = armazenamentoLocal.obter("lastro.token");
     expect(tokenJaime).not.toBeNull();
     const [header, payload, assinatura] = (tokenJaime ?? "").split(".");
@@ -34,7 +34,7 @@ describe("login pelo serviço local do frontend", () => {
     expect(screen.getByLabelText("Senha")).toHaveValue("");
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: "eliane" } });
     fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
-    expect(await screen.findByRole("heading", { name: "Olá, Eliane." })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Visão geral" })).toBeVisible();
     const payloadEliane = (armazenamentoLocal.obter("lastro.token") ?? "").split(".")[1];
     expect(JSON.parse(atob(payloadEliane))).toMatchObject({
       sub: "2",
@@ -42,7 +42,7 @@ describe("login pelo serviço local do frontend", () => {
       role: "acesso_total",
     });
     expect(screen.queryByRole("heading", { name: "Olá, Jaime." })).not.toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock.mock.calls.every(([url]) => url === "/api/v1/visao-geral")).toBe(true);
   });
 
   it.each([
@@ -63,7 +63,7 @@ describe("login pelo serviço local do frontend", () => {
     const { unmount } = render(<App />);
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: "jaime" } });
     fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
-    await screen.findByRole("heading", { name: "Olá, Jaime." });
+    await screen.findByRole("heading", { name: "Visão geral" });
     const token = armazenamentoLocal.obter("lastro.token");
     unmount();
     render(<App />);

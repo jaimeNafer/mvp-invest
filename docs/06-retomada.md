@@ -1,3 +1,23 @@
+## Ajuda sobre custo de aquisição — 04/11/2026
+
+Substituído o rótulo “Custo baixado” por “Custo de aquisição utilizado” no componente comum à prévia e aos detalhes. Ícone de informação explica o custo médio anterior e o custo de unidades adicionais eventualmente utilizadas para taxas. Ajuda reutilizável por cursor, foco ou clique; Escape dispensa somente a tooltip; botão não submete o formulário. Sem mudança de cálculos, API ou banco.
+
+Frontend: 71 testes, lint, typecheck/build e pacote integrado aprovados. Testes cobrem rótulo, valor preservado, cursor, descrição acessível, teclado/Escape e clique sem submissão. [Contrato atualizado](16-negociacoes.md#clareza-do-custo-utilizado--04112026). Alterações permanecem na branch codex/visao-geral, sem nova publicação.
+
+## Visão geral compacta e percentuais — 03/11/2026
+
+Implementada a página inicial de consolidação por usuário, com período, indicadores, composição a custo, saldos/custódia e parcelas do resultado. Consulta única com snapshot REPEATABLE_READ; fatos anteriores ao período continuam formando o custo. Sem alterações de schema, migrations ou comandos de gravação. [Contrato](18-visao-geral.md).
+
+Percentuais exibidos com duas casas HALF_EVEN por serviço reutilizável BigInt; API/barras preservam precisão e tooltip mostra o valor completo. Valores positivos abaixo de 0,01% não aparecem como zero. Sem cotação de mercado ou rentabilidade nesta fatia.
+
+Verificações: 138 testes backend aprovados (57 unitários/arquiteturais e 81 integrados MySQL), incluindo snapshot durante escrita concorrente, versões e cinco mil fatos sintéticos. Frontend final: 68 testes, lint, typecheck/build; pacote integrado reconstruído. Protótipo: 1 teste aprovado. Revisão independente resolveu ausência de registros apresentada como custo zero e altura do controle de custódia. Corrigida a precedência do padding específico da página e reutilizados os botões da aplicação.
+
+No navegador: seis ativos com duas custódias cada em MySQL descartável, viewport 1366×768 e documento de 768 px, sem rolagem vertical. A 390 px, indicadores em duas colunas e área principal empilhada, sem transbordamento horizontal da página. Aplicação pessoal reiniciada; consultas anteriores, fatos, posições e revisões dos dois perfis comparados e preservados. Somente GET no banco pessoal; evidências e capturas privadas em .local/visao-geral/.
+
+Disponível em http://127.0.0.1:8080/, branch codex/visao-geral, sem commit/push/novo PR desta entrega. Próximas evoluções priorizadas por Jaime: [série mensal do custo, valor de mercado e rentabilidade](ideias-futuras/evolucao-e-valoracao/README.md), cada uma sujeita a planejamento de fonte/metodologia. Demais lacunas do histórico permanecem no backlog.
+
+As notas seguintes são históricas.
+
 ## Catálogo de criptoativos concluído — 03/11/2026
 
 Elegibilidade baseada na classificação CRIPTO do catálogo, sem listas fixas de tickers no backend/React. Abertura admite criptoativos e BRL/USD; cotação permanece BRL/USDT/USDC e taxa somente nas moedas do par. REST mantém campos; snapshot interno AtivoResumo acrescenta boolean cripto, sem enum de outro contexto. [Contrato e ativos](17-catalogo-de-ativos.md).

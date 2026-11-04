@@ -23,6 +23,7 @@ describe("cadastro de carteiras", () => {
   it("cria e edita instituições pela modal, arquiva e reativa, mantendo perfis separados pelo Bearer", async () => {
     const registros: (Carteira & { perfil: string })[] = [];
     const fetchMock = vi.fn(async (url: string, opcoes?: RequestInit) => {
+      if (url === "/api/v1/visao-geral") return json({ detail: "Consulta indisponível." }, 503);
       if (endpointInstituicoes(url)) return json(catalogo);
       const token = new Headers(opcoes?.headers).get("Authorization")?.slice(7) ?? "";
       const perfil = JSON.parse(atob(token.split(".")[1])).sub as string;
@@ -57,7 +58,7 @@ describe("cadastro de carteiras", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: "jaime" } });
     fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
-    await screen.findByRole("heading", { name: "Olá, Jaime." });
+    await screen.findByRole("heading", { name: "Visão geral" });
     fireEvent.click(screen.getByRole("button", { name: "Carteiras" }));
     await screen.findByText("Nenhuma carteira cadastrada.");
     fireEvent.click(screen.getByRole("button", { name: "Adicionar carteira" }));
@@ -100,7 +101,7 @@ describe("cadastro de carteiras", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sair" }));
     fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: "eliane" } });
     fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
-    await screen.findByRole("heading", { name: "Olá, Eliane." });
+    await screen.findByRole("heading", { name: "Visão geral" });
     fireEvent.click(screen.getByRole("button", { name: "Carteiras" }));
     await screen.findByText("Nenhuma carteira cadastrada.");
     expect(screen.queryByText("Longo prazo")).not.toBeInTheDocument();

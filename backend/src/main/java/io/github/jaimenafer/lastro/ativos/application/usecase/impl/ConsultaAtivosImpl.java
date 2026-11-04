@@ -32,6 +32,7 @@ public class ConsultaAtivosImpl implements IConsultaAtivos {
         ativo.getId(),
         ativo.getCodigo(),
         ativo.getTicker(),
+        ativo.getNome(),
         ativo.getCasasDecimais(),
         ativo.isAtivo(),
         ativo.permiteSaldoInicial(),

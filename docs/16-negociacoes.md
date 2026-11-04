@@ -59,3 +59,9 @@ No navegador: acesso, listagem unificada, posição atual, abertura do formulár
 Revisões corrigidas: limite temporário da CTE na migração; autoria no DTO; proteção contra saída no primeiro POST pendente; rejeição de consulta com revisões divergentes; moeda negativa HALF_EVEN e duas casas com valor exato acessível. Nenhum achado material aberto dessas revisões.
 
 Branch de publicação: codex/negociacoes-livro. Alterações do backlog anteriores incluídas na entrega; publicação do PR solicitada por Jaime, sem merge automático. BNB permanece confirmado para o futuro. Próximo passo de produto: validar um recorte real do ciclo e escolher os complementos do backlog com base nessa conferência.
+
+## Clareza do custo utilizado — 04/11/2026
+
+A interface apresenta custoBaixadoBrl como “Custo de aquisição utilizado”, na prévia e nos detalhes. A ajuda explica o custo histórico dos ativos/moedas que saem pelo custo médio anterior; na venda, quantidade vendida × custo médio. Se houver saída adicional de ativos para pagar taxas, o custo dessas unidades também participa. Campos, valores e regras da API permanecem iguais.
+
+A ajuda reutilizável abre por cursor, foco ou clique; Escape fecha somente a tooltip, preservando a modal e o foco. O botão de informação não submete formulários. Manter essas propriedades ao reutilizar o componente.

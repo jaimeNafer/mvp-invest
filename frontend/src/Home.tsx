@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Carteiras from "./Carteiras";
 import Operacoes from "./Operacoes";
+import VisaoGeral from "./VisaoGeral";
 import type { Usuario } from "./services/autenticacao";
 
 type HomeProps = {
@@ -9,15 +10,23 @@ type HomeProps = {
 };
 
 export default function Home({ usuario, onLogout }: HomeProps) {
-  const [pagina, setPagina] = useState<"perfil" | "carteiras" | "operacoes">("perfil");
+  const [pagina, setPagina] = useState<"visao" | "perfil" | "carteiras" | "operacoes">("visao");
   return (
-    <div className="layout">
+    <div className={`layout ${pagina === "visao" ? "visao-geral-layout" : ""}`}>
       <aside className="sidebar" aria-label="Lastro">
         <a className="brand" href="/" aria-label="Lastro — início">
           lastro<span>↗</span>
         </a>
         <p className="tagline">CLAREZA PARA SUAS CONTAS</p>
         <nav aria-label="Navegação principal">
+          <button
+            className={`sidebar-link ${pagina === "visao" ? "sidebar-current" : ""}`}
+            type="button"
+            aria-current={pagina === "visao" ? "page" : undefined}
+            onClick={() => setPagina("visao")}
+          >
+            Visão geral
+          </button>
           <button
             className={`sidebar-link ${pagina === "perfil" ? "sidebar-current" : ""}`}
             type="button"
@@ -54,10 +63,18 @@ export default function Home({ usuario, onLogout }: HomeProps) {
         <header className="topbar">
           <span>
             Lastro <span className="separator">/</span>{" "}
-            {pagina === "perfil" ? "Perfil" : pagina === "carteiras" ? "Carteiras" : "Operações"}
+            {pagina === "visao"
+              ? "Visão geral"
+              : pagina === "perfil"
+                ? "Perfil"
+                : pagina === "carteiras"
+                  ? "Carteiras"
+                  : "Operações"}
           </span>
         </header>
-        {pagina === "operacoes" ? (
+        {pagina === "visao" ? (
+          <VisaoGeral onOperacoes={() => setPagina("operacoes")} />
+        ) : pagina === "operacoes" ? (
           <Operacoes />
         ) : pagina === "carteiras" ? (
           <Carteiras />

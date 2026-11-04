@@ -10,6 +10,7 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 
 | Documento | Pergunta que responde |
 | --- | --- |
+| [Visão geral compacta](18-visao-geral.md) | Como consultar custos e resultados por período sem confundir custo com valor de mercado? |
 | [Auditoria modular](13-auditoria-modular.md) | Quais fronteiras são públicas, quais dependências são permitidas e como são verificadas? |
 | [Backlog de ideias futuras](ideias-futuras/README.md) | Quais oportunidades podemos avaliar depois do MVP? |
 | [Produto e escopo](01-produto.md) | Para quem estamos construindo, qual problema resolvemos e o que entra? |

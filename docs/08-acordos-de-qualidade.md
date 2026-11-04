@@ -122,3 +122,11 @@ Por revisão explícita de Jaime, o advice trata apenas negócio, validação e 
 ## Catálogo e elegibilidade dos ativos
 
 O catálogo mantido pelo sistema determina os criptoativos elegíveis, sem listas de tickers repetidas nos repositories, validadores ou telas. Classificação e capacidade são expostas por snapshots escalares no contrato público entre contextos; situação ativa é validada nas novas gravações, preservando histórico e idempotência. Cotação continua BRL/USDT/USDC; abertura também aceita BRL/USD. Inclusões são migrations compatíveis, sem sobrescrever registros existentes. [Contrato vigente](17-catalogo-de-ativos.md).
+
+## Densidade visual e consolidação
+
+Por pedido de Jaime, priorizar informações essenciais e aproveitar o espaço: cabeçalhos baixos, blocos com 12–16 px e controles legíveis. A Visão geral deve caber em 1366×768 com seis ativos e custódia resumida, sem ocultar valores ou criar rolagens verticais independentes. Resumos por período preservam o custo anterior; totais financeiros vêm do backend. Custo, valor de mercado e rentabilidade são conceitos distintos. [Aceite](18-visao-geral.md).
+
+Percentuais da composição: manter precisão da API e barras, exibir duas casas com HALF_EVEN, oferecer valor completo no tooltip e diferenciar percentual positivo abaixo de 0,01% de zero. Usar serviço decimal reutilizável com BigInt; não converter valores financeiros em Number para formatar.
+
+Rótulos financeiros devem explicar sua finalidade; termos internos podem receber nomes de produto mais claros sem alterar contratos. Ajuda contextual deve funcionar por cursor, teclado e toque, sem submeter formulários ou fechar a modal ao dispensá-la. Mecanismo reutilizável de tooltip fica separado dos textos de negócio.

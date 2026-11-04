@@ -4,6 +4,7 @@ public record AtivoResumo(
     Long id,
     String codigo,
     String ticker,
+    String nome,
     int casasDecimais,
     boolean ativo,
     boolean permiteSaldoInicial,

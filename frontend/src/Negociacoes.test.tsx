@@ -426,7 +426,7 @@ describe("ciclo de negociações", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: `Detalhes da operação ${operacao.id}` }),
     );
-    expect(await screen.findByText("R$ 94,00")).toBeVisible();
+    await waitFor(() => expect(screen.getByText("R$ 94,00")).toBeVisible());
   });
 
   it("corrige e cancela negociações com motivo e prévia obrigatória", async () => {

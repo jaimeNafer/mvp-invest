@@ -158,3 +158,9 @@ Estas instruções se aplicam ao repositório inteiro. Foram solicitadas por Jai
 - AtivoResumo expõe classificação escalar cripto pelo contrato público entre contextos; não importar TipoAtivo do domínio de ativos em operações. REST mantém formato e catálogo ordenado, incluindo inativos.
 - Inclusões futuras são migrations revisadas, preservando registros compatíveis e interrompendo colisões antes da inserção. Precisão de 18 casas dos criptoativos é capacidade de registro, não regra de blockchain. Não acrescentar outra whitelist ao incluir outros criptoativos.
 - Contrato em docs/17-catalogo-de-ativos.md. A elegibilidade não autoriza novos tipos financeiros ou carga de dados reais.
+
+## Visão geral e densidade visual — 03/11/2026
+
+- Priorizar apresentação compacta: espaços/preenchimento de 12–16 px, cabeçalhos baixos, controles mínimos de 36 px em desktop e 44 px no toque. Não ocultar valores nem criar vários painéis de rolagem vertical. Visão geral com seis ativos e custódia resumida deve caber em 1366×768.
+- Consolidação global por usuário: saldos até a data final, resultados/taxas/aportes do período, mantendo fatos anteriores para o custo. Nova consulta somente leitura usa REPEATABLE_READ para snapshot consistente; comandos mantêm READ_COMMITTED e bloqueios.
+- Totais e percentuais financeiros calculados no backend. React apresenta valores exatos e ignora respostas canceladas. Não confundir custo com preço de mercado ou rentabilidade. Série mensal, valoração e rentabilidade foram priorizadas como evoluções, ainda não implementadas. Contrato em docs/18-visao-geral.md.
