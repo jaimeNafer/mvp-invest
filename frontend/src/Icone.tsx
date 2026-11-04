@@ -1,4 +1,4 @@
-type Nome = "adicionar" | "editar" | "arquivar" | "reativar" | "fechar";
+type Nome = "adicionar" | "editar" | "arquivar" | "reativar" | "fechar" | "informacao";
 
 const desenhos: Record<Nome, string> = {
   adicionar: "M12 5v14M5 12h14",
@@ -6,6 +6,7 @@ const desenhos: Record<Nome, string> = {
   arquivar: "M3 4h18v4H3zM5 8v12h14V8M9 12h6",
   reativar: "M3 10a9 9 0 1 1 1 8M3 4v6h6M12 8v8M8 12l4-4 4 4",
   fechar: "m6 6 12 12M6 18 18 6",
+  informacao: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 11v6M12 7h.01",
 };
 
 export default function Icone({ nome }: { nome: Nome }) {

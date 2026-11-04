@@ -1,7 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { decimalCanonico, decimalPtBr, moeda } from "./decimais";
+import { decimalCanonico, decimalPtBr, moeda, percentual } from "./decimais";
 
 describe("representação decimal", () => {
+  it.each([
+    ["44.4444", "44,44%"],
+    ["33.3333", "33,33%"],
+    ["22.2222", "22,22%"],
+    ["1.005", "1,00%"],
+    ["1.015", "1,02%"],
+    ["99.995", "100,00%"],
+    ["0", "0,00%"],
+    ["100", "100,00%"],
+    ["0.01", "0,01%"],
+    ["0.009999999999999999", "< 0,01%"],
+    ["0.000000000000000001", "< 0,01%"],
+    ["1.005000000000000001", "1,01%"],
+    ["-1.015", "-1,02%"],
+    ["-0.000001", "> -0,01%"],
+  ])("apresenta percentual %s com duas casas sem perda de precisão", (valor, esperado) => {
+    expect(percentual(valor)).toBe(esperado);
+  });
+
   it("converte pt-BR sem perder dígitos", () => {
     expect(decimalCanonico("1.234,56000001")).toBe("1234.56000001");
     expect(decimalCanonico("0,000000000000000001")).toBe("0.000000000000000001");

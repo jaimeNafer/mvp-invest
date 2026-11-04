@@ -11,6 +11,7 @@ const session = {
 describe("perfil selecionado", () => {
   it("apresenta a identidade recebida do serviço", () => {
     render(<Home usuario={session} onLogout={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Meu perfil" }));
     expect(screen.getByRole("heading", { name: "Olá, Jaime." })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Meu perfil" })).toBeVisible();
     expect(screen.getByText("jaime", { exact: true })).toBeVisible();

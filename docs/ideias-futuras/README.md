@@ -8,6 +8,7 @@ O [roteiro de entregas](../03-entregas.md) permanece a referência da sequência
 
 | Funcionalidade | Estado | Valor e encaminhamento |
 | --- | --- | --- |
+| [Série mensal, valor de mercado e rentabilidade](evolucao-e-valoracao/README.md) | Evoluções priorizadas por Jaime | Após a Visão geral a custo, nesta ordem; fonte e metodologia exigem planejamento próprio. |
 | [Taxas da Binance pagas em BNB](taxas-em-bnb/README.md) | Confirmada para o futuro | Representar a taxa na moeda efetivamente debitada, com saldo e custo de BNB. Fora da próxima entrega. |
 | [Transferências próprias com taxa de rede](../03-entregas.md#marco-3--livro-e-resultados-rastreáveis) | Prevista no Marco 3 | Alterar custódia entre instituições do mesmo usuário, preservando custo global e considerando a taxa. |
 | [Retirada em BRL](../03-entregas.md#marco-3--livro-e-resultados-rastreáveis) | Prevista no Marco 3 | Registrar saída de dinheiro sem confundi-la com prejuízo. |

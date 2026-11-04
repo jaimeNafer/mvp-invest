@@ -4,6 +4,10 @@ Estado em 03/11/2026: carteiras, execução Java 27 e saldo inicial implementado
 
 **Etapa de carteiras concluída por Jaime em 02/11/2026**, originalmente publicada no PR #12. O novo requisito altera a propriedade das contas e a execução em Java 27; a [modelagem vigente](10-modelagem-de-carteiras.md) substitui a anterior. Pendências de ativos/identidade externa não estão incluídas nesta correção.
 
+## Visão geral compacta
+
+Consolidação por usuário com período, custo dos saldos, resultado realizado, taxas, contagem, composição a custo e custódia resumida. [Contrato e aceite](18-visao-geral.md). Evoluções priorizadas: [série mensal, valor de mercado e rentabilidade](ideias-futuras/evolucao-e-valoracao/README.md).
+
 ## Catálogo de criptoativos — entrega concluída
 
 Disponíveis saldo inicial e negociações para criptoativos do catálogo mantido pelo sistema, sem listas fixas de elegibilidade. V11 acrescenta oito ativos; contratos REST e fatos preservados. [Regras, catálogo e validação](17-catalogo-de-ativos.md). Carga real do outro participante segue pendente dos comprovantes.
@@ -72,7 +76,8 @@ Primeira fatia: [saldo inicial — contrato e exemplos](12-saldo-inicial.md). Pl
 - [ ] Nas transferências entre instituições do próprio usuário, preservar custo global e alterar custódia, considerando a taxa de rede e o suporte à moeda em que ela foi cobrada. Não representar transferência como compra, venda ou aporte.
 - [x] Implementar taxas nas moedas da negociação, custo médio contínuo por usuário/ativo, custódia por usuário/instituição, parcelas de resultado e saldo suficiente; nunca vincular o histórico ao ID da associação da carteira.
 - [x] Implementar correção por substituição, cancelamento com motivo e histórico consultável para saldo inicial, aporte, compra e venda. Recalcular de forma transacional e impedir conflito de revisão e repetição da mesma submissão.
-- [ ] Entregar listagem paginada, detalhe do lançamento/cálculo, visão geral, composição e detalhe da posição; preservar o tratamento honesto do gráfico de referências históricas.
+- [x] Entregar listagem paginada e detalhe do lançamento/cálculo; visão geral por período e composição a custo com custódia.
+- [ ] Entregar detalhe da posição e, na sequência priorizada, série mensal do custo, valor de mercado e rentabilidade com fontes e metodologia próprias. Não usar custo como se fosse preço de mercado.
 
 **Aceite:** fixtures conferidas batem nos valores esperados; trocar o filtro mensal não altera custo histórico. Uma correção antiga válida atualiza resultados; uma inválida não muda o livro. Salvar duas vezes a mesma requisição não duplica operação. Tudo permanece após reiniciar.
 

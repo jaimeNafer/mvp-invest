@@ -255,3 +255,7 @@ Usar imports explícitos do Lombok. O curinga lombok.* importa também tipos de 
 ## Catálogo e elegibilidade dos ativos
 
 O catálogo mantido pelo sistema determina os criptoativos elegíveis, sem listas de tickers repetidas nos repositories, validadores ou telas. Classificação e capacidade são expostas por snapshots escalares no contrato público entre contextos; situação ativa é validada nas novas gravações, preservando histórico e idempotência. Cotação continua BRL/USDT/USDC; abertura também aceita BRL/USD. Inclusões são migrations compatíveis, sem sobrescrever registros existentes. [Contrato vigente](17-catalogo-de-ativos.md).
+
+## Visão geral por período
+
+Consulta no contexto operacoes: API → IVisaoGeralUseCase → contratos de domínio/catálogos, MotorLivro e ConsolidadorVisaoGeral. A nova leitura usa REPEATABLE_READ somente leitura para revisão e fatos do mesmo snapshot, sem mudar READ_COMMITTED dos comandos. Custo anterior ao período é preservado; React apresenta DTO único, sem somar valores financeiros. [Contrato](18-visao-geral.md).

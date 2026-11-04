@@ -28,9 +28,13 @@ Estado em 02/11/2026: carteiras e saldo inicial disponíveis localmente. Abertur
 
 ## Fatia de negociações — 03/11/2026
 
-Aporte em BRL, compra e venda à vista de BTC/ETH/USDT/USDC, cotadas em BRL/USDT/USDC, com taxas somente nas moedas da negociação. Quantidade e total bruto são informados; preço é derivado. Cotação histórica em reais é informada para stablecoins. Prévia e confirmação usam o mesmo motor Java; alterações antigas inválidas são recusadas por inteiro. Posição atual mostra quantidade/custo/custódia, e não valor de mercado.
+Aporte em BRL, compra e venda à vista de criptoativos do catálogo, cotadas em BRL/USDT/USDC, com taxas somente nas moedas da negociação. Quantidade e total bruto são informados; preço é derivado. Cotação histórica em reais é informada para stablecoins. Prévia e confirmação usam o mesmo motor Java; alterações antigas inválidas são recusadas por inteiro. Posição atual mostra quantidade/custo/custódia, e não valor de mercado.
 
 O [contrato](16-negociacoes.md) descreve revisão, repetição, histórico e precisão. BNB e ordens com múltiplas execuções seguem os estados do [backlog](ideias-futuras/README.md); transferências, retiradas, outros pares e importação permanecem futuros. Evidências finais de execução ficam em [Validação](04-validacao.md).
+
+## Visão geral por período — 03/11/2026
+
+Página inicial compacta com custo dos saldos até a data final, resultado realizado, taxas e operações do período, composição a custo e custódia. Histórico anterior é preservado no cálculo. Percentuais são apresentados com duas casas, mantendo precisão interna. [Contrato](18-visao-geral.md). Série mensal, valor de mercado e rentabilidade são evoluções priorizadas, ainda não implementadas.
 
 ## Capacidades da primeira entrega
 
