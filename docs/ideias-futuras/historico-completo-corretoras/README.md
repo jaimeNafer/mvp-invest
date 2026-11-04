@@ -1,0 +1,29 @@
+# Complementos para representar históricos de corretoras
+
+Estado: **oportunidades a avaliar**, identificadas no diagnóstico autorizado em 03/11/2026. Nenhuma implementação, prioridade ou nova regra financeira foi aprovada. Os arquivos reais e suas evidências ficam fora do Git.
+
+O ciclo entregue cobre aportes em BRL e negociações delimitadas. Históricos mais amplos contêm produtos, ativos e movimentos que exigem decisões próprias. Não omitir essas linhas e apresentar o restante como histórico completo, nem reinterpretar eventos para caber nos tipos disponíveis.
+
+## Oportunidades identificadas
+
+| Oportunidade | Problema observado e valor entregue | Dependências | Evidência para planejar |
+| --- | --- | --- | --- |
+| Ampliação controlada dos ativos negociáveis | O catálogo e a seleção de ativos atendidos restringem compras reais. Permitir o próximo conjunto necessário sem duplicar ativos ou liberar classificações indiscriminadamente. | Identidade do ativo, código, precisão e revisão das regras de negociação/saldo inicial; escopo explícito dos pares. | Comprovantes de compras, quantidades brutas/líquidas, taxa e especificações dos ativos candidatos. Ticker sozinho não resolve identidade ou substituição de token. |
+| Earn: principal, aplicação, resgate e rendimento | Aplicações/resgates e recompensas aparecem como movimentos distintos. Representar custódia e rendimento sem duplicar principal nem inventar uma compra. | Cobertura do produto e das contas, contrapartidas, posição anterior e decisão documentada sobre custo/valoração dos recebimentos. | Extrato do produto, aplicações, resgates, rendimentos e posição por data; relação com os movimentos Spot. |
+| Airdrops e outras distribuições | Créditos de origens distintas não são automaticamente aportes ou compras. Preservar origem e quantidade sem presumir custo zero. | Identificação da natureza do recebimento e política de custo/valoração ainda a definir. | Documento da distribuição, quantidade, instante e evidência que sustente o custo ou valor informado. Não antecipar regra tributária. |
+| Contas internas e produtos da mesma instituição | Spot, Funding e Alpha não são instituições diferentes. Distinguir localização e movimentos internos sem duplicar o patrimônio nem o custo global. | Cobertura dos extratos e pares de transferência; decisão de produto/modelagem antes da implementação. | Extratos de origem e destino, correspondências entre movimentos e posições por conta/produto. Reutilizar o item de transferências do roteiro, sem confundir transferência interna com troca de instituição. |
+| Conversão de pequenos saldos em BNB | Várias saídas podem corresponder a uma entrada em BNB. Explicar o evento e suas taxas sem confundi-lo com taxa de negociação paga em BNB. | Suporte aos ativos, custos históricos, identificação das pernas e política de valoração. | Comprovante da conversão com moedas entregues, BNB recebido, taxas e referências. Complementa conversões do roteiro; não substitui a ficha de taxas em BNB. |
+| Cotações históricas em BRL com proveniência | Linhas de quantidade não informam o equivalente histórico em reais. Tornar os cálculos verificáveis sem usar cotação atual ou assumir stablecoin igual a real. | Definição da fonte, instante, moeda, precisão e procedimento para ausência de informação. | Comprovante com valor em BRL ou fonte histórica verificável associada ao evento. A escolha de provedor e automação continua aberta. |
+| Identificação de origem/destino de depósitos e saques | Uma entrada não prova aporte novo; uma saída não prova venda, perda ou transferência própria. Evitar classificação financeira incorreta. | Confirmação da titularidade, contrapartida, custos e taxas; tipos de movimentação já previstos no roteiro. | Referência da transação, instituição/conta de origem e destino, comprovante e taxa. Complemento dos itens existentes de transferência, retirada e conferência; sem nova ficha duplicada para esses fluxos. |
+| Conciliação de exportações e proveniência | Períodos sobrepostos e linhas idênticas podem causar duplicação ou descarte de execuções legítimas. Tornar a preparação rastreável e repetível. | Identificação do formato e das ocorrências por arquivo/aba/linha; distinguir referência de ordem, execução e movimento. | Arquivos originais com hashes, intervalos reais, comparação como multiconjuntos e justificativa de cada correspondência. [Reconstrução de execuções](../ordens-com-multiplas-execucoes/README.md) e importação do roteiro permanecem os registros relacionados. |
+| Eventos especiais: Alpha/Web3, recuperação e substituição de tokens | Rótulos de pagamento, recuperação e troca de token não explicam sozinhos o evento econômico. Evitar tratar todos como negociação comum ou renda. | Diagnóstico por tipo, identidade dos ativos, contrapartidas e decisões específicas de representação. | Comprovantes do produto/evento, referências de entrada/saída e eventual relação entre ativos antigos e novos. Oportunidade posterior; não necessária ao recorte inicial de compras. |
+
+## Encaminhamento recomendado, ainda não aprovado
+
+A menor evolução candidata é ampliar de forma controlada os ativos necessários a um prefixo de depósitos e compras em BRL, acompanhada dos comprovantes de taxas e posição anterior. Isso permite validar um fluxo restrito antes de implementar todos os produtos de um histórico anual.
+
+Dados faltantes são pré-requisitos de conferência, não funcionalidades a inventar. Não criar saldo inicial compensatório, assumir taxa zero por falta de linha de taxa ou substituir recebimentos por compras fictícias. Nenhum registro real foi carregado neste diagnóstico.
+
+Não há proposta de classes, tabelas, clientes externos ou arquitetura de importação nesta ficha. Ao priorizar um item, definir comportamento e critérios de aceite com exemplos confirmados.
+
+[Índice do backlog](../README.md) · [Roteiro](../../03-entregas.md) · [Retomada](../../06-retomada.md)

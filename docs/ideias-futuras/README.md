@@ -15,9 +15,16 @@ O [roteiro de entregas](../03-entregas.md) permanece a referência da sequência
 | [Conferência com extratos](../03-entregas.md#marco-4--conferência) | Prevista no Marco 4 | Investigar diferenças de quantidade, operações ausentes e taxas incorretas após as movimentações. |
 | [Backup e recuperação comprovada](../03-entregas.md#marco-5--organização-fiscal-e-recuperação) | Prevista no Marco 5 | Recuperar o histórico cadastrado. Recomenda-se ensaiar recuperação antes do piloto com dados reais; antecipação ainda não é prioridade aprovada. |
 | [Ordens com várias execuções e taxas distintas](ordens-com-multiplas-execucoes/README.md) | A avaliar | Verificar a necessidade com um extrato real, sem presumir consolidação automática. |
+| [Complementos para históricos de corretoras](historico-completo-corretoras/README.md) | Oportunidades a avaliar | Ativos adicionais, Earn, distribuições, contas internas, pequenos saldos em BNB, valoração histórica, origem/destino, proveniência e eventos especiais. Dependências e evidências descritas na ficha; sem prioridade aprovada. |
 | [Importação CSV](../03-entregas.md#marco-6--validação-local) | Adiada até validar o fluxo | Reduzir o esforço manual quando necessário; escolher um formato concreto de corretora antes de planejar. |
 
-Próxima entrega planejada: aporte em BRL, compra e venda, com taxas somente em uma das moedas da própria negociação. Estes complementos não ampliam essa fatia.
+O ciclo de aporte em BRL, compra e venda foi entregue, com taxas somente em uma das moedas da própria negociação. Os complementos acima continuam sujeitos a planejamento próprio; o diagnóstico de históricos não amplia automaticamente o escopo atendido.
+
+## Diagnóstico de históricos — 03/11/2026
+
+Concluída análise documental de exportações de 2024–2026, aprofundando 2024, sem carga, limpeza ou alteração de produto. Identificadas sobreposições entre arquivos, repetições legítimas possíveis e linhas fora do período nominal. A seleção usa a data de cada movimento e a comparação preserva multiplicidade e proveniência.
+
+As [novas oportunidades](historico-completo-corretoras/README.md) complementam os registros existentes de taxas em BNB, execuções, transferências, retiradas, conversões e importação. O diagnóstico não aprova prioridades nem comprova custo/saldo final. [Estado e próximos passos](../06-retomada.md#diagnóstico-documental-do-histórico-concluído--03112026).
 
 ## Ideias para depois do MVP
 

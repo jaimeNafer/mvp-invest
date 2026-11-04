@@ -105,6 +105,8 @@ Recomendação de planejamento: realizar o ensaio de recuperação antes do pilo
 
 - [ ] Executar matriz de cenários e ensaio sintético até 5.000 operações; registrar equipamento, tempos e eventuais limitações.
 - [ ] Cada participante mantém um recorte real pequeno com custos conhecidos, compara saldos e gera um compilado.
+- [x] Diagnosticar os arquivos do outro participante, aprofundando 2024 e registrando lacunas e oportunidades dos anos posteriores. Análise documental concluída sem carga ou mudanças de produto; [complementos e dependências](ideias-futuras/historico-completo-corretoras/README.md). Isso não encerra o piloto nem confirma custos/saldos.
+- [x] Executar primeiro recorte real de depósitos/compras com preparação independente, backup restaurado, carga pela API, repetição idempotente e conferência após reinício. Evidências financeiras exclusivamente privadas; [resultado e limites](06-retomada.md#carga-real-e-conferência-local-concluídas--03112026). Isso não encerra a validação dos dois participantes.
 - [ ] Registrar divergências, causas, esforço, dúvidas e uso assistido; corrigir defeitos que impedem o fluxo.
 - [ ] Repetir o ciclo de atualização em sessões posteriores e comparar com o controle atual.
 - [ ] Decidir a próxima etapa com evidências: melhorar o fluxo manual, adicionar um primeiro CSV ou preparar acesso remoto.
