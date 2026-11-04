@@ -2,7 +2,7 @@
 
 ## Objetivo e limites
 
-Ciclo manual completo: aporte BRL, compra e venda spot. Ativos BTC/ETH/USDT/USDC; cotação BRL/USDT/USDC, moedas diferentes. Taxa em uma das duas moedas. Quantidade e total bruto do extrato são fatos; preço é derivado. Cotação histórica BRL informada para stablecoins, BRL=1. Data/hora Fortaleza e persistência UTC. Sem BNB, transferência, retirada, importação ou tributação.
+Ciclo manual completo: aporte BRL, compra e venda spot. Criptoativos do catálogo, conforme [elegibilidade vigente](17-catalogo-de-ativos.md); cotação BRL/USDT/USDC, moedas diferentes. Taxa em uma das duas moedas. Quantidade e total bruto do extrato são fatos; preço é derivado. Cotação histórica BRL informada para stablecoins, BRL=1. Data/hora Fortaleza e persistência UTC. Sem taxa em BNB como terceira moeda, transferência, retirada, importação ou tributação.
 
 ## Regras
 

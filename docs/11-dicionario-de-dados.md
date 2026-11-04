@@ -1,10 +1,12 @@
 # Dicionário de dados — schema vigente
 
-Schema V1–V9. Seis tabelas de negócio e 47 campos, todos documentados com comentários breves. Carteiras selecionam instituições pelos vínculos em `contas`; operações são fatos próprios do usuário/instituição.
+Schema V1–V11, com a evolução financeira de V10 descrita ao final. Seis tabelas de negócio documentadas com comentários breves. Carteiras selecionam instituições pelos vínculos em `contas`; operações são fatos próprios do usuário/instituição.
 
 Saldo inicial implementado por V9, com catálogo de seis ativos, ponto de partida e fatos versionados. [Contrato e operação](12-saldo-inicial.md).
 
 Tipos, nulabilidade e defaults estão na coluna Definição. Os campos `tipo` usam VARCHAR com CHECK para restringir as opções. `flyway_schema_history` é infraestrutura gerenciada pelo Flyway.
+
+V11 amplia somente os dados do catálogo com oito criptoativos; tipos, campos, constraints e comentários permanecem inalterados. [Códigos, nomes, precisão e compatibilidade](17-catalogo-de-ativos.md).
 
 ## carteiras
 

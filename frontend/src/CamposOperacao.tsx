@@ -22,9 +22,9 @@ export default function CamposOperacao({
   alterar,
 }: Props) {
   const brl = ativos.find((a) => a.codigo === "fiat:BRL");
-  const bases = ativos.filter((a) => ["BTC", "ETH", "USDT", "USDC"].includes(a.ticker));
+  const bases = ativos.filter((a) => a.tipo === "CRIPTO");
   const cotacoes = ativos.filter(
-    (a) => ["BRL", "USDT", "USDC"].includes(a.ticker) && a.id !== campos.ativoId,
+    (a) => ["fiat:BRL", "cripto:USDT", "cripto:USDC"].includes(a.codigo) && a.id !== campos.ativoId,
   );
   const moedasTaxa = ativos.filter(
     (a) => a.id === campos.ativoId || a.id === campos.moedaCotacaoId,

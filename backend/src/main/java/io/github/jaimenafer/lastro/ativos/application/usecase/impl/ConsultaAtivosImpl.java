@@ -34,6 +34,7 @@ public class ConsultaAtivosImpl implements IConsultaAtivos {
         ativo.getTicker(),
         ativo.getCasasDecimais(),
         ativo.isAtivo(),
-        IAtivoRepository.CODIGOS.contains(ativo.getCodigo()));
+        ativo.permiteSaldoInicial(),
+        ativo.cripto());
   }
 }

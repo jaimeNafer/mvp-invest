@@ -150,3 +150,11 @@ Estas instruções se aplicam ao repositório inteiro. Foram solicitadas por Jai
 - Aceitar quantidade e total bruto; derivar preço no domínio. Taxas somente nas moedas do par; BNB fica no backlog. Preservar 18/8/36 casas e HALF_EVEN nas fronteiras documentadas, sem dupla dedução de taxa ou quantidade negativa.
 - APIs legadas consultam somente SALDO_INICIAL. Posições atuais são derivadas do histórico confirmado; versões inativas preservam fatos, sem apresentar cálculo como vigente. Consultas de lista/posição não podem exibir revisões incompatíveis como um mesmo retrato.
 - V10 preserva cadeias e campos anteriores. Testar migração acima de mil versões; ajustar temporariamente a sessão da CTE ao volume de dados e restaurá-la, sem alterar configuração global. Migrations aplicadas continuam imutáveis.
+
+## Elegibilidade dos ativos pelo catálogo — 03/11/2026
+
+- Criptoativos negociáveis são determinados pela classificação CRIPTO no catálogo mantido pelo sistema; não manter listas fixas de tickers/códigos de criptoativos em repositories, validação da base negociada ou seletores. Novas gravações exigem ativos disponíveis; histórico e idempotência preservam o tratamento vigente de inativos.
+- Saldo inicial admite CRIPTO e BRL/USD; cotação continua BRL/USDT/USDC e taxa somente nas moedas do par. Usar códigos para identificar moedas fiduciárias/de cotação, sem confundir ticker com identidade.
+- AtivoResumo expõe classificação escalar cripto pelo contrato público entre contextos; não importar TipoAtivo do domínio de ativos em operações. REST mantém formato e catálogo ordenado, incluindo inativos.
+- Inclusões futuras são migrations revisadas, preservando registros compatíveis e interrompendo colisões antes da inserção. Precisão de 18 casas dos criptoativos é capacidade de registro, não regra de blockchain. Não acrescentar outra whitelist ao incluir outros criptoativos.
+- Contrato em docs/17-catalogo-de-ativos.md. A elegibilidade não autoriza novos tipos financeiros ou carga de dados reais.

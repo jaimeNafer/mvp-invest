@@ -1,3 +1,17 @@
+## Catálogo de criptoativos concluído — 03/11/2026
+
+Elegibilidade baseada na classificação CRIPTO do catálogo, sem listas fixas de tickers no backend/React. Abertura admite criptoativos e BRL/USD; cotação permanece BRL/USDT/USDC e taxa somente nas moedas do par. REST mantém campos; snapshot interno AtivoResumo acrescenta boolean cripto, sem enum de outro contexto. [Contrato e ativos](17-catalogo-de-ativos.md).
+
+V11 provisiona SOL, LINK, NEAR, LDO, ARKM, RONIN, PYTH e TIA ausentes, preservando dados compatíveis e recusando colisões antes da inserção. Validação de tipo usa comparação exata, pois a collation pode aceitar grafia incompatível com o enum. V1–V10 imutáveis; novas migrations continuam necessárias para manutenção de catálogo, sem outra whitelist Java/React.
+
+Validação: check e pacote integrado aprovados, 123 testes backend (55 unitários/arquiteturais e 68 integrados MySQL), 46 testes frontend, lint/typecheck/build e 1 teste do protótipo. Testes históricos V9→V10 fixados em V10; oito testes V10→V11 foram também executados isoladamente com alvo V11. Cenários: oito ativos com abertura/compra/venda/posição, cripto sintética adicional, taxas, inativação/idempotência, precisão, saldo, entradas inválidas, catálogo parcial e colisões. Revisão independente: asserção dependente de posição antiga no catálogo corrigida; nenhum outro achado material.
+
+Aplicada V11 no MySQL local após backup privado em .local/ativos-catalogo/. Comparação byte a byte dos fatos/cadastros, metadados, catálogo anterior, histórico Flyway anterior e respostas de ambos os perfis comprovou preservação. Reinício validou onze migrations sem reaplicação. Catálogo local com quatorze ativos; formulário de negociações permite selecionar SOL e abertura mostra os novos ativos. Nenhum fato fictício foi gravado no banco pessoal.
+
+Aplicação integrada disponível em http://127.0.0.1:8080/, branch codex/ativos-catalogo. Publicação em branch e PR para main solicitada por Jaime; sem merge automático. Consultar o PR para o resultado da CI remota. Dados/backup/evidências somente privados. Sem carga real de Eliane, manutenção visual de catálogo, novos pares ou outros tipos de movimento. Próximo passo: decidir a conferência do recorte com comprovantes e posição anterior; os demais complementos permanecem no backlog.
+
+As notas seguintes são históricas.
+
 ## Diagnóstico documental do histórico concluído — 03/11/2026
 
 Concluída análise dos arquivos fornecidos para Eliane, aprofundando os movimentos com data local em 2024 e usando 2025–2026 para identificar complementos. Arquivos, hashes, cópias preservadas, linhas com proveniência, comparações de sobreposição/multiplicidade, deltas observados por fonte e relatório ficam somente em `.local/eliane2024/`. Nenhum nome completo, identificador de origem, valor ou extrato foi incluído na documentação versionada.

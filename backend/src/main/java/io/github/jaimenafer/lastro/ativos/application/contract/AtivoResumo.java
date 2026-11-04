@@ -6,4 +6,5 @@ public record AtivoResumo(
     String ticker,
     int casasDecimais,
     boolean ativo,
-    boolean permiteSaldoInicial) {}
+    boolean permiteSaldoInicial,
+    boolean cripto) {}

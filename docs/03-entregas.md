@@ -4,6 +4,10 @@ Estado em 03/11/2026: carteiras, execução Java 27 e saldo inicial implementado
 
 **Etapa de carteiras concluída por Jaime em 02/11/2026**, originalmente publicada no PR #12. O novo requisito altera a propriedade das contas e a execução em Java 27; a [modelagem vigente](10-modelagem-de-carteiras.md) substitui a anterior. Pendências de ativos/identidade externa não estão incluídas nesta correção.
 
+## Catálogo de criptoativos — entrega concluída
+
+Disponíveis saldo inicial e negociações para criptoativos do catálogo mantido pelo sistema, sem listas fixas de elegibilidade. V11 acrescenta oito ativos; contratos REST e fatos preservados. [Regras, catálogo e validação](17-catalogo-de-ativos.md). Carga real do outro participante segue pendente dos comprovantes.
+
 ## Entrega de negociações e complementos
 
 Concluído conforme o plano de Jaime em 03/11/2026: ciclo de aporte em BRL, compra e venda à vista, com BRL/USDT/USDC como moedas de cotação. Taxas somente em uma das duas moedas da própria negociação. A fatia inclui prévia, resultados explicados, correção e cancelamento; com contratos e regras em [Negociações](16-negociacoes.md).

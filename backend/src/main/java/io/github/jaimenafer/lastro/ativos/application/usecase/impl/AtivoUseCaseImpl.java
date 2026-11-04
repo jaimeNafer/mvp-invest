@@ -17,8 +17,6 @@ public class AtivoUseCaseImpl implements IAtivoUseCase {
   @Override
   @Transactional(readOnly = true)
   public List<AtivoResponse> listar() {
-    return ativos.findAllByCodigoInOrderByTickerAscIdAsc(IAtivoRepository.CODIGOS).stream()
-        .map(AtivoMapper::de)
-        .toList();
+    return ativos.findAllByOrderByTickerAscIdAsc().stream().map(AtivoMapper::de).toList();
   }
 }

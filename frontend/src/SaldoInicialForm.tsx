@@ -184,12 +184,14 @@ export default function SaldoInicialForm(props: Props) {
           }}
         >
           <option value="">Selecione</option>
-          {props.ativos.map((a) => (
-            <option key={a.id} value={a.id} disabled={!a.ativo}>
-              {a.ticker} — {a.nome}
-              {!a.ativo ? " — inativo" : ""}
-            </option>
-          ))}
+          {props.ativos
+            .filter((a) => a.tipo === "CRIPTO" || ["fiat:BRL", "fiat:USD"].includes(a.codigo))
+            .map((a) => (
+              <option key={a.id} value={a.id} disabled={!a.ativo}>
+                {a.ticker} — {a.nome}
+                {!a.ativo ? " — inativo" : ""}
+              </option>
+            ))}
         </select>
         <label htmlFor="saldo-data">Data de início do acompanhamento</label>
         <input

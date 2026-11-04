@@ -53,8 +53,8 @@ public final class ValidacaoNegociacao {
           cadastro.referencia(),
           motivo);
     }
-    if (!Set.of("cripto:BTC", "cripto:ETH", "cripto:USDT", "cripto:USDC").contains(ativo.codigo()))
-      throw new OperacaoInvalidaException("Selecione BTC, ETH, USDT ou USDC para negociar.");
+    if (!ativo.cripto())
+      throw new OperacaoInvalidaException("Selecione um criptoativo do catálogo para negociar.");
     var moeda = buscarAtivo(ativos, cadastro.moedaCotacaoId());
     if (!COTACOES.contains(moeda.codigo()) || moeda.id().equals(ativo.id()))
       throw new OperacaoInvalidaException(
