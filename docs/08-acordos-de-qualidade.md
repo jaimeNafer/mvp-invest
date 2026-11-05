@@ -130,3 +130,11 @@ Por pedido de Jaime, priorizar informações essenciais e aproveitar o espaço: 
 Percentuais da composição: manter precisão da API e barras, exibir duas casas com HALF_EVEN, oferecer valor completo no tooltip e diferenciar percentual positivo abaixo de 0,01% de zero. Usar serviço decimal reutilizável com BigInt; não converter valores financeiros em Number para formatar.
 
 Rótulos financeiros devem explicar sua finalidade; termos internos podem receber nomes de produto mais claros sem alterar contratos. Ajuda contextual deve funcionar por cursor, teclado e toque, sem submeter formulários ou fechar a modal ao dispensá-la. Mecanismo reutilizável de tooltip fica separado dos textos de negócio.
+
+## Consolidação financeira — evolução de 04/11/2026
+
+- Resultado realizado mensal começa em zero no período selecionado; meses sem operações mantêm o acumulado. Último ponto e soma por ativo reconciliam exatamente com o resumo, reutilizando as parcelas do motor sem descontar taxas novamente.
+- Realização pertence ao ativo efetivamente realizado: ativo vendido ou moeda gasta em compra com USDT/USDC. Aportes e abertura não são lucro; custo não é valor de mercado.
+- Saldos em moeda são quantidades registradas, sem informação sobre bloqueios externos. Conferência apresenta somente avisos de revisão, não erros presumidos: custo zero declarado e referência repetida no mesmo usuário/instituição. Custo desconhecido continua rejeitado.
+- A ampliação do painel permite rolagem natural em 1366×768, substituindo o aceite anterior de todos os blocos caberem na altura da tela. Preservar blocos compactos, controles legíveis e ausência de rolagens verticais independentes.
+- Valores financeiros permanecem decimais exatos no backend e strings no frontend. Number é permitido somente para geometria do gráfico; alternativa tabular mantém acesso aos valores completos. Detalhes e avisos não exigem novas tabelas. [Contrato](18-visao-geral.md).

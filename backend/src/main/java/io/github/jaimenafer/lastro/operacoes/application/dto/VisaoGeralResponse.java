@@ -11,4 +11,9 @@ public record VisaoGeralResponse(
     boolean possuiRegistrosAteFim,
     ResumoVisaoGeralResponse resumo,
     ParcelasResultadoResponse resultado,
-    List<PosicaoVisaoGeralResponse> posicoes) {}
+    List<PosicaoVisaoGeralResponse> posicoes,
+    LocalDate dataSaldos,
+    List<SaldoMoedaResponse> saldosMoedas,
+    EvolucaoResultadoResponse evolucaoResultado,
+    List<ResultadoAtivoResponse> resultadosPorAtivo,
+    ConferenciaResponse conferencia) {}

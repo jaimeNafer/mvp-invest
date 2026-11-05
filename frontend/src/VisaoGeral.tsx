@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import ComposicaoCustos from "./ComposicaoCustos";
+import ConferenciaVisaoGeral from "./ConferenciaVisaoGeral";
+import EvolucaoResultado from "./EvolucaoResultado";
+import ResultadoMonetario from "./ResultadoMonetario";
+import ResultadosPorAtivo from "./ResultadosPorAtivo";
+import SaldosMoedas from "./SaldosMoedas";
 import SaldosVisaoGeral from "./SaldosVisaoGeral";
 import { consultarVisaoGeral } from "./services/visaoGeral";
 import type { PeriodoVisaoGeral, VisaoGeral as Consolidacao } from "./services/visaoGeral";
@@ -93,7 +98,7 @@ export default function VisaoGeral({ onOperacoes }: { onOperacoes: () => void })
       {dados && (
         <>
           <p className="overview-caption">
-            Saldos a custo até {dataLegivel(dados.dataFim)} · Resultados de{" "}
+            Saldos a custo até {dataLegivel(dados.dataSaldos)} · Resultados de{" "}
             {dataLegivel(dados.dataInicio)} a {dataLegivel(dados.dataFim)}
           </p>
           {dados.dataReferencia && dados.dataInicio < dados.dataReferencia && (
@@ -110,9 +115,9 @@ export default function VisaoGeral({ onOperacoes }: { onOperacoes: () => void })
                 </dd>
               </div>
               <div>
-                <dt>Resultado realizado</dt>
+                <dt>Resultado realizado líquido</dt>
                 <dd>
-                  <ValorMonetario valor={dados.resumo.resultadoRealizadoBrl} />
+                  <ResultadoMonetario valor={dados.resumo.resultadoRealizadoBrl} />
                 </dd>
               </div>
               <div>
@@ -143,6 +148,11 @@ export default function VisaoGeral({ onOperacoes }: { onOperacoes: () => void })
                   Nenhuma operação no período. Os saldos incluem os registros anteriores.
                 </p>
               )}
+              <SaldosMoedas saldos={dados.saldosMoedas} />
+              <div className="overview-analysis">
+                <EvolucaoResultado evolucao={dados.evolucaoResultado} />
+                <ResultadosPorAtivo resultados={dados.resultadosPorAtivo} />
+              </div>
               <div className="overview-main">
                 <ComposicaoCustos posicoes={dados.posicoes} />
                 <SaldosVisaoGeral posicoes={dados.posicoes} />
@@ -182,6 +192,15 @@ export default function VisaoGeral({ onOperacoes }: { onOperacoes: () => void })
                 </div>
               </dl>
             </section>
+          )}
+          {dados.possuiRegistrosAteFim && (
+            <ConferenciaVisaoGeral
+              conferencia={dados.conferencia}
+              dataFim={dados.dataSaldos}
+              revisao={dados.revisao}
+              onAtualizar={() => setConsulta({ ...consulta })}
+              onOperacoes={onOperacoes}
+            />
           )}
         </>
       )}

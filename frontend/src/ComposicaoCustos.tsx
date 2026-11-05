@@ -7,6 +7,9 @@ export default function ComposicaoCustos({ posicoes }: { posicoes: PosicaoVisaoG
   return (
     <section className="overview-panel overview-composition" aria-labelledby="composicao-titulo">
       <h2 id="composicao-titulo">Composição a custo</h2>
+      <p className="overview-note composition-caption">
+        Distribuição pelo custo de aquisição, sem cotação de mercado.
+      </p>
       {possuiComposicao ? (
         <ul>
           {posicoes.map((p) => (

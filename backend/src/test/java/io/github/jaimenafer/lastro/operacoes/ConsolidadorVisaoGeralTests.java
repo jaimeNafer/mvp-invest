@@ -3,6 +3,7 @@ package io.github.jaimenafer.lastro.operacoes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.jaimenafer.lastro.operacoes.domain.model.*;
+import io.github.jaimenafer.lastro.operacoes.domain.service.AnaliseResultado;
 import io.github.jaimenafer.lastro.operacoes.domain.service.ConsolidadorVisaoGeral;
 import io.github.jaimenafer.lastro.operacoes.domain.service.MotorLivro;
 import java.math.BigDecimal;
@@ -93,5 +94,9 @@ class ConsolidadorVisaoGeralTests {
     assertThat(resumo.aportesBrl()).isEqualByComparingTo("5050");
     assertThat(resumo.operacoesNoPeriodo()).isEqualTo(5000);
     assertThat(resumo.resultadoRealizadoBrl()).isZero();
+    var periodo = new PeriodoVisaoGeral(LocalDate.of(2026, 10, 5), LocalDate.of(2026, 10, 5));
+    assertThat(AnaliseResultado.mensal(fatos, livro, periodo).getFirst().operacoes())
+        .isEqualTo(5000);
+    assertThat(AnaliseResultado.porAtivo(fatos, livro, periodo, Map.of(1L, "fiat:BRL"))).isEmpty();
   }
 }

@@ -164,3 +164,12 @@ Estas instruções se aplicam ao repositório inteiro. Foram solicitadas por Jai
 - Priorizar apresentação compacta: espaços/preenchimento de 12–16 px, cabeçalhos baixos, controles mínimos de 36 px em desktop e 44 px no toque. Não ocultar valores nem criar vários painéis de rolagem vertical. Visão geral com seis ativos e custódia resumida deve caber em 1366×768.
 - Consolidação global por usuário: saldos até a data final, resultados/taxas/aportes do período, mantendo fatos anteriores para o custo. Nova consulta somente leitura usa REPEATABLE_READ para snapshot consistente; comandos mantêm READ_COMMITTED e bloqueios.
 - Totais e percentuais financeiros calculados no backend. React apresenta valores exatos e ignora respostas canceladas. Não confundir custo com preço de mercado ou rentabilidade. Série mensal, valoração e rentabilidade foram priorizadas como evoluções, ainda não implementadas. Contrato em docs/18-visao-geral.md.
+
+
+## Consolidação financeira — evolução de 04/11/2026
+
+- Resultado realizado mensal começa em zero no período selecionado; meses sem operações mantêm o acumulado. Último ponto e soma por ativo reconciliam exatamente com o resumo, reutilizando as parcelas do motor sem descontar taxas novamente.
+- Realização pertence ao ativo efetivamente realizado: ativo vendido ou moeda gasta em compra com USDT/USDC. Aportes e abertura não são lucro; custo não é valor de mercado.
+- Saldos em moeda são quantidades registradas, sem informação sobre bloqueios externos. Conferência apresenta somente avisos de revisão, não erros presumidos: custo zero declarado e referência repetida no mesmo usuário/instituição. Custo desconhecido continua rejeitado.
+- A ampliação do painel permite rolagem natural em 1366×768, substituindo o aceite anterior de todos os blocos caberem na altura da tela. Preservar blocos compactos, controles legíveis e ausência de rolagens verticais independentes.
+- Valores financeiros permanecem decimais exatos no backend e strings no frontend. Number é permitido somente para geometria do gráfico; alternativa tabular mantém acesso aos valores completos. Detalhes e avisos não exigem novas tabelas. [Contrato](docs/18-visao-geral.md).

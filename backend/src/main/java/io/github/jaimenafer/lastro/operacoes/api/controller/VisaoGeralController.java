@@ -1,6 +1,6 @@
 package io.github.jaimenafer.lastro.operacoes.api.controller;
 
-import io.github.jaimenafer.lastro.operacoes.application.dto.FiltroVisaoGeral;
+import io.github.jaimenafer.lastro.operacoes.application.dto.*;
 import io.github.jaimenafer.lastro.operacoes.application.dto.VisaoGeralResponse;
 import io.github.jaimenafer.lastro.operacoes.application.usecase.IVisaoGeralUseCase;
 import jakarta.validation.Valid;
@@ -17,5 +17,10 @@ public class VisaoGeralController {
   @GetMapping("/api/v1/visao-geral")
   public VisaoGeralResponse consultar(@Valid @ModelAttribute FiltroVisaoGeral filtro) {
     return visaoGeral.consultar(filtro);
+  }
+
+  @GetMapping("/api/v1/visao-geral/avisos")
+  public AvisosConferenciaResponse avisos(@Valid @ModelAttribute FiltroAvisosConferencia filtro) {
+    return visaoGeral.avisos(filtro);
   }
 }
