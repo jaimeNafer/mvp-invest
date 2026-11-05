@@ -10,7 +10,7 @@ export default function SaldosVisaoGeral({ posicoes }: { posicoes: PosicaoVisaoG
         <p className="overview-note">Sem posições na data final.</p>
       ) : (
         <div className="table-scroll">
-          <table>
+          <table aria-labelledby="saldos-titulo">
             <thead>
               <tr>
                 <th>Ativo</th>

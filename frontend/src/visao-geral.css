@@ -209,6 +209,183 @@
 .overview-error p {
   margin: 0 0 8px;
 }
+.overview-analysis {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.result-positive {
+  color: #10745e;
+}
+.result-negative {
+  color: #b73d3d;
+}
+.result-chart {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+.chart-axis {
+  position: relative;
+  font-size: 11px;
+  color: #607984;
+}
+.chart-axis span {
+  position: absolute;
+  right: 0;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  line-height: 14px;
+}
+.overview-evolution svg {
+  display: block;
+  width: 100%;
+  height: 164px;
+}
+.chart-plot {
+  min-width: 0;
+}
+.chart-months {
+  position: relative;
+  height: 24px;
+  font-size: 11px;
+  color: #607984;
+}
+.chart-month-label {
+  position: absolute;
+  white-space: nowrap;
+}
+.chart-zero {
+  stroke: #91a4aa;
+  stroke-dasharray: 4 3;
+}
+.chart-result {
+  stroke: #12866e;
+  stroke-width: 2;
+  fill: none;
+}
+.chart-point {
+  fill: #12866e;
+}
+.overview-evolution summary,
+.overview-asset-results summary {
+  cursor: pointer;
+  min-height: 36px;
+  display: list-item;
+  align-content: center;
+}
+.overview-evolution table,
+.overview-asset-results table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.overview-evolution th,
+.overview-evolution td,
+.overview-asset-results th,
+.overview-asset-results td {
+  padding: 7px 6px;
+  border-bottom: 1px solid #e7edef;
+  text-align: left;
+  vertical-align: top;
+}
+.overview-evolution th,
+.overview-asset-results th {
+  font-weight: 500;
+  color: #607984;
+}
+.overview-asset-results td:last-child,
+.overview-asset-results th:last-child {
+  text-align: right;
+}
+.overview-asset-results td small {
+  display: block;
+  font-size: 10px;
+  color: #607984;
+}
+.overview-asset-results table {
+  margin-top: 6px;
+}
+.asset-result-parcels {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  text-align: left;
+  margin: 0 0 6px;
+}
+.asset-result-parcels dd {
+  margin: 0;
+  text-align: right;
+}
+.overview-currencies {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.overview-currencies h2 {
+  margin: 0;
+}
+.overview-currencies dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+}
+.overview-currencies dl > div {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+}
+.overview-currencies dt {
+  color: #607984;
+}
+.overview-currencies dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.overview-currencies > p {
+  flex-basis: 100%;
+}
+.composition-caption {
+  padding-bottom: 10px;
+}
+.overview-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.review-items {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: grid;
+  gap: 8px;
+}
+.review-item {
+  display: grid;
+  gap: 4px;
+  border-bottom: 1px solid #e7edef;
+  padding: 8px 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.review-items button {
+  justify-self: start;
+}
+.review-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.overview-page .modal {
+  max-width: min(640px, calc(100vw - 32px));
+}
 @media (max-width: 1100px) {
   .overview-heading {
     flex-wrap: wrap;
@@ -228,6 +405,9 @@
   }
 }
 @media (max-width: 700px) {
+  .overview-analysis {
+    grid-template-columns: 1fr;
+  }
   .layout.visao-geral-layout > main {
     padding: 0 16px 16px;
   }
@@ -250,7 +430,9 @@
 @media (pointer: coarse) {
   .overview-page button,
   .overview-filters input,
-  .overview-balances summary {
+  .overview-balances summary,
+  .overview-evolution summary,
+  .overview-asset-results summary {
     min-height: 44px;
   }
 }

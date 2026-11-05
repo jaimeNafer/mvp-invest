@@ -8,7 +8,7 @@ import io.github.jaimenafer.lastro.operacoes.application.mapper.*;
 import io.github.jaimenafer.lastro.operacoes.application.usecase.IVisaoGeralUseCase;
 import io.github.jaimenafer.lastro.operacoes.domain.model.*;
 import io.github.jaimenafer.lastro.operacoes.domain.repository.*;
-import io.github.jaimenafer.lastro.operacoes.domain.service.ConsolidadorVisaoGeral;
+import io.github.jaimenafer.lastro.operacoes.domain.service.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -54,9 +54,8 @@ public class VisaoGeralUseCaseImpl implements IVisaoGeralUseCase {
         instituicoes.buscarPorIds(instituicaoIds).stream()
             .collect(Collectors.toMap(InstituicaoResumo::id, Function.identity()));
     ResultadoLivro livro = LivroMapper.calcular(historico, List.copyOf(ativosPorId.values()));
-    ResumoVisaoGeral resumo =
-        ConsolidadorVisaoGeral.resumir(
-            historico.stream().map(LivroMapper::fato).toList(), livro, periodo);
+    List<FatoLivro> fatos = historico.stream().map(LivroMapper::fato).toList();
+    ResumoVisaoGeral resumo = ConsolidadorVisaoGeral.resumir(fatos, livro, periodo);
     return VisaoGeralMapper.de(
         ponto.map(PontoPartida::getRevisao).orElse(0L),
         referencia,
@@ -64,6 +63,50 @@ public class VisaoGeralUseCaseImpl implements IVisaoGeralUseCase {
         !historico.isEmpty(),
         resumo,
         livro,
+        ativosPorId,
+        instituicoesPorId,
+        AnaliseResultado.mensal(fatos, livro, periodo),
+        AnaliseResultado.porAtivo(
+            fatos,
+            livro,
+            periodo,
+            ativosPorId.values().stream()
+                .collect(Collectors.toMap(AtivoResumo::id, AtivoResumo::codigo))),
+        ConferenciaRegistros.selecionar(historico, TipoAvisoConferencia.CUSTO_ZERO_DECLARADO)
+            .size(),
+        ConferenciaRegistros.selecionar(historico, TipoAvisoConferencia.REFERENCIA_REPETIDA)
+            .size());
+  }
+
+  @Override
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+  public AvisosConferenciaResponse avisos(FiltroAvisosConferencia filtro) {
+    var ponto = pontos.findById(usuario.id());
+    LocalDate fim = VisaoGeralMapper.data(filtro.dataFim());
+    PeriodoVisaoGeral periodo =
+        PeriodoVisaoGeral.definir(fim, fim, null, LocalDate.now(ZoneId.of("America/Fortaleza")));
+    List<Operacao> historico =
+        operacoes.historico(usuario.id()).stream()
+            .filter(Operacao::confirmada)
+            .filter(o -> periodo.ateFim(o.getOcorridaEm()))
+            .toList();
+    List<Operacao> selecionadas = ConferenciaRegistros.selecionar(historico, filtro.tipo());
+    Map<Long, AtivoResumo> ativosPorId =
+        ativos
+            .buscarPorIds(
+                selecionadas.stream().map(Operacao::getAtivoId).collect(Collectors.toSet()))
+            .stream()
+            .collect(Collectors.toMap(AtivoResumo::id, Function.identity()));
+    Map<Long, InstituicaoResumo> instituicoesPorId =
+        instituicoes
+            .buscarPorIds(
+                selecionadas.stream().map(Operacao::getInstituicaoId).collect(Collectors.toSet()))
+            .stream()
+            .collect(Collectors.toMap(InstituicaoResumo::id, Function.identity()));
+    return VisaoGeralMapper.avisos(
+        ponto.map(PontoPartida::getRevisao).orElse(0L),
+        selecionadas,
+        filtro,
         ativosPorId,
         instituicoesPorId);
   }

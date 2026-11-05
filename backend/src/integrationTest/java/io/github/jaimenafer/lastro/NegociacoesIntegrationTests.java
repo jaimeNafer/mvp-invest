@@ -169,6 +169,13 @@ class NegociacoesIntegrationTests {
                 .param("dataFim", "2026-10-06"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.revisao").value("3"))
+        .andExpect(jsonPath("$.dataSaldos").value("2026-10-06"))
+        .andExpect(jsonPath("$.evolucaoResultado.acumuladoInicialBrl").value("0"))
+        .andExpect(jsonPath("$.evolucaoResultado.meses[0].acumuladoBrl").value("48"))
+        .andExpect(jsonPath("$.resultadosPorAtivo[0].ativoTicker").value("BTC"))
+        .andExpect(jsonPath("$.resultadosPorAtivo[0].resultadoTotalBrl").value("48"))
+        .andExpect(jsonPath("$.saldosMoedas[0].ativoTicker").value("BRL"))
+        .andExpect(jsonPath("$.saldosMoedas[0].quantidade").value("947"))
         .andExpect(jsonPath("$.dataReferencia").value("2026-10-05"))
         .andExpect(jsonPath("$.possuiRegistrosAteFim").value(true))
         .andExpect(jsonPath("$.resumo.custoSaldosBrl").value("1048"))
@@ -192,6 +199,79 @@ class NegociacoesIntegrationTests {
         .andExpect(jsonPath("$.resumo.aportesBrl").value("1000"))
         .andExpect(
             jsonPath("$.posicoes[?(@.ativoTicker == 'BTC')].participacaoPercentual").value("20.2"));
+  }
+
+  @Test
+  void avisosRespeitamInstituicaoDataPerfilPaginacaoEVersoesVigentes() throws Exception {
+    var primeiro = aporte("100");
+    primeiro.put("referencia", "ref-1");
+    var original = criar("a", primeiro);
+    var segundo = aporte("20");
+    segundo.put("referencia", "ref-1");
+    segundo.put("ocorridaEm", "2026-10-06T12:00:00-03:00");
+    criar("a", segundo);
+    criar("b", primeiro);
+    var outraInstituicao = aporte("5");
+    outraInstituicao.put("referencia", "ref-1");
+    outraInstituicao.put("instituicaoId", Long.toString(bitget));
+    criar("a", outraInstituicao);
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.conferencia.referenciasRepetidas").value(2));
+    mvc.perform(
+            get("/api/v1/visao-geral/avisos")
+                .header("Authorization", bearer("a"))
+                .param("dataFim", "2026-10-06")
+                .param("tipo", "REFERENCIA_REPETIDA")
+                .param("tamanho", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.revisao").value("3"))
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.itens.length()").value(1))
+        .andExpect(jsonPath("$.itens[0].referencia").value("ref-1"));
+    mvc.perform(
+            get("/api/v1/visao-geral/avisos")
+                .header("Authorization", bearer("a"))
+                .param("dataFim", "2026-10-05")
+                .param("tipo", "REFERENCIA_REPETIDA"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(0));
+    mvc.perform(
+            get("/api/v1/visao-geral/avisos")
+                .header("Authorization", bearer("b"))
+                .param("dataFim", "2026-10-06")
+                .param("tipo", "REFERENCIA_REPETIDA"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(0));
+    postJson(
+            "a",
+            "/api/v1/operacoes/" + original.get("id").stringValue() + "/cancelamento",
+            Map.of("revisao", "3", "motivo", "Evento repetido"))
+        .andExpect(status().isOk());
+    mvc.perform(
+            get("/api/v1/visao-geral/avisos")
+                .header("Authorization", bearer("a"))
+                .param("dataFim", "2026-10-06")
+                .param("tipo", "REFERENCIA_REPETIDA"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.revisao").value("4"))
+        .andExpect(jsonPath("$.total").value(0));
+  }
+
+  @Test
+  void avisosValidamParametrosEAcesso() throws Exception {
+    mvc.perform(get("/api/v1/visao-geral/avisos")).andExpect(status().isUnauthorized());
+    for (var parametros :
+        List.of(
+            Map.of("dataFim", "2026-10-05"),
+            Map.of("dataFim", "2026-02-30", "tipo", "CUSTO_ZERO_DECLARADO"),
+            Map.of("dataFim", "2026-10-05", "tipo", "OUTRO"),
+            Map.of("dataFim", "2026-10-05", "tipo", "REFERENCIA_REPETIDA", "tamanho", "51"),
+            Map.of("dataFim", "2026-10-05", "tipo", "REFERENCIA_REPETIDA", "pagina", "-1"))) {
+      var pedido = get("/api/v1/visao-geral/avisos").header("Authorization", bearer("a"));
+      parametros.forEach(pedido::param);
+      mvc.perform(pedido).andExpect(status().isBadRequest());
+    }
   }
 
   @Test
@@ -323,7 +403,16 @@ class NegociacoesIntegrationTests {
         .andExpect(jsonPath("$.resumo.operacoesNoPeriodo").value(1))
         .andExpect(jsonPath("$.resumo.aportesBrl").value("0"))
         .andExpect(jsonPath("$.posicoes[0].quantidade").value("1"))
-        .andExpect(jsonPath("$.posicoes[0].participacaoPercentual").isEmpty());
+        .andExpect(jsonPath("$.posicoes[0].participacaoPercentual").isEmpty())
+        .andExpect(jsonPath("$.conferencia.custoZeroDeclarado").value(1));
+    mvc.perform(
+            get("/api/v1/visao-geral/avisos")
+                .header("Authorization", bearer("a"))
+                .param("dataFim", "2026-10-02")
+                .param("tipo", "CUSTO_ZERO_DECLARADO"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.itens[0].justificativa").value("Origem comprovada"));
     mvc.perform(
             get("/api/v1/visao-geral")
                 .header("Authorization", bearer("a"))
@@ -575,6 +664,12 @@ class NegociacoesIntegrationTests {
     compra.put("cotacaoBrl", "5.2");
     var confirmada = criar("a", compra);
     assertThat(confirmada.get("calculo").get("resultadoMoedaBrl").stringValue()).isEqualTo("20");
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer("a")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.resultadosPorAtivo.length()").value(1))
+        .andExpect(jsonPath("$.resultadosPorAtivo[0].ativoTicker").value("USDT"))
+        .andExpect(jsonPath("$.resultadosPorAtivo[0].resultadoTotalBrl").value("20"))
+        .andExpect(jsonPath("$.evolucaoResultado.meses[0].acumuladoBrl").value("20"));
     var aberturaId =
         jdbc.queryForObject("SELECT id FROM operacoes WHERE tipo='SALDO_INICIAL'", Long.class);
     postJson(

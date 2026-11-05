@@ -1,3 +1,21 @@
+## Evolução da consolidação financeira — 04/11/2026
+
+Concluída a evolução da Visão geral: resultado realizado líquido acumulado mensal, contribuições por ativo, saldos em moedas e avisos de conferência. Composição a custo e custódia preservadas. Contrato ampliado em [Visão geral](18-visao-geral.md), sem novas tabelas ou migrations.
+
+A série começa em zero no período escolhido, preserva meses vazios e limites parciais e termina no resultado do resumo. Motor único mantém custos anteriores. Vendas atribuem realização ao ativo vendido; compras com USDT/USDC atribuem à moeda gasta. Aportes e abertura não geram lucro. Parcelas e ativos reconciliam com o resumo, sem descontar taxas novamente.
+
+Conferência sob demanda, paginada, com custo zero declarado e referências exatamente repetidas por usuário/instituição. Não diagnostica erro nem deduplica. Avisos anteriores ao início do período continuam relevantes até a data dos saldos; diferença de revisão exige atualizar o painel. Detalhes reutilizam o fluxo existente. Custo desconhecido e entradas incompletas continuam rejeitados; retiradas permanecem em entrega separada.
+
+Verificação: **149 testes backend** (66 unitários/arquiteturais e 83 integrados MySQL), sem falhas ou skips; **78 testes frontend**, lint, typecheck/build e JAR integrado aprovados. Cobertos resultado negativo/positivo/zero, USDT/USDC, taxas, ativo esgotado, abertura/aportes, meses parciais/vazios, fronteira do dia em Fortaleza, cinco mil fatos, avisos/paginação/validação, versões e isolamento. Suíte existente de concorrência e atomicidade preservada.
+
+Revisão independente encontrou bloqueio de carregamento ao voltar de um detalhe pendente; teste reproduziu o problema e a separação dos estados da lista/detalhe o corrigiu. Suíte completa verde após a correção. Ensaio visual em MySQL descartável confirmou sete posições (seis criptoativos e BRL), perdas/ganhos, contribuições por ativo, avisos e abertura de detalhe. Em 1366×768, painéis lado a lado; em 390 px, indicadores em duas colunas e conteúdo empilhado, sem transbordamento horizontal da página. Rótulos do gráfico são HTML de tamanho estável, separados da geometria SVG; alternativa tabular preserva os valores completos. Não foi executado ensaio com leitor de tela.
+
+Aplicação pessoal reiniciada com o pacote integrado em http://127.0.0.1:8080/. Contratos anteriores de operações, posições, carteiras e revisões comparados antes/depois para ambos os perfis e preservados; nova série, resultados por ativo, parcelas e avisos reconciliados por cálculo decimal independente. Nenhuma escrita de negócio no banco pessoal. Somente o ambiente descartável recebeu fatos sintéticos e foi encerrado depois da conferência. Evidências privadas em .local/evolucao-visao/, ignoradas pelo Git.
+
+Documentação, roteiro, backlog e acordos atualizados. O novo aceite permite rolagem natural com os painéis adicionais e substitui a restrição anterior de caber integralmente em 768 px. Cotações manuais/históricas têm somente proposta documentada, sem integração ou preço artificial. Série mensal do custo, valor de mercado e rentabilidade seguem distintos e pendentes. Branch de trabalho codex/visao-geral; alterações desta evolução ainda sem commit/push.
+
+As notas seguintes são históricas.
+
 ## Ajuda sobre custo de aquisição — 04/11/2026
 
 Substituído o rótulo “Custo baixado” por “Custo de aquisição utilizado” no componente comum à prévia e aos detalhes. Ícone de informação explica o custo médio anterior e o custo de unidades adicionais eventualmente utilizadas para taxas. Ajuda reutilizável por cursor, foco ou clique; Escape dispensa somente a tooltip; botão não submete o formulário. Sem mudança de cálculos, API ou banco.
