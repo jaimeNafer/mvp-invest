@@ -821,3 +821,34 @@ h2 {
 .operation-preview summary {
   cursor: pointer;
 }
+.import-panel {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.import-panel .saldo-form {
+  margin-bottom: 16px;
+}
+.import-panel .check-label {
+  min-height: 36px;
+  margin: 0;
+}
+.import-panel input[type="file"] {
+  display: block;
+  padding: 10px 0;
+  max-width: 100%;
+  font: inherit;
+}
+.import-file-name {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.import-panel caption {
+  text-align: left;
+  padding: 8px 0;
+  font-weight: 600;
+}
+@media (pointer: coarse) {
+  .import-panel .check-label {
+    min-height: 44px;
+  }
+}

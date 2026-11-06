@@ -4,6 +4,7 @@ import static org.hibernate.exception.ConstraintViolationException.ConstraintKin
 
 import io.github.jaimenafer.lastro.operacoes.domain.exception.SaldoInicialConflitanteException;
 import io.github.jaimenafer.lastro.operacoes.domain.exception.SaldoInicialNaoEncontradoException;
+import io.github.jaimenafer.lastro.operacoes.domain.exception.OperacaoConflitanteException;
 import io.github.jaimenafer.lastro.operacoes.domain.model.*;
 import io.github.jaimenafer.lastro.operacoes.domain.model.SituacaoOperacao;
 import io.github.jaimenafer.lastro.operacoes.domain.repository.IOperacaoRepository;
@@ -63,6 +64,19 @@ public class OperacaoPersistenceAdapter implements IOperacaoRepository {
   @Override
   public List<Operacao> historico(String perfilRef) {
     return jpa.findByPerfilRefOrderByOcorridaEmAscOrdemLivroAscIdAsc(perfilRef);
+  }
+
+  @Override
+  public void salvarLote(List<Operacao> operacoes) {
+    try {
+      jpa.saveAllAndFlush(operacoes);
+    } catch (DataIntegrityViolationException erro) {
+      if (erro.getCause() instanceof ConstraintViolationException violacao
+          && violacao.getKind() == UNIQUE)
+        throw new OperacaoConflitanteException(
+            "Uma das operações do lote já foi registrada. Atualize a prévia antes de confirmar.", erro);
+      throw erro;
+    }
   }
 
   @Override

@@ -4,6 +4,7 @@ import io.github.jaimenafer.lastro.acesso.domain.exception.AcessoInvalidoExcepti
 import io.github.jaimenafer.lastro.carteiras.domain.exception.CarteiraConflitanteException;
 import io.github.jaimenafer.lastro.carteiras.domain.exception.CarteiraInvalidaException;
 import io.github.jaimenafer.lastro.carteiras.domain.exception.CarteiraNaoEncontradaException;
+import io.github.jaimenafer.lastro.importacoes.domain.exception.*;
 import io.github.jaimenafer.lastro.operacoes.domain.exception.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class TratamentoGlobalException {
   @ExceptionHandler({
     CarteiraInvalidaException.class,
     SaldoInicialInvalidoException.class,
+    ImportacaoInvalidaException.class,
     OperacaoInvalidaException.class
   })
   public ResponseEntity<ProblemDetail> entrada(RuntimeException erro) {
@@ -28,6 +30,7 @@ public class TratamentoGlobalException {
   @ExceptionHandler({
     CarteiraNaoEncontradaException.class,
     SaldoInicialNaoEncontradoException.class,
+    ImportacaoNaoEncontradaException.class,
     OperacaoNaoEncontradaException.class
   })
   public ResponseEntity<ProblemDetail> ausente(RuntimeException erro) {
@@ -37,6 +40,7 @@ public class TratamentoGlobalException {
   @ExceptionHandler({
     CarteiraConflitanteException.class,
     SaldoInicialConflitanteException.class,
+    ImportacaoConflitanteException.class,
     OperacaoConflitanteException.class
   })
   public ResponseEntity<ProblemDetail> conflito(RuntimeException erro) {

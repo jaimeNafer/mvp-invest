@@ -15,6 +15,12 @@ public class ConsultaAtivosImpl implements IConsultaAtivos {
 
   @Override
   @Transactional(readOnly = true)
+  public Optional<AtivoResumo> buscarPorCodigo(String codigo) {
+    return ativos.findByCodigo(codigo).map(this::resumir);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public Optional<AtivoResumo> buscar(Long id) {
     return ativos.findById(id).map(this::resumir);
   }

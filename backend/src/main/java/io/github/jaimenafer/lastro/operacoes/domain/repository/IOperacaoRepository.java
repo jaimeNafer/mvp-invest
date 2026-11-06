@@ -19,6 +19,8 @@ public interface IOperacaoRepository {
 
   Operacao saveAndFlush(Operacao operacao);
 
+  void salvarLote(List<Operacao> operacoes);
+
   List<Operacao> historico(String perfilRef);
 
   void flush();

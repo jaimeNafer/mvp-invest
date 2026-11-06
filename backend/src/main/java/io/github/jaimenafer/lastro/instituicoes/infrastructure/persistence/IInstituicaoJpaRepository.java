@@ -9,6 +9,8 @@ import org.springframework.data.repository.Repository;
 public interface IInstituicaoJpaRepository extends Repository<Instituicao, Long> {
   Optional<Instituicao> findById(Long id);
 
+  Optional<Instituicao> findByCodigo(String codigo);
+
   List<Instituicao> findAllByOrderByNomeAscIdAsc();
 
   List<Instituicao> findAllByIdIn(Collection<Long> ids);

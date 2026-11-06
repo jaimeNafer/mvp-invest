@@ -16,9 +16,18 @@ spring:
   flyway:
     clean-disabled: true
     validate-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: ${LASTRO_IMPORTACAO_MAX_ARQUIVO:10MB}
+      max-request-size: ${LASTRO_IMPORTACAO_MAX_REQUISICAO:11MB}
   sql:
     init:
       mode: never
 server:
   address: 127.0.0.1
   port: ${LASTRO_PORT:8080}
+
+lastro:
+  importacoes:
+    max-bytes: ${LASTRO_IMPORTACAO_MAX_BYTES:10485760}
+    max-eventos: ${LASTRO_IMPORTACAO_MAX_EVENTOS:5000}

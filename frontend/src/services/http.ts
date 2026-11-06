@@ -12,7 +12,8 @@ export class ErroHttp extends Error {
 export async function requisitarJson<T>(caminho: string, opcoes: RequestInit = {}): Promise<T> {
   const headers = new Headers(opcoes.headers);
   headers.set("Accept", "application/json");
-  if (opcoes.body) headers.set("Content-Type", "application/json");
+  if (opcoes.body && !(opcoes.body instanceof FormData))
+    headers.set("Content-Type", "application/json");
   const token = obterToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 

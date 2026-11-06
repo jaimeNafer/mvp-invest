@@ -10,5 +10,7 @@ public interface IAtivoJpaRepository extends Repository<Ativo, Long> {
 
   Optional<Ativo> findById(Long id);
 
+  Optional<Ativo> findByCodigo(String codigo);
+
   List<Ativo> findAllByIdIn(java.util.Collection<Long> ids);
 }
