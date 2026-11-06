@@ -1,3 +1,19 @@
+## Importação Binance — retomada de 06/11/2026
+
+Implementada a primeira fatia de importação do CSV enriquecido: depósitos BRL e compras OCBS/CONVERT em BRL, com prévia, confirmação atômica, recibo, arquivo original e proveniência. Interface em **Operações → Importar arquivo**. [Contrato](19-importacao-binance.md).
+
+Branch de entrega `codex/importacao-binance`. Publicação autorizada por Jaime em 06/11/2026, sem merge em `main` ou abertura de PR nesta etapa. Não representa suporte aos XLSX de movimentações ou ao histórico completo de outros tipos financeiros.
+
+Última verificação automatizada concluída em 05/11: **200 testes backend** (105 unitários/arquiteturais + 95 integrados MySQL), sem falhas ou skips; `check` e pacote integrado aprovados. Cobertura do recorte de motor/parser/mappers: **98,61% de linhas e 88,97% de branches**, acima dos mínimos de 90%/85%. Frontend: **91 testes**, lint, typecheck e build aprovados. Cenários incluem concorrência, rollback de operações/recibo, isolamento, legado, sobreposição, cancelamento e 5.000 eventos.
+
+Backup privado restaurado em MySQL descartável, com checksums de todas as tabelas conferidos. Na cópia, a prévia do CSV original reconheceu os 20 eventos existentes, sem registros novos nem erros. Nenhum fato real foi reinserido. Evidências e arquivos reais em `.local/importacao-implementacao/`, ignorada pelo Git.
+
+Pendente: concluir o ensaio visual de upload → prévia → confirmação → detalhes e reinício e revisar eventuais ajustes. A publicação da branch não encerra esse aceite. O teste visual anterior foi interrompido no seletor de arquivos; não foi declarado concluído.
+
+Aplicação local iniciada em 06/11/2026 em http://127.0.0.1:8080/, com frontend e backend no pacote integrado e MySQL `lastro_local`. Gerado novo backup privado antes da V12; migration aplicada e checksums das tabelas anteriores preservados. Frontend/assets e endpoints de importações, operações e visão geral responderam HTTP 200 para os dois perfis. Não foram confirmadas operações durante esta inicialização. Pacote reconstruído com sucesso; não foi repetida a suíte completa nesta retomada, pois não houve mudança de código de aplicação.
+
+As notas seguintes são históricas.
+
 ## Evolução da consolidação financeira — 04/11/2026
 
 Concluída a evolução da Visão geral: resultado realizado líquido acumulado mensal, contribuições por ativo, saldos em moedas e avisos de conferência. Composição a custo e custódia preservadas. Contrato ampliado em [Visão geral](18-visao-geral.md), sem novas tabelas ou migrations.

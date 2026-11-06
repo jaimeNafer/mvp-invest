@@ -138,3 +138,7 @@ Rótulos financeiros devem explicar sua finalidade; termos internos podem recebe
 - Saldos em moeda são quantidades registradas, sem informação sobre bloqueios externos. Conferência apresenta somente avisos de revisão, não erros presumidos: custo zero declarado e referência repetida no mesmo usuário/instituição. Custo desconhecido continua rejeitado.
 - A ampliação do painel permite rolagem natural em 1366×768, substituindo o aceite anterior de todos os blocos caberem na altura da tela. Preservar blocos compactos, controles legíveis e ausência de rolagens verticais independentes.
 - Valores financeiros permanecem decimais exatos no backend e strings no frontend. Number é permitido somente para geometria do gráfico; alternativa tabular mantém acesso aos valores completos. Detalhes e avisos não exigem novas tabelas. [Contrato](18-visao-geral.md).
+
+## Importação e evidências
+
+Prévia sem gravação, confirmação atômica e repetição segura são parte da funcionalidade. Não deduplicar por mera coincidência de data/quantidade; comprovar identidade e comparar conteúdo financeiro. Preservar originais e versões posteriores. Testes financeiros usam expectativas independentes e fixtures sintéticas, sem dados pessoais em logs ou CI. [Contrato](19-importacao-binance.md).

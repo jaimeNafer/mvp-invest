@@ -173,3 +173,10 @@ Estas instruções se aplicam ao repositório inteiro. Foram solicitadas por Jai
 - Saldos em moeda são quantidades registradas, sem informação sobre bloqueios externos. Conferência apresenta somente avisos de revisão, não erros presumidos: custo zero declarado e referência repetida no mesmo usuário/instituição. Custo desconhecido continua rejeitado.
 - A ampliação do painel permite rolagem natural em 1366×768, substituindo o aceite anterior de todos os blocos caberem na altura da tela. Preservar blocos compactos, controles legíveis e ausência de rolagens verticais independentes.
 - Valores financeiros permanecem decimais exatos no backend e strings no frontend. Number é permitido somente para geometria do gráfico; alternativa tabular mantém acesso aos valores completos. Detalhes e avisos não exigem novas tabelas. [Contrato](docs/18-visao-geral.md).
+
+## Importação auditável — 05/11/2026
+
+- Interpretar arquivos no contexto importacoes; validar e gravar fatos somente pelo contrato público de lote de operacoes. Não duplicar regras financeiras ou chamar HTTP interno.
+- Manter arquivo, decisões, versão do leitor, origem dos registros e operações na mesma transação. Prévia não grava. Idempotência distingue comando, arquivo e evento; reconhecer fatos originais não desfaz correções/cancelamentos.
+- Não adaptar taxas em BNB, movimentações ou custos desconhecidos aos tipos suportados. Evidência insuficiente bloqueia carga; importação não equivale a conciliação ou apuração fiscal.
+- Dados e arquivos reais ficam fora de Git, CI e logs. Cenários públicos são sintéticos. Executar testes de atomicidade, sobreposição, concorrência e isolamento. [Contrato](docs/19-importacao-binance.md).

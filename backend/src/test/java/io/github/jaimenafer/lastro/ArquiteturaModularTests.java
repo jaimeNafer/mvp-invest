@@ -27,7 +27,9 @@ class ArquiteturaModularTests {
           "carteiras",
           Set.of("acesso", "instituicoes"),
           "operacoes",
-          Set.of("acesso", "ativos", "instituicoes", "carteiras"));
+          Set.of("acesso", "ativos", "instituicoes", "carteiras"),
+          "importacoes",
+          Set.of("acesso", "ativos", "instituicoes", "operacoes"));
   private static final JavaClasses CLASSES =
       new ClassFileImporter()
           .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)

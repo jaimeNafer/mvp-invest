@@ -63,7 +63,7 @@ A árvore representa o padrão lógico, não a criação de pastas vazias. Confi
 | ativos | IConsultaAtivos e AtivoResumo | Consulta individual/em lote; retorna IDs, códigos e metadados escalares. Disponibilidade do saldo inicial pertence ao catálogo. |
 | instituicoes | IConsultaInstituicoes e InstituicaoResumo | Consulta individual/em lote incluindo inativas para histórico; consumidor valida a disponibilidade na gravação. |
 | carteiras | IConsultaCarteiras | Optional de conjunto imutável de IDs de instituições, unido sem repetições, limitado ao usuário atual. Carteira inexistente/alheia retorna Optional.empty; o consumidor traduz para seu erro de negócio. |
-| operacoes | Nenhuma API entre contextos necessária | Seus endpoints HTTP continuam usando os usecases existentes, sem exposição automática como contrato modular. |
+| operacoes | IImportacaoOperacoes e records escalares de lote | Valida e grava lotes de aportes/compras pelo mesmo motor, preservando usuário, locks e histórico. |
 
 Os novos contratos são síncronos e participam da transação existente. Não lançam exceções internas de outro contexto para comunicar ausência esperada. DTOs de contrato são records com valores escalares, sem JPA, Spring, Jackson ou dependência dos DTOs REST.
 
@@ -71,13 +71,14 @@ Os novos contratos são síncronos e participam da transação existente. Não l
 
 Linhas são consumidores; colunas são fornecedores. ✓ significa somente application.contract, acessível pela camada application. — significa nenhuma dependência cruzada autorizada.
 
-| Consumidor → fornecedor | acesso | ativos | instituicoes | carteiras | operacoes |
-| --- | --- | --- | --- | --- | --- |
-| acesso | próprio | — | — | — | — |
-| ativos | — | próprio | — | — | — |
-| instituicoes | — | — | próprio | — | — |
-| carteiras | ✓ | — | ✓ | próprio | — |
-| operacoes | ✓ | ✓ | ✓ | ✓ | próprio |
+| Consumidor → fornecedor | acesso | ativos | instituicoes | carteiras | operacoes | importacoes |
+| --- | --- | --- | --- | --- | --- | --- |
+| acesso | próprio | — | — | — | — | — |
+| ativos | — | próprio | — | — | — | — |
+| instituicoes | — | — | próprio | — | — | — |
+| carteiras | ✓ | — | ✓ | próprio | — | — |
+| operacoes | ✓ | ✓ | ✓ | ✓ | próprio | — |
+| importacoes | ✓ | ✓ | ✓ | — | ✓ | próprio |
 
 O handler HTTP transversal pode importar **apenas domain.exception** dos contextos, além de suas dependências técnicas. Contextos de negócio não dependem do handler/pacote global. Essa exceção técnica é unidirecional e não constitui compartilhamento de interfaces de negócio. Novos contextos devem ser registrados na matriz; não ficam liberados automaticamente.
 
@@ -131,3 +132,7 @@ Não introduzido nesta entrega. Existe linha 2.2 alinhada a Spring Boot 4.2, con
 - Não foram criados contextos futuros, eventos, mensageria ou abstrações para casos inexistentes.
 
 [Arquitetura vigente](02-arquitetura.md) · [Retomada](06-retomada.md) · [Validação](04-validacao.md)
+
+## Importação — 05/11/2026
+
+`importacoes` é responsável por interpretação de arquivos e proveniência; consome somente os contratos públicos de acesso, ativos, instituições e operações. O motor permanece em operações. Consultas por código dos catálogos retornam snapshots; a listagem de recibos usa projeção sem arquivo ou registros. [Contrato](19-importacao-binance.md).

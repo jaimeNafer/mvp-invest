@@ -15,6 +15,12 @@ public class ConsultaInstituicoesImpl implements IConsultaInstituicoes {
 
   @Override
   @Transactional(readOnly = true)
+  public Optional<InstituicaoResumo> buscarPorCodigo(String codigo) {
+    return instituicoes.findByCodigo(codigo).map(this::resumir);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public Optional<InstituicaoResumo> buscar(Long id) {
     return instituicoes.findById(id).map(this::resumir);
   }

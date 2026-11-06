@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'jacoco'
 	id 'org.springframework.boot' version '4.2.0-SNAPSHOT'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -31,6 +32,7 @@ repositories {
 }
 
 dependencies {
+	implementation 'org.apache.commons:commons-csv:1.14.1'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-flyway'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -52,6 +54,10 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+jacoco {
+	toolVersion = '0.8.16'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }
@@ -67,6 +73,30 @@ tasks.register('integrationTest', Test) {
 
 tasks.named('check') {
 	dependsOn integrationTest
+	dependsOn jacocoTestCoverageVerification
+}
+
+def regrasImportacao = ['**/operacoes/domain/service/MotorLivro.class',
+	'**/importacoes/infrastructure/csv/LeitorRelatorioBinance.class',
+	'**/importacoes/application/mapper/*.class']
+
+tasks.named('jacocoTestReport') {
+	dependsOn test, integrationTest
+	executionData.setFrom(layout.buildDirectory.file('jacoco/test.exec'), layout.buildDirectory.file('jacoco/integrationTest.exec'))
+	classDirectories.setFrom(sourceSets.main.output.classesDirs.asFileTree.matching { include regrasImportacao })
+	reports { xml.required = true }
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+	dependsOn jacocoTestReport
+	executionData.setFrom(layout.buildDirectory.file('jacoco/test.exec'), layout.buildDirectory.file('jacoco/integrationTest.exec'))
+	classDirectories.setFrom(sourceSets.main.output.classesDirs.asFileTree.matching { include regrasImportacao })
+	violationRules {
+		rule {
+			limit { counter = 'LINE'; minimum = 0.90 }
+			limit { counter = 'BRANCH'; minimum = 0.85 }
+		}
+	}
 }
 
 tasks.register('localTestRun', JavaExec) {

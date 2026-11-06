@@ -259,3 +259,7 @@ O catálogo mantido pelo sistema determina os criptoativos elegíveis, sem lista
 ## Visão geral por período
 
 Consulta no contexto operacoes: API → IVisaoGeralUseCase → contratos de domínio/catálogos, MotorLivro e ConsolidadorVisaoGeral. A nova leitura usa REPEATABLE_READ somente leitura para revisão e fatos do mesmo snapshot, sem mudar READ_COMMITTED dos comandos. Custo anterior ao período é preservado; React apresenta DTO único, sem somar valores financeiros. [Contrato](18-visao-geral.md).
+
+## Importação de arquivos
+
+Novo contexto importacoes separa interpretação/proveniência das regras financeiras, que permanecem em operacoes. Contrato público de lote participa da mesma transação com recibos e arquivo original. Listagens usam projeções sem BLOB/registros; metadados são resolvidos por código distinto. Sem filas, rascunhos persistidos ou framework multiexchange. [Detalhes](19-importacao-binance.md) e [matriz](13-auditoria-modular.md).

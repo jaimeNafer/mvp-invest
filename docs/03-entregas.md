@@ -4,6 +4,10 @@ Estado em 03/11/2026: carteiras, execução Java 27 e saldo inicial implementado
 
 **Etapa de carteiras concluída por Jaime em 02/11/2026**, originalmente publicada no PR #12. O novo requisito altera a propriedade das contas e a execução em Java 27; a [modelagem vigente](10-modelagem-de-carteiras.md) substitui a anterior. Pendências de ativos/identidade externa não estão incluídas nesta correção.
 
+## Importação Binance — primeira fatia implementada
+
+CSV enriquecido de depósitos e compras BRL, com prévia, confirmação transacional e recibos/proveniência. Verificações automatizadas aprovadas; aceite visual final pendente. Branch de entrega: `codex/importacao-binance`, com publicação autorizada sem merge. XLSX de movimentações e novos tipos financeiros seguem em entregas posteriores. [Contrato e sequência](19-importacao-binance.md), [estado e evidências](06-retomada.md).
+
 ## Visão geral e consolidação financeira
 
 Consolidação por usuário com período, custo dos saldos, resultado realizado, taxas, contagem, composição a custo e custódia resumida. [Contrato e aceite](18-visao-geral.md). Evolução de 04/11/2026: série mensal do resultado realizado, contribuições por ativo, saldos em moedas e avisos para revisão. Retiradas permanecem separadas. Complementos futuros distintos: [série mensal do custo, valor de mercado e rentabilidade](ideias-futuras/evolucao-e-valoracao/README.md).

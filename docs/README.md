@@ -72,3 +72,5 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 - [Aporte, compra e venda: contrato e cálculo](16-negociacoes.md).
 
 - [17 — Catálogo e elegibilidade de criptoativos](17-catalogo-de-ativos.md).
+
+- [Importação Binance: formato, proveniência e confirmação](19-importacao-binance.md).

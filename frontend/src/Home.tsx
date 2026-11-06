@@ -11,10 +11,19 @@ type HomeProps = {
 
 export default function Home({ usuario, onLogout }: HomeProps) {
   const [pagina, setPagina] = useState<"visao" | "perfil" | "carteiras" | "operacoes">("visao");
+  const [bloqueado, setBloqueado] = useState(false);
   return (
     <div className={`layout ${pagina === "visao" ? "visao-geral-layout" : ""}`}>
       <aside className="sidebar" aria-label="Lastro">
-        <a className="brand" href="/" aria-label="Lastro — início">
+        <a
+          className="brand"
+          href="/"
+          aria-label="Lastro — início"
+          aria-disabled={bloqueado}
+          onClick={(evento) => {
+            if (bloqueado) evento.preventDefault();
+          }}
+        >
           lastro<span>↗</span>
         </a>
         <p className="tagline">CLAREZA PARA SUAS CONTAS</p>
@@ -22,6 +31,7 @@ export default function Home({ usuario, onLogout }: HomeProps) {
           <button
             className={`sidebar-link ${pagina === "visao" ? "sidebar-current" : ""}`}
             type="button"
+            disabled={bloqueado}
             aria-current={pagina === "visao" ? "page" : undefined}
             onClick={() => setPagina("visao")}
           >
@@ -30,6 +40,7 @@ export default function Home({ usuario, onLogout }: HomeProps) {
           <button
             className={`sidebar-link ${pagina === "perfil" ? "sidebar-current" : ""}`}
             type="button"
+            disabled={bloqueado}
             aria-current={pagina === "perfil" ? "page" : undefined}
             onClick={() => setPagina("perfil")}
           >
@@ -38,6 +49,7 @@ export default function Home({ usuario, onLogout }: HomeProps) {
           <button
             className={`sidebar-link ${pagina === "carteiras" ? "sidebar-current" : ""}`}
             type="button"
+            disabled={bloqueado}
             aria-current={pagina === "carteiras" ? "page" : undefined}
             onClick={() => setPagina("carteiras")}
           >
@@ -46,6 +58,7 @@ export default function Home({ usuario, onLogout }: HomeProps) {
           <button
             className={`sidebar-link ${pagina === "operacoes" ? "sidebar-current" : ""}`}
             type="button"
+            disabled={bloqueado}
             aria-current={pagina === "operacoes" ? "page" : undefined}
             onClick={() => setPagina("operacoes")}
           >
@@ -54,7 +67,7 @@ export default function Home({ usuario, onLogout }: HomeProps) {
         </nav>
         <div className="sidebar-footer account-footer">
           <span>{usuario.name}</span>
-          <button type="button" onClick={onLogout}>
+          <button type="button" disabled={bloqueado} onClick={onLogout}>
             Sair
           </button>
         </div>
@@ -75,7 +88,7 @@ export default function Home({ usuario, onLogout }: HomeProps) {
         {pagina === "visao" ? (
           <VisaoGeral onOperacoes={() => setPagina("operacoes")} />
         ) : pagina === "operacoes" ? (
-          <Operacoes />
+          <Operacoes onBloqueio={setBloqueado} />
         ) : pagina === "carteiras" ? (
           <Carteiras />
         ) : (

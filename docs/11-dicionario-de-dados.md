@@ -1,6 +1,6 @@
 # Dicionário de dados — schema vigente
 
-Schema V1–V11, com a evolução financeira de V10 descrita ao final. Seis tabelas de negócio documentadas com comentários breves. Carteiras selecionam instituições pelos vínculos em `contas`; operações são fatos próprios do usuário/instituição.
+Schema V1–V12, com a evolução financeira de V10 descrita ao final. Oito tabelas de negócio documentadas com comentários breves. Carteiras selecionam instituições pelos vínculos em `contas`; operações são fatos próprios do usuário/instituição.
 
 Saldo inicial implementado por V9, com catálogo de seis ativos, ponto de partida e fatos versionados. [Contrato e operação](12-saldo-inicial.md).
 
@@ -150,3 +150,37 @@ Persistência textual pelo nome, sem ORDINAL ou alteração de schema. TODAS exi
 | operacoes.confirmada | TINYINT gerado | Marcador de unicidade somente do SALDO_INICIAL confirmado. |
 
 Moedas de cotação e taxa têm FKs para ativos; fatos continuam pertencendo ao usuário/instituição, sem FK para carteira ou vínculo. Compra/venda exigem moeda distinta e total/cotação positivos. Aporte e abertura não recebem esses campos. Taxa zero não recebe moeda; taxa positiva usa ativo ou moeda de cotação. Instantes, quantidades, ciclo de vida e cadeia de substituição existentes são preservados. [Contrato das negociações](16-negociacoes.md).
+
+## importacoes — V12
+
+Recibos e arquivos confirmados de importação por usuário.
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| id | BIGINT UNSIGNED, PK, AUTO_INCREMENT | Identificador do recibo. |
+| perfil_ref | VARCHAR(120), utf8mb4_bin, NOT NULL | Referência do usuário proprietário. |
+| chave_requisicao | CHAR(36), ascii_bin, NOT NULL | Chave de repetição segura da confirmação. |
+| hash | CHAR(64), ascii_bin, NOT NULL | SHA-256 do arquivo original. |
+| decisoes | VARCHAR(64), NOT NULL | Confirmações de aportes próprios, taxas incluídas e posição anterior zerada. |
+| nome_arquivo | VARCHAR(255), NOT NULL | Nome do arquivo importado. |
+| versao_leitor | VARCHAR(40), NOT NULL | Versão do formato interpretado. |
+| arquivo | MEDIUMBLOB, NOT NULL | Conteúdo original do arquivo confirmado. |
+| criado_em | DATETIME(6), NOT NULL | Instante da confirmação em UTC. |
+| novos | INT, NOT NULL | Quantidade de operações registradas. |
+| reconhecidos | INT, NOT NULL | Quantidade de operações anteriormente registradas. |
+
+Unicidades por `(perfil_ref,chave_requisicao)` e `(perfil_ref,hash)`. Índice de histórico por perfil, instante e ID. Todas as colunas não nulas e sem default.
+
+## importacoes_eventos — V12
+
+Vínculos entre eventos de arquivos confirmados e operações financeiras.
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| id | BIGINT UNSIGNED, PK, AUTO_INCREMENT | Identificador do vínculo. |
+| importacao_id | BIGINT UNSIGNED, NOT NULL | Recibo que contém o evento. |
+| linha | INT, NOT NULL | Número do registro no arquivo de origem, incluindo cabeçalho. |
+| referencia | VARCHAR(160), utf8mb4_bin, NOT NULL | Referência do evento na instituição. |
+| operacao_id | BIGINT UNSIGNED, NOT NULL | Operação financeira registrada ou reconhecida. |
+
+UNIQUE `(importacao_id,referencia)`. FKs para `importacoes.id` e `operacoes.id`, sem exclusão em cascata. O vínculo usa a operação original mesmo depois de correção/cancelamento. [Regras e API](19-importacao-binance.md).

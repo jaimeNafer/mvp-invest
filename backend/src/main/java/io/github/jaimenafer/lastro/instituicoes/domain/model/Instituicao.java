@@ -15,6 +15,9 @@ import lombok.NoArgsConstructor;
 public class Instituicao {
   @Id @Getter private Long id;
 
+  @Column(nullable = false, length = 80)
+  private String codigo;
+
   @Column(nullable = false, length = 160)
   private String nome;
 

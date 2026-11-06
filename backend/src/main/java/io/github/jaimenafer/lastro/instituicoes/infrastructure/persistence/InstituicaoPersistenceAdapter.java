@@ -14,6 +14,11 @@ public class InstituicaoPersistenceAdapter implements IInstituicaoRepository {
   private final IInstituicaoJpaRepository jpa;
 
   @Override
+  public Optional<Instituicao> findByCodigo(String codigo) {
+    return jpa.findByCodigo(codigo);
+  }
+
+  @Override
   public Optional<Instituicao> findById(Long id) {
     return jpa.findById(id);
   }

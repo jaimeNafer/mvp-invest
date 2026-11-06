@@ -10,7 +10,7 @@ export default function DetalheOperacao({
 }: {
   operacao: Operacao;
   onAnterior: (id: string) => void;
-  onSaldos: () => void;
+  onSaldos?: () => void;
 }) {
   return (
     <div className="saldo-form">
@@ -105,7 +105,7 @@ export default function DetalheOperacao({
             Consultar versão anterior
           </button>
         )}
-        {o.tipo === "SALDO_INICIAL" && (
+        {o.tipo === "SALDO_INICIAL" && onSaldos && (
           <button type="button" className="secondary-button" onClick={onSaldos}>
             Gerenciar saldos iniciais
           </button>
