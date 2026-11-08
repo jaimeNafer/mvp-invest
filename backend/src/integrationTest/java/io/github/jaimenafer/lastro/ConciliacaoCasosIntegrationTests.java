@@ -117,7 +117,7 @@ class ConciliacaoCasosIntegrationTests {
                     texto(original, "versao"),
                     UUID.randomUUID().toString())
                 .andExpect(status().isOk()));
-    assertThat(texto(revisado, "estado")).isNotEqualTo("COERENTE");
+    assertThat(revisado.path("saldoAnteriorPendente").asBoolean()).isTrue();
     assertThat(revisado.path("revisadoEm").isNull()).isFalse();
     assertThat(texto(revisado, "revisadoPor")).isNotBlank();
     JsonNode estado = timeline(perfil);
@@ -183,8 +183,7 @@ class ConciliacaoCasosIntegrationTests {
     JsonNode registro = depois.path("itens").get(0);
     assertThat(texto(registro, "id")).isEqualTo(id);
     assertThat(registro.path("aplicado").asBoolean()).isTrue();
-    assertThat(texto(registro, "estado")).isNotEqualTo("COERENTE");
-    assertThat(registro.path("pendencias").isEmpty()).isFalse();
+    assertThat(registro.path("saldoAnteriorPendente").asBoolean()).isTrue();
   }
 
   @Test

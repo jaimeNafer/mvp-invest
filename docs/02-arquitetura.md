@@ -4,6 +4,8 @@
 
 **Confirmado:** MySQL, Spring Boot, Java 21+, Flyway, MockMvc, React/Vite/TypeScript e um repositório único. Sem H2 nesta etapa: testes de domínio sem banco e integração de persistência com MySQL/Testcontainers. Docker está disponível; o MySQL já instalado será usado no desenvolvimento. Login mockado por serviço no frontend. Autenticação real será responsabilidade de um backend externo; o backend de negócio não controla usuários ou sessões. A estrutura interna do backend será discutida antes da próxima expansão.
 
+O JWT sem assinatura é exclusivo do ambiente local de desenvolvimento. O filtro confia no perfil informado pelo cliente, o que torna esse mecanismo inadequado para exposição pública multiusuário.
+
 **Build confirmado em 01/11/2026:** Gradle com wrapper, por preferência de Jaime, substituindo a proposta anterior de Maven. Usar Groovy DSL (`build.gradle` e `settings.gradle`) como padrão inicial; isso não altera a linguagem Java do backend.
 
 **Base implementada:** Java 27 e Spring Boot 4.2.0-SNAPSHOT por alteração de Jaime; Spring MVC/JPA e frontend integrado para uso local. Gradle Wrapper 9.8.2. Novas camadas continuam condicionadas a responsabilidades concretas.

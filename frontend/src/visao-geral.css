@@ -277,7 +277,8 @@
   align-content: center;
 }
 .overview-evolution table,
-.overview-asset-results table {
+.overview-asset-results table,
+.overview-patrimony table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
@@ -285,14 +286,17 @@
 .overview-evolution th,
 .overview-evolution td,
 .overview-asset-results th,
-.overview-asset-results td {
+.overview-asset-results td,
+.overview-patrimony th,
+.overview-patrimony td {
   padding: 7px 6px;
   border-bottom: 1px solid #e7edef;
   text-align: left;
   vertical-align: top;
 }
 .overview-evolution th,
-.overview-asset-results th {
+.overview-asset-results th,
+.overview-patrimony th {
   font-weight: 500;
   color: #607984;
 }
@@ -435,4 +439,15 @@
   .overview-asset-results summary {
     min-height: 44px;
   }
+}
+.patrimony-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.overview-patrimony summary {
+  cursor: pointer;
+  font-weight: 600;
 }

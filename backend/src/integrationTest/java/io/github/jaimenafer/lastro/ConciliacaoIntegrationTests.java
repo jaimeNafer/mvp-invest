@@ -405,26 +405,12 @@ class ConciliacaoIntegrationTests {
   void csvParcialAntesDoPrimeiroAceitePreservaAsDuasQuantidades() throws Exception {
     String perfil = "primeiro-parcial-" + UUID.randomUUID();
     receber(perfil, csvNegociacao("Buy", "BRL", "100", "BTC", "1")).andExpect(status().isCreated());
-    JsonNode t = timeline(perfil);
-    String brl =
-        jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='fiat:BRL'", Long.class).toString();
-    editarRegistro(
-        perfil,
-        t,
-        t.path("itens").get(0),
-        Map.of(
-            "natureza",
-            "COMPRA",
-            "moedaCotacaoId",
-            brl,
-            "totalBruto",
-            "100",
-            "cotacaoBrl",
-            "1",
-            "taxaInformada",
-            false));
+    assertThat(timeline(perfil).path("linhasPorGrupo").iterator().next()).hasSize(2);
     JsonNode p = previa(perfil, timeline(perfil).path("revisao").asText());
-    assertThat(p.path("registrosParaAplicar").asInt()).isEqualTo(1);
+    assertThat(p.path("grupos")).hasSize(1);
+    assertThat(p.path("grupos").get(0).path("linhas")).hasSize(2);
+    assertThat(new java.math.BigDecimal(p.path("grupos").get(0).path("principalBrl").asText()))
+        .isEqualByComparingTo("100");
     assertThat(p.path("ajustes").get(0).path("quantidadeSugerida").asText()).isEqualTo("100");
     aplicar(perfil);
     JsonNode posicoes =

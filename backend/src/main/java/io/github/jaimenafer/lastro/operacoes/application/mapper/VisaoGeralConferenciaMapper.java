@@ -144,7 +144,8 @@ public final class VisaoGeralConferenciaMapper {
   }
 
   private static boolean semClassificacao(ItemConferenciaLivro item) {
-    return !item.ajuste() && item.operacao() == null && item.transferenciaRef() == null;
+    return !item.ajuste() && !item.creditoAutomatico() && item.operacao() == null
+        && item.transferenciaRef() == null;
   }
 
   private static BigDecimal subtotal(
@@ -246,42 +247,33 @@ public final class VisaoGeralConferenciaMapper {
       Map<Long, CalculoOperacao> calculos,
       RetratoConferencia retrato,
       Map<Long, String> codigos) {
-    Map<Long, List<CalculoOperacao>> porAtivo = new HashMap<>();
-    Map<Long, List<CalculoOperacao>> moedas = new HashMap<>();
-    for (FatoLivro fato : fatos) {
-      if (fato.tipo() == TipoOperacao.VENDA)
-        porAtivo
-            .computeIfAbsent(fato.ativoId(), ignorado -> new ArrayList<>())
-            .add(calculos.get(fato.id()));
-      else if (fato.tipo() == TipoOperacao.COMPRA
-          && !"fiat:BRL".equals(codigos.get(fato.moedaCotacaoId())))
-        moedas
-            .computeIfAbsent(fato.moedaCotacaoId(), ignorado -> new ArrayList<>())
-            .add(calculos.get(fato.id()));
-    }
-    Set<Long> ids = new TreeSet<>(porAtivo.keySet());
-    ids.addAll(moedas.keySet());
+    Map<Long, List<ParcelaResultadoAtivo>> porAtivo = fatos.stream()
+        .flatMap(fato -> ParcelaResultadoAtivo.de(fato, calculos.get(fato.id()),
+            fato.moedaCotacaoId() != null && "fiat:BRL".equals(codigos.get(fato.moedaCotacaoId()))).stream())
+        .collect(Collectors.groupingBy(ParcelaResultadoAtivo::ativoId));
     List<ResultadoAtivoResponse> resultados = new ArrayList<>();
-    for (Long id : ids) {
-      List<CalculoOperacao> vendas = porAtivo.getOrDefault(id, List.of());
-      List<CalculoOperacao> compras = moedas.getOrDefault(id, List.of());
-      List<CalculoOperacao> todos = new ArrayList<>(vendas);
-      todos.addAll(compras);
+    for (var entrada : porAtivo.entrySet()) {
+      Long id = entrada.getKey();
+      List<ParcelaResultadoAtivo> parcelas = entrada.getValue();
       var ativo = retrato.ativos().get(id);
       boolean incompleto =
           !retrato.quantidadesCompletas()
               || retrato.itens().stream()
                   .anyMatch(i -> semClassificacao(i) && i.ativoId().equals(id));
+      BigDecimal negociacao = totalParcelas(parcelas, ParcelaResultadoAtivo::negociacao, incompleto);
+      BigDecimal moeda = totalParcelas(parcelas, ParcelaResultadoAtivo::moeda, incompleto);
+      BigDecimal taxa = totalParcelas(parcelas, ParcelaResultadoAtivo::taxa, incompleto);
+      BigDecimal total = negociacao == null || moeda == null || taxa == null
+          ? null : negociacao.add(moeda).add(taxa);
+      BigDecimal conhecido = parcelas.stream()
+          .flatMap(p -> java.util.stream.Stream.of(p.negociacao(), p.moeda(), p.taxa()))
+          .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
       resultados.add(
           new ResultadoAtivoResponse(
               id.toString(),
               ativo.ticker(),
               ativo.nome(),
-              numero(total(vendas, CalculoOperacao::resultadoNegociacaoBrl, incompleto)),
-              numero(total(compras, CalculoOperacao::resultadoMoedaBrl, incompleto)),
-              numero(total(todos, CalculoOperacao::resultadoTaxaBrl, incompleto)),
-              numero(total(todos, CalculoOperacao::resultadoTotalBrl, incompleto)),
-              numero(subtotal(todos, CalculoOperacao::resultadoTotalBrl))));
+              numero(negociacao), numero(moeda), numero(taxa), numero(total), numero(conhecido)));
     }
     return resultados.stream()
         .sorted(
@@ -292,6 +284,12 @@ public final class VisaoGeralConferenciaMapper {
                 .thenComparing(ResultadoAtivoResponse::ativoTicker)
                 .thenComparing(ResultadoAtivoResponse::ativoId))
         .toList();
+  }
+
+  private static BigDecimal totalParcelas(List<ParcelaResultadoAtivo> parcelas,
+      Function<ParcelaResultadoAtivo, BigDecimal> campo, boolean incompleto) {
+    if (incompleto || parcelas.stream().map(campo).anyMatch(Objects::isNull)) return null;
+    return parcelas.stream().map(campo).reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   private static String numero(BigDecimal valor) {

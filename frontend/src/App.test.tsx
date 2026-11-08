@@ -42,7 +42,9 @@ describe("login pelo serviço local do frontend", () => {
       role: "acesso_total",
     });
     expect(screen.queryByRole("heading", { name: "Olá, Jaime." })).not.toBeInTheDocument();
-    expect(fetchMock.mock.calls.every(([url]) => url === "/api/v1/visao-geral")).toBe(true);
+    expect(new Set(fetchMock.mock.calls.map(([url]) => url))).toEqual(
+      new Set(["/api/v1/visao-geral", "/api/v1/conciliacao/cotacoes/atualizacao"]),
+    );
   });
 
   it.each([

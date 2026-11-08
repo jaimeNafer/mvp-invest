@@ -2,6 +2,8 @@ package io.github.jaimenafer.lastro.operacoes.api.controller;
 
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
 import io.github.jaimenafer.lastro.operacoes.application.usecase.IConferenciaUseCase;
+import io.github.jaimenafer.lastro.operacoes.application.usecase.IAgendamentoCotacoesUseCase;
+import io.github.jaimenafer.lastro.operacoes.application.usecase.IValoracaoManualUseCase;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,25 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ConferenciaController {
   private final IConferenciaUseCase usecase;
+  private final IAgendamentoCotacoesUseCase cotacoes;
+  private final IValoracaoManualUseCase valoracoes;
+
+  @PutMapping("/registros/{id}/valoracao")
+  public RevisaoConferenciaResponse valorarRegistro(
+      @PathVariable String id, @Valid @RequestBody ValoracaoManualRequest request,
+      @RequestHeader("Idempotency-Key") String chave) {
+    return valoracoes.registrarLinha(id, request, chave);
+  }
+
+  @PostMapping("/cotacoes/atualizacoes")
+  public AgendamentoCotacoesResponse atualizarCotacoes() {
+    return new AgendamentoCotacoesResponse(cotacoes.solicitar());
+  }
+
+  @GetMapping("/cotacoes/atualizacao")
+  public AtualizacaoCotacoesResponse ultimaAtualizacaoCotacoes() {
+    return new AtualizacaoCotacoesResponse(cotacoes.ultimaAtualizacao());
+  }
 
   @GetMapping("/timeline")
   public TimelineConferenciaResponse listar(

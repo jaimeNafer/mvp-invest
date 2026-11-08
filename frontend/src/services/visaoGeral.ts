@@ -3,6 +3,14 @@ import { requisitarJson } from "./http";
 import type { Posicao } from "./operacoes";
 
 export type PeriodoVisaoGeral = { dataInicio: string; dataFim: string };
+export type PontoPatrimonioDiario = {
+  data: string;
+  valorTotalBrl: string | null;
+  valorConhecidoBrl: string;
+  ativosComPreco: number;
+  ativosSemPreco: number;
+  quantidadesCompletas: boolean;
+};
 export type PosicaoVisaoGeral = Posicao & {
   ativoNome: string;
   participacaoPercentual: string | null;
@@ -84,6 +92,13 @@ export type VisaoGeral = PeriodoVisaoGeral & {
 export function consultarVisaoGeral(periodo?: PeriodoVisaoGeral, signal?: AbortSignal) {
   const parametros = periodo ? `?${new URLSearchParams(periodo)}` : "";
   return requisitarJson<VisaoGeral>(`/visao-geral${parametros}`, { signal });
+}
+
+export function consultarPatrimonioDiario(periodo?: PeriodoVisaoGeral, signal?: AbortSignal) {
+  const parametros = periodo ? `?${new URLSearchParams(periodo)}` : "";
+  return requisitarJson<PontoPatrimonioDiario[]>(`/visao-geral/patrimonio-diario${parametros}`, {
+    signal,
+  });
 }
 
 export function consultarAvisos(

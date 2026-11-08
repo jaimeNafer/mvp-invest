@@ -2,9 +2,12 @@ package io.github.jaimenafer.lastro.operacoes.application.port;
 
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
 import io.github.jaimenafer.lastro.operacoes.domain.model.*;
+import java.math.BigDecimal;
 import java.util.*;
 
 public interface IAssociacoesLivro {
+  BigDecimal cotacaoEfetiva(List<LinhaAssociacao> linhas);
+
   List<GrupoEmConferencia> grupos(boolean propostas, Map<Long, String> impedimentos);
 
   List<GrupoEmConferencia> gruposParaTimeline(Map<Long, String> impedimentos);

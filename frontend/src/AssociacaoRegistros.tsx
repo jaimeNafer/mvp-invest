@@ -58,6 +58,7 @@ export default function AssociacaoRegistros({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [avisos, setAvisos] = useState<string[]>([]);
+  const [janelaMilissegundos, setJanelaMilissegundos] = useState<number>();
   const previaAbort = useRef<AbortController | null>(null);
   const grupoAbort = useRef<AbortController | null>(null);
   const linhaClicada = useRef<LinhaAssociacaoResponse | null>(null);
@@ -72,6 +73,7 @@ export default function AssociacaoRegistros({
         if (!ativa) return;
         setRevisaoCandidatos(resposta.revisao);
         setAvisos(resposta.avisos ?? []);
+        setJanelaMilissegundos(resposta.janelaMilissegundos);
         setTaxaZeroConfirmada(resposta.grupo?.taxaZeroConfirmada ?? false);
         setCotacaoBrl(resposta.grupo?.cotacaoBrl ?? "");
         const porId = new Map(resposta.linhas.map((linha) => [linha.id, linha]));
@@ -227,6 +229,14 @@ export default function AssociacaoRegistros({
     );
   };
 
+  const podeAcrescentar = (id: string) => {
+    if (janelaMilissegundos === undefined || selecionadas.includes(id)) return true;
+    const datas = linhas
+      .filter((linha) => linha.id === id || selecionadas.includes(linha.id))
+      .map((linha) => Date.parse(linha.data ?? ""));
+    return Math.max(...datas) - Math.min(...datas) <= janelaMilissegundos;
+  };
+
   const escolherCandidata = (id: string) => {
     invalidaPrevia();
     const candidata = linhas.find((linha) => linha.id === id);
@@ -348,7 +358,9 @@ export default function AssociacaoRegistros({
                         type="checkbox"
                         aria-label={`${linha.ativoTicker} ${linha.quantidade} ${linha.id}`}
                         checked={selecionadas.includes(linha.id)}
-                        disabled={disabled || salvando || consultandoGrupo}
+                        disabled={
+                          disabled || salvando || consultandoGrupo || !podeAcrescentar(linha.id)
+                        }
                         onChange={(evento) => alternarLinha(linha.id, evento.target.checked)}
                       />
                     </td>

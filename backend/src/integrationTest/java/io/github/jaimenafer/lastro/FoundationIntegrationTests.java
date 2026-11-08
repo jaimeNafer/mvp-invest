@@ -27,7 +27,7 @@ class FoundationIntegrationTests {
 
   @Test
   void migrationsCriamBancoSemDadosReaisEReexecucaoNaoAlteraSchema() {
-    assertThat(flyway.info().applied()).hasSize(15);
+    assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("17");
     assertThat(flyway.migrate().migrationsExecuted).isZero();
     assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM carteiras", Integer.class)).isZero();
     assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM contas", Integer.class)).isZero();

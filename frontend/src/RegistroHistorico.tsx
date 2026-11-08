@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ConferenciaRegistroForm from "./ConferenciaRegistroForm";
+import ValoracaoHistorico from "./ValoracaoHistorico";
 import { classesEstados, nomesEstados } from "./services/conciliacao";
 import type {
   ContaCustodia,
@@ -29,6 +30,7 @@ export default function RegistroHistorico({
   ativos,
   onAbrir,
   onSalvar,
+  onSalvarValoracao,
   onRevisar,
   onAssociar,
   emGrupo = false,
@@ -41,6 +43,7 @@ export default function RegistroHistorico({
   ativos: Ativo[];
   onAbrir: (aberto: boolean) => void;
   onSalvar: (dados: DadosConferencia, saldoAnterior: boolean) => void;
+  onSalvarValoracao?: (valorTotalBrl: string) => void | Promise<void>;
   onRevisar: () => void;
   onAssociar: () => void;
   emGrupo?: boolean;
@@ -147,6 +150,13 @@ export default function RegistroHistorico({
       </div>
       {aberto && (
         <div className="registro-detalhes">
+          {!emGrupo && registro.valoracao && (
+            <ValoracaoHistorico
+              valoracao={registro.valoracao}
+              disabled={disabled}
+              onSalvar={(valorTotalBrl) => onSalvarValoracao?.(valorTotalBrl)}
+            />
+          )}
           {registro.natureza === "CREDITO_AUTOMATICO" &&
             registro.subtipoCredito === "RENDIMENTO" && (
               <p>A disponibilidade para negociação depende das condições da instituição.</p>
