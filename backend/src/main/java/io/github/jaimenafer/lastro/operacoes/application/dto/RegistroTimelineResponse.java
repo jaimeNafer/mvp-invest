@@ -45,7 +45,8 @@ public record RegistroTimelineResponse(
     boolean saldoAnteriorPendente,
     SubtipoCredito subtipoCredito,
     List<ParcelaGrupoResponse> pagamentosGrupo,
-    List<ParcelaGrupoResponse> recebimentosGrupo) {
+    List<ParcelaGrupoResponse> recebimentosGrupo,
+    ValoracaoTimelineResponse valoracao) {
   public String chaveGrupo() {
     return grupoNumero == null ? grupoAutomatico : grupoNumero;
   }

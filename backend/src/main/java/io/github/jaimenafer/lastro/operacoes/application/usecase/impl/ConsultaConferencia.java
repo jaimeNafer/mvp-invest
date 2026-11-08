@@ -12,6 +12,8 @@ import io.github.jaimenafer.lastro.operacoes.application.port.*;
 import io.github.jaimenafer.lastro.operacoes.domain.model.*;
 import io.github.jaimenafer.lastro.operacoes.domain.repository.*;
 import io.github.jaimenafer.lastro.operacoes.domain.service.MotorLivro;
+import io.github.jaimenafer.lastro.operacoes.domain.service.ValoracaoCreditos;
+import io.github.jaimenafer.lastro.operacoes.domain.service.IdentidadeValoracao;
 import io.github.jaimenafer.lastro.operacoes.domain.service.ProjecaoGrupo;
 import io.github.jaimenafer.lastro.operacoes.domain.service.ClassificacaoMovimentacao;
 import java.math.*;
@@ -29,6 +31,8 @@ import org.springframework.transaction.annotation.*;
 public class ConsultaConferencia implements IConsultaConferencia, IConsultaLivroConferencia {
   private final IUsuarioAtual usuario;
   private final IOperacaoRepository operacoes;
+  private final IHistoricoCotacaoRepository cotacoes;
+  private final IValoracaoManualRepository valoracoesManuais;
   private final IRegistroConferenciaRepository registros;
   private final IContaCustodiaRepository custodias;
   private final IAjusteConciliatorioRepository ajustes;
@@ -77,6 +81,7 @@ public class ConsultaConferencia implements IConsultaConferencia, IConsultaLivro
             associacoes.projetar(itens, propostas, impedimentos).stream()
                 .filter(i -> ate == null || !i.ocorridaEm().isAfter(ate))
                 .toList());
+    itens = new ArrayList<>(valorarCreditos(itens));
     if (incluirAjustes)
       for (AjusteConciliatorio a : ajustes.listarAtivos(usuario.id())) {
         boolean ancoraPresente = itens.stream().anyMatch(i -> i.id().equals(a.getAncoraRef()));
@@ -99,6 +104,33 @@ public class ConsultaConferencia implements IConsultaConferencia, IConsultaLivro
     return List.copyOf(itens);
   }
 
+  private List<ItemConferenciaLivro> valorarCreditos(List<ItemConferenciaLivro> itens) {
+    Map<String, ValoracaoManual> manuais = valoracoesManuais.listar(usuario.id()).stream()
+        .filter(v -> v.registroId() != null)
+        .collect(Collectors.toMap(v -> "registro:" + v.registroId(), Function.identity()));
+    itens = itens.stream().map(i -> aplicarValorManual(i, manuais.get(i.id()))).toList();
+    List<Instant> datas = itens.stream()
+        .filter(i -> i.creditoAutomatico() && i.custoEntradaBrl() == null)
+        .map(ItemConferenciaLivro::ocorridaEm)
+        .filter(Objects::nonNull)
+        .toList();
+    if (datas.isEmpty()) return itens;
+    Long brlId = ativos.buscarPorCodigo("fiat:BRL").orElseThrow().id();
+    Instant inicio = datas.stream().min(Comparator.naturalOrder()).orElseThrow().minus(Duration.ofHours(24));
+    Instant fim = datas.stream().max(Comparator.naturalOrder()).orElseThrow().plusMillis(1);
+    return ValoracaoCreditos.valorar(itens, brlId, cotacoes.buscar(inicio, fim, "HORA"));
+  }
+
+  private ItemConferenciaLivro aplicarValorManual(ItemConferenciaLivro item, ValoracaoManual manual) {
+    if (!item.creditoAutomatico() || manual == null || item.custoEntradaBrl() != null) return item;
+    String identidade = IdentidadeValoracao.registro(manual.registroId(), item.instituicaoId(),
+        item.contaId(), item.ativoId(), item.ocorridaEm(), item.quantidade());
+    if (!Objects.equals(manual.identidade(), identidade)) return item;
+    Valoracao valor = new Valoracao(EstadoValoracao.MANUAL, manual.valorBrl(), List.of());
+    return new ItemConferenciaLivro(item.id(), item.contaId(), item.instituicaoId(), item.ativoId(),
+        item.ocorridaEm(), item.ordem(), item.quantidade(), manual.valorBrl(), item.operacao(),
+        item.ajuste(), item.ancoraId(), item.transferenciaRef(), true, valor);
+  }
   public Map<Long, String> impedimentosOrigem() {
     List<RegistroConferencia> fontes = registros.listar(usuario.id());
     Map<Long, PropostaRegistro> classificacoes = classificarMovimentacoes(fontes);
@@ -606,6 +638,11 @@ public class ConsultaConferencia implements IConsultaConferencia, IConsultaLivro
     Set<Long> ids = new HashSet<>();
     for (ItemConferenciaLivro i : itens) {
       ids.add(i.ativoId());
+      if (i.valoracao() != null)
+        for (CotacaoHistorica c : i.valoracao().caminho()) {
+          ids.add(c.baseId());
+          ids.add(c.moedaId());
+        }
       if (i.operacao() != null) {
         if (i.operacao().moedaCotacaoId() != null) ids.add(i.operacao().moedaCotacaoId());
         if (i.operacao().taxaAtivoId() != null) ids.add(i.operacao().taxaAtivoId());
@@ -640,6 +677,8 @@ public class ConsultaConferencia implements IConsultaConferencia, IConsultaLivro
 
   public List<RegistroTimelineResponse> registros() {
     List<ItemConferenciaLivro> itens = projetar(true, true, null);
+    Map<String, ItemConferenciaLivro> itensPorId = itens.stream()
+        .collect(Collectors.toMap(ItemConferenciaLivro::id, Function.identity(), (a, b) -> a));
     Map<Long, AtivoResumo> catalogo = catalogo(itens);
     Set<Long> propostos =
         registros.listar(usuario.id()).stream()
@@ -799,7 +838,8 @@ public class ConsultaConferencia implements IConsultaConferencia, IConsultaLivro
               grupo == null ? List.of() : grupo.resumo().pagamentos().stream()
                   .map(v -> new ParcelaGrupoResponse(v.ticker(), decimal(v.quantidade()))).toList(),
               grupo == null ? List.of() : grupo.resumo().recebimentos().stream()
-                  .map(v -> new ParcelaGrupoResponse(v.ticker(), decimal(v.quantidade()))).toList()));
+                  .map(v -> new ParcelaGrupoResponse(v.ticker(), decimal(v.quantidade()))).toList(),
+              valoracaoTimeline(r, p, grupo, itensPorId, catalogo)));
     }
     List<ItemConferenciaLivro> exibidos = new ArrayList<>(itens);
     Set<String> idsExibidos =
@@ -888,7 +928,8 @@ public class ConsultaConferencia implements IConsultaConferencia, IConsultaLivro
                 false,
                 null,
                 List.of(),
-                List.of()));
+                List.of(),
+                null));
       }
     Map<String, String> datas =
         linhas.stream()
@@ -901,6 +942,51 @@ public class ConsultaConferencia implements IConsultaConferencia, IConsultaLivro
             .thenComparing(l -> l.origem().equals("SINTETICA") ? 0 : 1)
             .thenComparing(RegistroTimelineResponse::id));
     return List.copyOf(linhas);
+  }
+
+  private ValoracaoTimelineResponse valoracaoTimeline(RegistroConferencia registro, PropostaRegistro proposta,
+      GrupoEmConferencia grupo, Map<String, ItemConferenciaLivro> itens, Map<Long, AtivoResumo> catalogo) {
+    boolean credito = grupo == null && proposta.natureza() == NaturezaRegistro.CREDITO_AUTOMATICO;
+    boolean negociacao = grupo != null && grupo.resumo().natureza() != null
+        && Set.of(NaturezaRegistro.COMPRA, NaturezaRegistro.VENDA,
+        NaturezaRegistro.CONVERSAO).contains(grupo.resumo().natureza());
+    if (!credito && !negociacao) return null;
+    ItemConferenciaLivro item = itens.get(grupo == null ? "registro:" + registro.getId() : grupo.identificador());
+    Valoracao valor = item == null ? null : item.valoracao();
+    if (valor == null && grupo != null) valor = grupo.valoracao();
+    if (valor == null && credito && item != null && item.custoEntradaBrl() != null)
+      valor = new Valoracao(EstadoValoracao.CONFIRMADO, item.custoEntradaBrl(), List.of());
+    if (valor == null && negociacao && grupo.resumo().principalBrl() != null)
+      valor = new Valoracao(EstadoValoracao.CONFIRMADO, grupo.resumo().principalBrl(), List.of());
+    if (valor == null) valor = new Valoracao(EstadoValoracao.INDISPONIVEL, null, List.of());
+    List<CotacaoHistorica> caminho = valor.caminho();
+    String data = caminho.isEmpty() ? null : caminho.stream().map(CotacaoHistorica::instante)
+        .min(Comparator.naturalOrder()).orElseThrow().toString();
+    String fonte = caminho.isEmpty() ? null : caminho.getFirst().fonte();
+    List<ParcelaGrupo> moedas = !negociacao ? List.of() : grupo.resumo().natureza() == NaturezaRegistro.VENDA
+        ? grupo.resumo().recebimentos() : grupo.resumo().pagamentos();
+    Long ativoInicial = moedas.size() == 1 ? moedas.getFirst().ativoId() : item == null ? null : item.ativoId();
+    String metodo = caminho.isEmpty() ? null : caminhoValoracao(ativoInicial, caminho, catalogo);
+    BigDecimal quantidade = moedas.size() == 1 ? moedas.getFirst().quantidade()
+        : item == null ? null : item.quantidade();
+    String cotacao = valor.valorTotalBrl() == null || quantidade == null || quantidade.signum() <= 0
+        ? null : valor.valorTotalBrl().divide(quantidade, 18, RoundingMode.HALF_EVEN).stripTrailingZeros().toPlainString();
+    return new ValoracaoTimelineResponse(valor.estado(), decimal(valor.valorTotalBrl()), cotacao,
+        data, fonte, metodo, valor.estado() == EstadoValoracao.ESTIMADO,
+        valor.estado() == EstadoValoracao.INDISPONIVEL ? "Não há cotação histórica adequada para esta operação." : null,
+        valor.estado() != EstadoValoracao.CONFIRMADO && (credito || grupo != null && grupo.id() != null));
+  }
+
+  private String caminhoValoracao(Long inicio, List<CotacaoHistorica> caminho,
+      Map<Long, AtivoResumo> catalogo) {
+    List<String> nomes = new ArrayList<>();
+    Long atual = inicio;
+    nomes.add(catalogo.containsKey(atual) ? catalogo.get(atual).ticker() : String.valueOf(atual));
+    for (CotacaoHistorica cotacao : caminho) {
+      atual = Objects.equals(atual, cotacao.baseId()) ? cotacao.moedaId() : cotacao.baseId();
+      nomes.add(catalogo.containsKey(atual) ? catalogo.get(atual).ticker() : String.valueOf(atual));
+    }
+    return String.join(" → ", nomes);
   }
 
   private String identificadorEfeito(RegistroConferencia registro, GrupoEmConferencia grupo) {

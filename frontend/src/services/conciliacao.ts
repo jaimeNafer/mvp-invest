@@ -2,6 +2,7 @@ import type { GrupoAssociacaoResponse } from "./associacoes";
 import { requisitarJson } from "./http";
 
 export type EstadoConferencia = "COERENTE" | "PENDENTE" | "CORRECAO_NECESSARIA";
+export type MarcadorAtualizacaoCotacoes = { atualizadaEm: string | null };
 export type NaturezaRegistro =
   | "OBSERVADA"
   | "SALDO_ANTERIOR"
@@ -13,6 +14,24 @@ export type NaturezaRegistro =
   | "CREDITO_AUTOMATICO"
   | "MOVIMENTACAO_INTERNA";
 export type FinalidadeCripto = "DESCONHECIDA" | "CARTEIRA_PROPRIA" | "TERCEIROS" | "OUTRA";
+export type StatusValoracao = "CONFIRMADO" | "HISTORICO" | "ESTIMADO" | "MANUAL" | "INDISPONIVEL";
+export type ValoracaoTimeline = {
+  statusValoracao: StatusValoracao;
+  valorTotalBrl: string | null;
+  cotacaoUtilizada: string | null;
+  dataHoraCotacao: string | null;
+  fonteCotacao: string | null;
+  metodoConversao: string | null;
+  aproximado: boolean;
+  motivoIndisponibilidade: string | null;
+  permiteCorrecaoManual: boolean;
+};
+
+export function consultarMarcadorAtualizacaoCotacoes(signal?: AbortSignal) {
+  return requisitarJson<MarcadorAtualizacaoCotacoes>("/conciliacao/cotacoes/atualizacao", {
+    signal,
+  });
+}
 export type ResumoConferencia = {
   total: number;
   operacoesCoerentes?: number;
@@ -78,6 +97,7 @@ export type RegistroTimeline = {
   taxaAtivoId?: string | null;
   taxaQuantidade?: string | null;
   taxaInformada?: boolean;
+  valoracao?: ValoracaoTimeline;
 };
 export type FiltroTimeline = {
   pagina: number;
@@ -170,10 +190,35 @@ export function comandoConferencia(
 ): ComandoConferencia {
   return { caminho, corpo: JSON.stringify(entrada), metodo, chave: crypto.randomUUID(), mensagem };
 }
+export function comandoValoracao(
+  registro: RegistroTimeline,
+  revisao: string,
+  valorTotalBrl: string,
+  versao = registro.versao,
+): ComandoConferencia {
+  const caminho = registro.grupoNumero
+    ? `/conciliacao/associacoes/${encodeURIComponent(registro.grupoNumero)}/valoracao`
+    : `/conciliacao/registros/${encodeURIComponent(registro.id)}/valoracao`;
+  return comandoConferencia(
+    caminho,
+    { revisao, versao, valorTotalBrl },
+    "Valor informado. O histórico será recalculado automaticamente.",
+    "PUT",
+  );
+}
+export function comandoAtualizacaoCotacoes(): ComandoConferencia {
+  return {
+    caminho: "/conciliacao/cotacoes/atualizacoes",
+    metodo: "POST",
+    corpo: "",
+    chave: crypto.randomUUID(),
+    mensagem: "Solicitação recebida. O histórico será recalculado automaticamente.",
+  };
+}
 export function executarConferencia(comando: ComandoConferencia) {
   return requisitarJson(comando.caminho, {
     method: comando.metodo,
-    body: comando.corpo,
+    ...(comando.corpo ? { body: comando.corpo } : {}),
     headers: { "Idempotency-Key": comando.chave },
     signal: AbortSignal.timeout(120000),
   });

@@ -4,6 +4,7 @@ import Historico from "./Historico";
 import Operacoes from "./Operacoes";
 import PreviaConciliacao from "./PreviaConciliacao";
 import RegistroHistorico from "./RegistroHistorico";
+import type { ValoracaoTimeline } from "./services/conciliacao";
 
 const registro = {
   id: "registro:42",
@@ -29,6 +30,17 @@ const registro = {
   ],
   ancoraId: null,
   camposOriginais: { Change: "-0.030000000000000001", Remark: "registro sintético" },
+};
+const valoracaoIndisponivel: ValoracaoTimeline = {
+  statusValoracao: "INDISPONIVEL",
+  valorTotalBrl: null,
+  cotacaoUtilizada: null,
+  dataHoraCotacao: null,
+  fonteCotacao: null,
+  metodoConversao: null,
+  aproximado: false,
+  motivoIndisponibilidade: "Dados financeiros ainda indisponíveis",
+  permiteCorrecaoManual: true,
 };
 const resumo = {
   total: 3,
@@ -63,6 +75,7 @@ function servidor(
     agrupar?: boolean;
     grupoAutomatico?: boolean;
     conversao?: boolean;
+    valoracao?: ValoracaoTimeline;
     mutacao?: (url: string, init: RequestInit) => Response | Promise<Response>;
   } = {},
 ) {
@@ -77,6 +90,7 @@ function servidor(
         const chave = opcoes.grupoAutomatico ? "grupo:registro:42" : "OP-42";
         const primeira = {
           ...registro,
+          ...(opcoes.valoracao ? { valoracao: opcoes.valoracao } : {}),
           ...(opcoes.conversao
             ? {
                 tipo: "Binance Convert",
@@ -104,7 +118,7 @@ function servidor(
       }
       return json({
         itens: [
-          registro,
+          { ...registro, ...(opcoes.valoracao ? { valoracao: opcoes.valoracao } : {}) },
           {
             ...registro,
             id: "operacao:1",
@@ -176,6 +190,7 @@ function servidor(
         ],
         resumo,
       });
+    if (url.endsWith("/conciliacao/associacoes/OP-42")) return json({ versao: "5" });
     if (init.method === "POST" || init.method === "PUT") {
       escritas.push({ url, init });
       if (opcoes.mutacao) return opcoes.mutacao(url, init);
@@ -652,4 +667,71 @@ it("preserva formulario apos conflito seguido de falha ao atualizar o historico"
   expect(screen.getByLabelText("Motivo")).toHaveValue("Preservar rascunho");
   expect(screen.getByRole("button", { name: "Conferir histórico" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Tentar novamente" })).toBeEnabled();
+});
+
+it("informa valor manual na operação agrupada com recálculo avisado", async () => {
+  const { escritas, fetchMock } = servidor({ agrupar: true, valoracao: valoracaoIndisponivel });
+  render(<Historico />);
+  fireEvent.click(await screen.findByRole("button", { name: "Operação OP-42" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Informar valor em reais" }));
+  expect(screen.getByLabelText("Valor total em reais")).toBeVisible();
+  expect(
+    screen.getByText("Ao salvar, o histórico será recalculado automaticamente."),
+  ).toBeVisible();
+  fireEvent.change(screen.getByLabelText("Valor total em reais"), {
+    target: { value: "1.234,56" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Salvar valor" }));
+  await waitFor(() => expect(escritas).toHaveLength(1));
+  expect(
+    fetchMock.mock.calls.some(([url]) => String(url).endsWith("/conciliacao/associacoes/OP-42")),
+  ).toBe(true);
+  expect(escritas[0].url).toContain("/conciliacao/associacoes/OP-42/valoracao");
+  expect(JSON.parse(String(escritas[0].init.body))).toEqual({
+    revisao: "7",
+    versao: "5",
+    valorTotalBrl: "1234.56",
+  });
+  expect(new Headers(escritas[0].init.headers).get("Idempotency-Key")).toBeTruthy();
+});
+
+it("informa valor manual em registro individual e exibe a valoração fora da coerência", async () => {
+  const { escritas } = servidor({ valoracao: valoracaoIndisponivel });
+  render(<Historico />);
+  fireEvent.click(await screen.findByRole("button", { name: "Detalhar Saída observada" }));
+  expect(screen.getByText("Valor indisponível")).toBeVisible();
+  expect(screen.getByText("Com pendência")).toBeVisible();
+  expect(screen.getByText("Dados financeiros ainda indisponíveis")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Informar valor em reais" }));
+  fireEvent.change(screen.getByLabelText("Valor total em reais"), { target: { value: "25,00" } });
+  fireEvent.click(screen.getByRole("button", { name: "Salvar valor" }));
+  await waitFor(() => expect(escritas).toHaveLength(1));
+  expect(escritas[0].url).toContain("/conciliacao/registros/registro%3A42/valoracao");
+  expect(JSON.parse(String(escritas[0].init.body))).toEqual({
+    revisao: "7",
+    versao: "1",
+    valorTotalBrl: "25.00",
+  });
+});
+
+it("solicita atualização de cotações sem payload e permite recarregar o histórico", async () => {
+  const { escritas, fetchMock } = servidor();
+  render(<Historico />);
+  await screen.findByText("Saída observada");
+  fireEvent.click(screen.getByRole("button", { name: "Atualizar cotações" }));
+  expect(
+    await screen.findByText("Solicitação recebida. O histórico será recalculado automaticamente."),
+  ).toBeVisible();
+  await waitFor(() => expect(escritas).toHaveLength(1));
+  expect(escritas[0].url).toBe("/api/v1/conciliacao/cotacoes/atualizacoes");
+  expect(escritas[0].init.body).toBeUndefined();
+  const consultasAntes = fetchMock.mock.calls.filter(([url]) =>
+    String(url).includes("/timeline?"),
+  ).length;
+  fireEvent.click(screen.getByRole("button", { name: "Recarregar histórico" }));
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).includes("/timeline?")).length,
+    ).toBeGreaterThan(consultasAntes),
+  );
 });

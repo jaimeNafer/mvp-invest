@@ -4,6 +4,7 @@ import io.github.jaimenafer.lastro.operacoes.application.dto.*;
 import io.github.jaimenafer.lastro.operacoes.application.dto.VisaoGeralResponse;
 import io.github.jaimenafer.lastro.operacoes.application.usecase.IVisaoGeralUseCase;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -22,5 +23,10 @@ public class VisaoGeralController {
   @GetMapping("/api/v1/visao-geral/avisos")
   public AvisosConferenciaResponse avisos(@Valid @ModelAttribute FiltroAvisosConferencia filtro) {
     return visaoGeral.avisos(filtro);
+  }
+
+  @GetMapping("/api/v1/visao-geral/patrimonio-diario")
+  public List<PatrimonioDiarioResponse> patrimonioDiario(@Valid @ModelAttribute FiltroVisaoGeral filtro) {
+    return visaoGeral.patrimonioDiario(filtro);
   }
 }

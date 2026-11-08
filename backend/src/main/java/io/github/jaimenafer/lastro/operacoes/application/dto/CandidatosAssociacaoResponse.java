@@ -6,4 +6,5 @@ public record CandidatosAssociacaoResponse(
     String revisao,
     List<LinhaAssociacaoResponse> linhas,
     GrupoAssociacaoResponse grupo,
-    List<String> avisos) {}
+    List<String> avisos,
+    long janelaMilissegundos) {}

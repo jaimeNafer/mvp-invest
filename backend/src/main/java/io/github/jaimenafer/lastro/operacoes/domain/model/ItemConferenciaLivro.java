@@ -4,24 +4,21 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record ItemConferenciaLivro(
-    String id,
-    Long contaId,
-    Long instituicaoId,
-    Long ativoId,
-    Instant ocorridaEm,
-    long ordem,
-    BigDecimal quantidade,
-    BigDecimal custoEntradaBrl,
-    FatoLivro operacao,
-    boolean ajuste,
-    String ancoraId,
-    String transferenciaRef,
-    boolean creditoAutomatico) {
+    String id, Long contaId, Long instituicaoId, Long ativoId, Instant ocorridaEm, long ordem,
+    BigDecimal quantidade, BigDecimal custoEntradaBrl, FatoLivro operacao, boolean ajuste,
+    String ancoraId, String transferenciaRef, boolean creditoAutomatico, Valoracao valoracao) {
+  public ItemConferenciaLivro(
+      String id, Long contaId, Long instituicaoId, Long ativoId, Instant ocorridaEm, long ordem,
+      BigDecimal quantidade, BigDecimal custoEntradaBrl, FatoLivro operacao, boolean ajuste,
+      String ancoraId, String transferenciaRef, boolean creditoAutomatico) {
+    this(id, contaId, instituicaoId, ativoId, ocorridaEm, ordem, quantidade, custoEntradaBrl,
+        operacao, ajuste, ancoraId, transferenciaRef, creditoAutomatico, null);
+  }
   public ItemConferenciaLivro(
       String id, Long contaId, Long instituicaoId, Long ativoId, Instant ocorridaEm, long ordem,
       BigDecimal quantidade, BigDecimal custoEntradaBrl, FatoLivro operacao, boolean ajuste,
       String ancoraId, String transferenciaRef) {
     this(id, contaId, instituicaoId, ativoId, ocorridaEm, ordem, quantidade, custoEntradaBrl,
-        operacao, ajuste, ancoraId, transferenciaRef, false);
+        operacao, ajuste, ancoraId, transferenciaRef, false, null);
   }
 }

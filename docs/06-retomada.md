@@ -1,3 +1,34 @@
+## Estabilização após auditoria — 08/11/2026
+
+O total efetivo em BRL prevalece no livro, na associação e no comando de valoração manual. A distribuição do resultado usa parcelas de negociação, moeda e taxa. Na compra, o custo da taxa externa integra o ativo adquirido e a variação da baixa pertence ao ativo usado na taxa. Na venda, a despesa fica na operação principal e a variação da baixa pertence ao ativo da taxa. Custo histórico ausente mantém o resultado dependente indisponível.
+
+A V17 distingue períodos parciais de cargas fechadas e permite novo pedido após falha esgotada. A seleção de caminhos usa a data da perna mais antiga como primeiro critério entre os caminhos válidos. A posição diária fecha em Fortaleza e a referência de cotação deriva desse mesmo instante. O painel solicita a série ao abrir, com até 366 datas, erro explícito e opção de tentar novamente. Antes, um intervalo de 366 dias com 5000 registros podia percorrer até 1.830.000 pares dia–registro só para formar os prefixos, além de executar o livro para cada dia. O resumo fechado agora dispensa essa consulta.
+
+### Triagem dos sete testes da auditoria
+
+| Teste | Causa observada na reprodução inicial | Ajuste |
+| --- | --- | --- |
+| associacaoDeTaxaAnteriorEncerraAjusteSemRepetirQuantidades | A taxa com mesma referência e dentro da janela já era agrupada automaticamente. O cenário não criava o ajuste que pretendia encerrar. | A preparação registra primeiro um grupo com as duas pernas principais e mantém a taxa separada até a revisão explícita. |
+| editarLinhaNaoMudaGrupoAplicadoAntesDeReavaliar | A confirmação anterior já persistia o grupo. A segunda criação retornava 409 por reserva das linhas. | O teste recupera o número original e continua a verificar que a edição de quantidade só tem efeito depois da reavaliação do grupo. |
+| manualAteDoisSegundosConfirmaTaxaZeroSemDuplicarEDesfaz | A janela inclusiva já produz uma sugestão automática. | A proposta manual é salva sobre as linhas antes da confirmação e o teste continua cobrindo a confirmação e o desfazimento. |
+| rejeitarAjustePreservaRegistroAplicadoComDeficitExplicito | O débito identificado pode ser coerente e ter saldo anterior pendente, em campos separados. | O teste verifica o indicador específico de saldo anterior e a ausência de ajuste aceito. |
+| revisarNaoResolveLacunaEEdicaoNaoHerdaRevisaoAnterior | Mesmo contrato de saldo anterior separado do estado de coerência. | O teste verifica o indicador específico e que editar invalida a revisão manual anterior. |
+| csvParcialAntesDoPrimeiroAceitePreservaAsDuasQuantidades | O CSV passou a gerar pernas assinadas. O teste tentava transformar a perna negativa em compra individual e recebia 400. | O teste confirma o grupo com as duas pernas, o valor efetivo, o ajuste em BRL e a posição em BTC. |
+| catalogoSomenteLeituraEContextoObrigatorio | A V15 adicionou BNB, LISTA e IO. O teste ainda esperava 14 ativos. | O teste verifica os 17 ativos e os três novos códigos, mantendo os contratos de acesso e somente leitura. |
+
+Na confirmação de uma associação, a comparação da proposta agora usa os objetos desserializados. A representação JSON devolvida pelo MySQL podia produzir versões extras sem mudança da proposta. O teste de desfazimento conserva a exigência de uma única versão anterior.
+
+Verificação: 225 testes unitários e de arquitetura aprovados. A rodada integral inicial de integração teve 176 aprovados e quatro falhas. Após os ajustes, 59 integrações focadas passaram, incluindo os quatro casos, a regressão de saldo anterior nos dois estados de associação, a cadeia retroativa e a V17. As duas regressões de saída cripto da triagem passaram na rodada integral inicial. A suíte integral de integração não foi reexecutada após a rodada focada. No frontend, 129 testes passaram na rodada integral e 11 na rodada focada, que inclui um teste novo de janela temporal. Builds e lint passaram.
+
+Aplicação integrada atualizada em `http://127.0.0.1:8080/`, com JAR separado do diretório de build. A V17 foi aplicada após backup privado em `.local/backup-antes-v17-20261108-041022.sql`. Página, bundle, visão geral, timeline e patrimônio diário responderam HTTP 200. As contagens antes e depois coincidiram em 65 registros, 14 grupos e 24 operações.
+
+## Motor de valoração histórica — aplicação local, 08/11/2026
+
+Correção posterior: a evolução diária passou a ficar recolhida e paginada em 15 datas, após os indicadores principais, evitando que o histórico extenso empurre o restante da visão geral. Teste focado, build frontend e pacote integrado passaram; a aplicação local foi reiniciada e serviu o bundle corrigido com HTTP 200.
+
+Trabalho na branch `codex/valoracao-historica`, disponibilizado em `http://127.0.0.1:8080/`. Cliente Binance, cache versionado, fila e projeção financeira usam cotações históricas. Correções manuais versionadas são vinculadas à identidade econômica; a visão geral oferece série diária com cobertura. A migration V16 foi aplicada ao MySQL local após backup privado em `.local/backup-antes-valoracao-20261108-030203.sql`. Foi solicitada a busca de 390 períodos para Eliane; o processamento prossegue em segundo plano, com prioridade para preços horários.
+
+Os testes focados de livro, arquitetura, resolução de preços e três cenários integrados de valoração passaram; o frontend e o pacote integrado compilaram. Página e APIs de visão geral e timeline responderam HTTP 200. A lista de pares é explícita e limitada aos ativos cadastrados na implementação: não cobre automaticamente qualquer ativo. Os sete testes de integração anteriormente registrados foram repetidos e continuam falhando. A atualização automática da visão geral passou pelo build, mas seu teste mais recente não foi executado.
 ## Verificação antes da publicação — 07/11/2026
 
 O frontend passou em lint, 123 testes e build. O backend passou em 197 testes unitários e arquiteturais; na suíte completa de integração, 155 dos 162 testes passaram. Os sete cenários com falha, que permanecem para investigação e correção, são:

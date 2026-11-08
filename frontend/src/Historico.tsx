@@ -5,6 +5,7 @@ import { decimalPtBr } from "./services/decimais";
 import PreviaConciliacao from "./PreviaConciliacao";
 import RecebimentoHistorico from "./RecebimentoHistorico";
 import RegistroHistorico from "./RegistroHistorico";
+import ValoracaoHistorico from "./ValoracaoHistorico";
 import ResumoConciliacao from "./ResumoConciliacao";
 import type { FiltroTimeline, RegistroTimeline } from "./services/conciliacao";
 import useHistorico from "./useHistorico";
@@ -40,6 +41,11 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
     proximaPendencia,
     recebido,
     revisar,
+    salvarValoracao,
+    solicitarCotacoes,
+    atualizacaoCotacoesSolicitada,
+    solicitandoCotacoes,
+    recarregarHistoricoCotacoes,
     confirmar,
   } = useHistorico(onBloqueio);
   const desabilitado = bloqueado || carregando || falhaAtualizacao;
@@ -79,6 +85,7 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
           ) : null
         }
         onSalvar={(dados, saldoAnterior) => salvar(registro, dados, saldoAnterior)}
+        onSalvarValoracao={(valorTotalBrl) => salvarValoracao(registro, valorTotalBrl)}
         onRevisar={() => revisar(registro)}
       />
     );
@@ -103,6 +110,14 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
           <button
             type="button"
             className="secondary-button"
+            disabled={desabilitado || solicitandoCotacoes}
+            onClick={() => void solicitarCotacoes()}
+          >
+            {solicitandoCotacoes ? "Solicitando…" : "Atualizar cotações"}
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
             disabled={desabilitado || !pagina?.proximaPendenciaId}
             onClick={proximaPendencia}
           >
@@ -122,6 +137,16 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
         </p>
       )}
       {aviso && <p role="status">{aviso}</p>}
+      {atualizacaoCotacoesSolicitada && (
+        <button
+          className="secondary-button"
+          type="button"
+          disabled={desabilitado}
+          onClick={() => void recarregarHistoricoCotacoes()}
+        >
+          Recarregar histórico
+        </button>
+      )}
       {falhaAtualizacao && (
         <p role="status">
           Não foi possível atualizar. Os dados anteriores e o preenchimento foram preservados; tente
@@ -280,6 +305,11 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
                           className="registro-detalhes"
                           aria-label="Linhas originais da operação"
                         >
+                          <ValoracaoHistorico
+                            valoracao={registro.valoracao}
+                            disabled={desabilitado || analisando}
+                            onSalvar={(valorTotalBrl) => salvarValoracao(registro, valorTotalBrl)}
+                          />
                           <div className="resumo-operacao">
                             {grupo.map((linha) => (
                               <span key={linha.id}>

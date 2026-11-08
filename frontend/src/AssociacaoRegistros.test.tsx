@@ -59,6 +59,31 @@ const resposta = (body: unknown, status = 200) => new Response(JSON.stringify(bo
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Associação de registros", () => {
+  it("considera o intervalo entre os extremos de toda a seleção", async () => {
+    const anterior = { ...pagamento, data: "2026-11-06T12:30:43.123456Z" };
+    const posterior = {
+      ...pagamento,
+      id: "registro:3",
+      quantidade: "-200",
+      data: "2026-11-06T12:30:47.123456Z",
+    };
+    const dados = {
+      ...candidatos,
+      linhas: [linha, anterior, posterior],
+      janelaMilissegundos: 2000,
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(dados)));
+    render(<AssociacaoRegistros {...props} />);
+    fireEvent.click(await screen.findByText("Opções de conferência"));
+    const primeira = screen.getByRole("checkbox", { name: /BRL -100/ });
+    const ultima = screen.getByRole("checkbox", { name: /BRL -200/ });
+    expect(ultima).toBeEnabled();
+    fireEvent.click(primeira);
+    expect(ultima).toBeDisabled();
+    fireEvent.click(primeira);
+    expect(ultima).toBeEnabled();
+  });
+
   it("abre com a linha clicada selecionada e exige prévia antes de salvar", async () => {
     const fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes("/candidatos")) return Promise.resolve(resposta(candidatos));

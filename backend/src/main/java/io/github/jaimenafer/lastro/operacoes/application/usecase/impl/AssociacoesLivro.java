@@ -13,9 +13,12 @@ import io.github.jaimenafer.lastro.operacoes.domain.model.*;
 import io.github.jaimenafer.lastro.operacoes.domain.repository.*;
 import io.github.jaimenafer.lastro.operacoes.domain.service.AgrupamentoNegociacoes;
 import io.github.jaimenafer.lastro.operacoes.domain.service.ProjecaoGrupo;
+import io.github.jaimenafer.lastro.operacoes.domain.service.ResolvedorCotacao;
+import io.github.jaimenafer.lastro.operacoes.domain.service.IdentidadeValoracao;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,8 @@ import org.springframework.stereotype.Service;
 public class AssociacoesLivro implements IAssociacoesLivro {
   private final IUsuarioAtual usuario;
   private final IGrupoAssociacaoRepository repository;
+  private final IHistoricoCotacaoRepository cotacoes;
+  private final IValoracaoManualRepository valoracoesManuais;
   private final IRegistroConferenciaRepository registros;
   private final IConsultaAtivos ativos;
   private final IConfiguracaoAssociacao propriedades;
@@ -170,7 +175,7 @@ public class AssociacoesLivro implements IAssociacoesLivro {
   }
 
   public List<GrupoEmConferencia> gruposParaTimeline(Map<Long, String> impedimentos) {
-    return grupos(true, impedimentos, true);
+    return valorarGrupos(grupos(true, impedimentos, true));
   }
 
   private List<GrupoEmConferencia> grupos(
@@ -243,13 +248,24 @@ public class AssociacoesLivro implements IAssociacoesLivro {
     return List.copyOf(selecionados);
   }
 
+  @Override
+  public BigDecimal cotacaoEfetiva(List<LinhaAssociacao> linhas) {
+    Set<Long> ids = linhas.stream().map(LinhaAssociacao::registroId).collect(Collectors.toSet());
+    Map<Long, OrigemRegistro> origens = registros.listar(usuario.id()).stream()
+        .filter(r -> ids.contains(r.getId()))
+        .collect(Collectors.toMap(RegistroConferencia::getId, ConferenciaMapper::origem));
+    return cotacaoOriginal(linhas, origens);
+  }
+
   private BigDecimal cotacaoOriginal(
       List<LinhaAssociacao> linhas, Map<Long, OrigemRegistro> origens) {
     if (linhas.size() != 2
-        || linhas.stream().anyMatch(l -> l.origemFisica() == null || l.papel() == PapelLinha.TAXA)
-        || linhas.stream().map(LinhaAssociacao::origemFisica).distinct().count() != 1
+        || linhas.stream().anyMatch(l -> l.papel() == PapelLinha.TAXA)
         || linhas.stream().anyMatch(l -> !Set.of("convert", "binance convert")
             .contains(l.operacao().strip().toLowerCase(Locale.ROOT)))) return null;
+    List<String> proveniencias = linhas.stream().map(l -> origens.get(l.registroId()))
+        .filter(Objects::nonNull).map(this::origemFisica).filter(Objects::nonNull).toList();
+    if (proveniencias.size() != 2 || !proveniencias.get(0).equals(proveniencias.get(1))) return null;
     LinhaAssociacao pagamento = linhas.stream().filter(l -> l.papel() == PapelLinha.PAGAMENTO)
         .findFirst().orElse(null);
     LinhaAssociacao recebimento = linhas.stream().filter(l -> l.papel() == PapelLinha.RECEBIMENTO)
@@ -322,19 +338,145 @@ public class AssociacoesLivro implements IAssociacoesLivro {
   public List<ItemConferenciaLivro> projetar(
       List<ItemConferenciaLivro> itens, boolean propostas, Map<Long, String> impedimentos) {
     List<ItemConferenciaLivro> resultado = new ArrayList<>(itens);
-    for (var grupo : grupos(propostas, impedimentos)) {
+    for (var grupo : valorarGrupos(grupos(propostas, impedimentos))) {
       if (grupo.proposta().desfazer()) continue;
       Set<String> ids =
           grupo.proposta().linhas().stream()
               .map(l -> "registro:" + l.registroId())
               .collect(Collectors.toSet());
       resultado.removeIf(i -> ids.contains(i.id()));
-      resultado.addAll(
-          ProjecaoGrupo.projetar(grupo.identificador(), grupo.proposta(), grupo.resumo()));
+      resultado.addAll(ProjecaoGrupo.projetar(grupo.identificador(), grupo.proposta(), grupo.resumo())
+          .stream().map(i -> aplicarValoracao(i, grupo.valoracao(), grupo.taxaExternaBrl())).toList());
     }
     return List.copyOf(resultado);
   }
 
+  private ItemConferenciaLivro aplicarValoracao(ItemConferenciaLivro item, Valoracao valoracao,
+      BigDecimal taxaExternaBrl) {
+    if (valoracao == null && taxaExternaBrl == null) return item;
+    FatoLivro f = item.operacao();
+    if (f == null) return item;
+    FatoLivro fato = new FatoLivro(f.id(), f.tipo(), f.instituicaoId(), f.ativoId(), f.ocorridaEm(),
+        f.ordemLivro(), f.quantidade(), f.custoTotalBrl(), f.moedaCotacaoId(), f.totalBruto(),
+        f.cotacaoBrl(), f.taxaAtivoId(), f.taxaQuantidade(),
+        valoracao == null ? null : valoracao.valorTotalBrl(), taxaExternaBrl);
+    return new ItemConferenciaLivro(item.id(), item.contaId(), item.instituicaoId(), item.ativoId(),
+        item.ocorridaEm(), item.ordem(), item.quantidade(), item.custoEntradaBrl(), fato,
+        item.ajuste(), item.ancoraId(), item.transferenciaRef(), item.creditoAutomatico(), valoracao);
+  }
+
+  private List<GrupoEmConferencia> valorarGrupos(List<GrupoEmConferencia> grupos) {
+    Map<Long, ValoracaoManual> valoresManuais = valoracoesManuais.listar(usuario.id()).stream()
+        .filter(v -> v.grupoId() != null)
+        .collect(Collectors.toMap(ValoracaoManual::grupoId, v -> v));
+    List<GrupoEmConferencia> candidatos = grupos.stream()
+        .filter(g -> !g.proposta().desfazer() && moedaCotacao(g) != null
+            && (taxaEmTerceiroAtivo(g) != null || (!"fiat:BRL".equals(moedaCotacao(g).codigo())
+                && (g.proposta().cotacaoBrl() == null || valoresManuais.containsKey(g.id())))))
+        .toList();
+    if (candidatos.isEmpty()) return grupos;
+    List<Instant> datas = candidatos.stream()
+        .map(g -> g.proposta().linhas().stream().map(LinhaAssociacao::data)
+            .min(Comparator.naturalOrder()).orElseThrow()).toList();
+    Instant inicio = datas.stream().min(Comparator.naturalOrder()).orElseThrow().minus(Duration.ofHours(24));
+    Instant fim = datas.stream().max(Comparator.naturalOrder()).orElseThrow().plusMillis(1);
+    List<CotacaoHistorica> precos = cotacoes.buscar(inicio, fim, "HORA");
+    Long brl = ativos.buscarPorCodigo("fiat:BRL").orElseThrow().id();
+    Set<Long> ids = grupos.stream().flatMap(g -> g.proposta().linhas().stream())
+        .map(LinhaAssociacao::ativoId).filter(Objects::nonNull).collect(Collectors.toSet());
+    Map<Long, AtivoResumo> catalogo = ativos.buscarPorIds(ids).stream()
+        .collect(Collectors.toMap(AtivoResumo::id, a -> a));
+    Map<Long, OrigemRegistro> origens = valoresManuais.isEmpty() ? Map.of()
+        : registros.listar(usuario.id()).stream()
+            .collect(Collectors.toMap(RegistroConferencia::getId, ConferenciaMapper::origem));
+    return grupos.stream().map(g -> valorarGrupo(g, precos, brl, catalogo, valoresManuais, origens)).toList();
+  }
+
+  private GrupoEmConferencia valorarGrupo(GrupoEmConferencia grupo, List<CotacaoHistorica> precos,
+      Long brl, Map<Long, AtivoResumo> catalogo, Map<Long, ValoracaoManual> valoresManuais,
+      Map<Long, OrigemRegistro> origens) {
+    PropostaGrupo p = grupo.proposta();
+    ParcelaGrupo moeda = moedaCotacao(grupo);
+    if (p.desfazer() || moeda == null) return grupo;
+    if ("fiat:BRL".equals(moeda.codigo())) return valorarTaxaExterna(grupo, precos, brl, catalogo);
+    ValoracaoManual manual = grupo.id() == null ? null : valoresManuais.get(grupo.id());
+    if (manual != null && Objects.equals(manual.identidade(), IdentidadeValoracao.grupo(p))) {
+      BigDecimal cotacaoEfetiva = cotacaoOriginal(p.linhas(), origens);
+      if (cotacaoEfetiva != null) {
+        PropostaGrupo efetiva = new PropostaGrupo(p.linhas(), p.taxaZeroConfirmada(), cotacaoEfetiva, false);
+        GrupoEmConferencia confirmado = emConferencia(grupo.id(), efetiva, grupo.pendente(), grupo.automatico(), catalogo);
+        return valorarTaxaExterna(confirmado, precos, brl, catalogo);
+      }
+      BigDecimal quantidade = moeda.quantidade();
+      if (quantidade == null || quantidade.signum() <= 0) return grupo;
+      PropostaGrupo atual = new PropostaGrupo(p.linhas(), p.taxaZeroConfirmada(),
+          manual.valorBrl().divide(quantidade, 18, RoundingMode.HALF_EVEN), false);
+      GrupoEmConferencia recalculado = emConferencia(grupo.id(), atual, grupo.pendente(), grupo.automatico(), catalogo);
+      return valorarTaxaExterna(comValoracao(recalculado,
+          new Valoracao(EstadoValoracao.MANUAL, manual.valorBrl(), List.of())), precos, brl, catalogo);
+    }
+    if (p.cotacaoBrl() != null) return valorarTaxaExterna(grupo, precos, brl, catalogo);
+    Long base = moeda.ativoId();
+    if (base == null) return grupo;
+    Instant data = p.linhas().stream().map(LinhaAssociacao::data).min(Comparator.naturalOrder()).orElseThrow();
+    GrupoEmConferencia valorado = ResolvedorCotacao.resolver(base, brl, data, precos)
+        .map(r -> {
+          PropostaGrupo atual = new PropostaGrupo(p.linhas(), p.taxaZeroConfirmada(),
+              r.preco().setScale(18, RoundingMode.HALF_EVEN), false);
+          GrupoEmConferencia recalculado = emConferencia(grupo.id(), atual, grupo.pendente(), grupo.automatico(), catalogo);
+          BigDecimal total = moeda.quantidade().multiply(r.preco()).setScale(8, RoundingMode.HALF_EVEN);
+          return comValoracao(recalculado, new Valoracao(r.aproximado() ? EstadoValoracao.ESTIMADO
+              : EstadoValoracao.HISTORICO, total, r.caminho()));
+        })
+        .orElse(grupo);
+    return valorarTaxaExterna(valorado, precos, brl, catalogo);
+  }
+
+  private ParcelaGrupo moedaCotacao(GrupoEmConferencia grupo) {
+    NaturezaRegistro natureza = grupo.resumo().natureza();
+    if (natureza == null) return null;
+    List<ParcelaGrupo> moedas = switch (natureza) {
+      case COMPRA, CONVERSAO -> grupo.resumo().pagamentos();
+      case VENDA -> grupo.resumo().recebimentos();
+      default -> List.of();
+    };
+    return moedas.size() == 1 ? moedas.getFirst() : null;
+  }
+
+  private GrupoEmConferencia comValoracao(GrupoEmConferencia grupo, Valoracao valoracao) {
+    return new GrupoEmConferencia(grupo.id(), grupo.identificador(), grupo.proposta(), grupo.resumo(),
+        grupo.pendente(), grupo.automatico(), valoracao, grupo.taxaExternaBrl());
+  }
+
+  private ParcelaGrupo taxaEmTerceiroAtivo(GrupoEmConferencia grupo) {
+    ResumoGrupo resumo = grupo.resumo();
+    if (resumo.taxas().size() != 1 || resumo.pagamentos().size() != 1
+        || resumo.recebimentos().size() != 1) return null;
+    ParcelaGrupo taxa = resumo.taxas().getFirst();
+    return taxa.ativoId() != null && !taxa.ativoId().equals(resumo.pagamentos().getFirst().ativoId())
+        && !taxa.ativoId().equals(resumo.recebimentos().getFirst().ativoId()) ? taxa : null;
+  }
+
+  private GrupoEmConferencia valorarTaxaExterna(GrupoEmConferencia grupo,
+      List<CotacaoHistorica> precos, Long brl, Map<Long, AtivoResumo> catalogo) {
+    ParcelaGrupo taxa = taxaEmTerceiroAtivo(grupo);
+    if (taxa == null) return grupo;
+    Instant data = grupo.proposta().linhas().stream().map(LinhaAssociacao::data)
+        .min(Comparator.naturalOrder()).orElseThrow();
+    var cotacao = ResolvedorCotacao.resolver(taxa.ativoId(), brl, data, precos);
+    if (cotacao.isEmpty()) return grupo;
+    PropostaGrupo proposta = grupo.proposta();
+    PropostaGrupo semTaxa = new PropostaGrupo(proposta.linhas().stream()
+        .filter(l -> l.papel() != PapelLinha.TAXA).toList(), true, proposta.cotacaoBrl(), false);
+    ResumoGrupo validado = ValidacaoGrupo.resumir(semTaxa, catalogo, propriedades.janelaAssociacao());
+    if (!validado.completo()) return grupo;
+    ResumoGrupo resumo = new ResumoGrupo(validado.natureza(), validado.recebimentos(),
+        validado.pagamentos(), grupo.resumo().taxas(), validado.principalBrl(), true, List.of());
+    BigDecimal taxaBrl = taxa.quantidade().multiply(cotacao.orElseThrow().preco())
+        .setScale(8, RoundingMode.HALF_EVEN);
+    return new GrupoEmConferencia(grupo.id(), grupo.identificador(), proposta, resumo,
+        grupo.pendente(), grupo.automatico(), grupo.valoracao(), taxaBrl);
+  }
   public boolean aplicar(Map<Long, String> impedimentos) {
     boolean mudou = false;
     for (var selecionado : grupos(true, impedimentos))
@@ -345,7 +487,7 @@ public class AssociacoesLivro implements IAssociacoesLivro {
                     GrupoAssociacao.criar(
                         usuario.id(), escrever(selecionado.proposta()), Instant.now()))
                 : repository.buscar(usuario.id(), selecionado.id());
-        if (selecionado.id() != null)
+        if (selecionado.id() != null && !selecionado.proposta().equals(snapshot(grupo.getPropostaJson())))
           grupo.propor(escrever(selecionado.proposta()), usuario.id(), Instant.now());
         grupo.aplicar();
         repository.flush();

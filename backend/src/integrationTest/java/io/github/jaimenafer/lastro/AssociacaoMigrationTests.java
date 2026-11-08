@@ -72,7 +72,7 @@ class AssociacaoMigrationTests {
         .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
     jdbc.update("INSERT INTO ativos(codigo,ticker,nome,tipo,casas_decimais,ativo) VALUES ('cripto:BNB','BNB','Nome preservado','CRIPTO',18,FALSE)");
     var antesV15 = jdbc.queryForMap("SELECT * FROM ativos WHERE codigo='cripto:BNB'");
-    var atual = Flyway.configure().dataSource(fonte).load();
+    var atual = Flyway.configure().dataSource(fonte).target("15").load();
     assertThat(atual.migrate().migrationsExecuted).isEqualTo(1);
     assertThat(jdbc.queryForMap("SELECT * FROM ativos WHERE codigo='cripto:BNB'")).isEqualTo(antesV15);
     assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ativos WHERE codigo IN ('cripto:LISTA','cripto:IO')", Integer.class)).isEqualTo(2);
