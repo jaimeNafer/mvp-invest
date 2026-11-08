@@ -91,7 +91,10 @@ public final class OperacoesMapper {
                     .sorted(
                         Comparator.comparing(CustodiaLivroResponse::instituicaoNome)
                             .thenComparing(CustodiaLivroResponse::instituicaoId))
-                    .toList()))
+                    .toList(),
+                true,
+                false,
+                List.of()))
         .sorted(
             Comparator.comparing(PosicaoLivroResponse::ativoTicker)
                 .thenComparing(PosicaoLivroResponse::ativoId))

@@ -263,3 +263,26 @@ Consulta no contexto operacoes: API → IVisaoGeralUseCase → contratos de dom�
 ## Importação de arquivos
 
 Novo contexto importacoes separa interpretação/proveniência das regras financeiras, que permanecem em operacoes. Contrato público de lote participa da mesma transação com recibos e arquivo original. Listagens usam projeções sem BLOB/registros; metadados são resolvidos por código distinto. Sem filas, rascunhos persistidos ou framework multiexchange. [Detalhes](19-importacao-binance.md) e [matriz](13-auditoria-modular.md).
+
+### Conciliação progressiva
+
+O [plano revisado](20-conciliacao-progressiva.md) autoriza projetar recepção persistente de registros incompletos e ajustes auditáveis. A implementação do primeiro ciclo substitui, no novo fluxo, a restrição anterior de persistir somente arquivos financeiramente confirmados. Importacoes conserva origem; operacoes continua proprietário dos cálculos, lacunas e contas de custódia. Não adicionar dependência inversa entre os contextos, segundo motor ou infraestrutura genérica de workflow. Contas de custódia não reutilizam contas, que permanece vínculo carteira/instituição.
+
+
+`RecebimentoConferencia` implementa o contrato público de recepção; `PreparacaoConciliacao` prepara sugestões; `ConferenciaUseCaseImpl` coordena os comandos; `ConsultaConferencia` produz snapshots e valida históricos candidatos. Essas responsabilidades ficam em aplicação, atrás de interfaces. `MotorLivro.conferir` reutiliza os cálculos financeiros do motor, distinguindo valores desconhecidos, contas de custódia e lacunas.
+
+A identificação de arquivo e evento protege os dois fluxos de importação, sob o mesmo bloqueio do livro. Propostas atuais, snapshots aplicados e histórico de correções têm papéis distintos. Impedimentos não removem silenciosamente o snapshot aplicado da prévia. Confirmações, ajustes, associações, revisão e recibos idempotentes compartilham a transação READ_COMMITTED; consultas usam REPEATABLE_READ.
+
+Disponibilidade global de quantidades complementa os estados por registro: linha sem data/ativo/quantidade ou aplicação pendente não representa ausência de patrimônio. Custos e resultados incompletos são nulos, com subtotais separados. Não criar totais financeiros no React. [Contrato detalhado](21-contrato-conciliacao.md).
+
+
+## Grupos de registros complementares
+
+Associação pertence a operacoes, que já coordena conferência e o livro. Importacoes continua responsável por bytes e proveniência. AgrupamentoNegociacoes decide compatibilidade e papéis; ProjecaoGrupo seleciona a representação financeira sem repetir linhas; MotorLivro mantém cálculos de posição e resultado. Validação de negociações completas é reutilizada, sem adaptar taxa externa a outro ativo. A aplicação coordena snapshots propostos/aplicados, revisões, reservas e confirmação atômica, e mappers puros produzem DTOs. Não há novo motor ou integração HTTP interna. [Contrato](22-associacao-registros-binance.md).
+
+
+## Separação do domínio fiscal — 07/11/2026
+
+O núcleo do Lastro consolida investimentos, posições, custos, desempenho e patrimônio. Preço médio, custo de aquisição e lucro ou prejuízo pertencem a esse domínio. Importação e conferência não exigem informações exclusivamente tributárias nem atribuem situação fiscal. Recompensas, rendimentos e airdrops são eventos patrimoniais, sem exigência de valoração fiscal na importação. Dados originais são preservados; valores patrimoniais desconhecidos não são inventados.
+
+Uma eventual funcionalidade fiscal futura deve ser independente e consumir os dados do domínio de investimentos, sem dependência do núcleo em relação a ela. Cálculos de impostos, DARF, declarações e infraestrutura fiscal antecipada estão fora do escopo atual.

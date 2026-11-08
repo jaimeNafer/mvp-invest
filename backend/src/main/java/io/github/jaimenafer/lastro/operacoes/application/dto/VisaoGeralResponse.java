@@ -16,4 +16,6 @@ public record VisaoGeralResponse(
     List<SaldoMoedaResponse> saldosMoedas,
     EvolucaoResultadoResponse evolucaoResultado,
     List<ResultadoAtivoResponse> resultadosPorAtivo,
-    ConferenciaResponse conferencia) {}
+    ConferenciaResponse conferencia,
+    ResumoConferenciaResponse conciliacao,
+    DisponibilidadeVisaoGeralResponse disponibilidade) {}

@@ -32,6 +32,7 @@ repositories {
 }
 
 dependencies {
+	implementation 'org.apache.poi:poi-ooxml:6.0.0'
 	implementation 'org.apache.commons:commons-csv:1.14.1'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-flyway'
@@ -77,7 +78,10 @@ tasks.named('check') {
 }
 
 def regrasImportacao = ['**/operacoes/domain/service/MotorLivro.class',
+	'**/operacoes/domain/service/AgrupamentoNegociacoes.class',
+	'**/operacoes/domain/service/ProjecaoGrupo.class',
 	'**/importacoes/infrastructure/csv/LeitorRelatorioBinance.class',
+	'**/importacoes/infrastructure/arquivos/*.class',
 	'**/importacoes/application/mapper/*.class']
 
 tasks.named('jacocoTestReport') {

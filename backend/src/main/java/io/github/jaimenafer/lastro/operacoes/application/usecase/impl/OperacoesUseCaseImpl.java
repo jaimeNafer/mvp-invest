@@ -28,9 +28,11 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
   private final IConsultaInstituicoes instituicoes;
   private final IConsultaCarteiras carteiras;
   private final IUsuarioAtual usuario;
+  private final io.github.jaimenafer.lastro.operacoes.application.port.IConsultaLivroConferencia
+      conferencia;
   private static final ZoneId FUSO = ZoneId.of("America/Fortaleza");
 
-  @Transactional(readOnly = true)
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
   public ListaOperacoesResponse listar(
       String tipo,
       String situacao,
@@ -57,7 +59,7 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
     var historico = operacoes.historico(usuario.id());
     var ativosPorId = carregarAtivos(historico);
     var instituicoesPorId = carregarInstituicoes(historico);
-    var livro = LivroMapper.calcular(historico, new ArrayList<>(ativosPorId.values()));
+    var livro = LivroConferenciaMapper.livro(conferencia.carregar(null));
     var calculos =
         livro.calculos().stream()
             .collect(Collectors.toMap(CalculoOperacao::operacaoId, Function.identity()));
@@ -91,25 +93,24 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
         ponto.map(PontoPartida::getDataReferencia).orElse(null));
   }
 
-  @Transactional(readOnly = true)
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
   public OperacaoResponse buscar(long id) {
     var historico = operacoes.historico(usuario.id());
     var operacao = buscarNoHistorico(historico, id);
     return responder(operacao, historico);
   }
 
-  @Transactional(readOnly = true)
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
   public PosicoesLivroResponse posicoes() {
     var ponto = pontos.findById(usuario.id());
-    var historico = operacoes.historico(usuario.id());
-    var ativosPorId = carregarAtivos(historico);
-    var livro = LivroMapper.calcular(historico, new ArrayList<>(ativosPorId.values()));
+    var retrato = conferencia.carregar(null);
     return new PosicoesLivroResponse(
         Long.toString(ponto.map(PontoPartida::getRevisao).orElse(0L)),
-        OperacoesMapper.posicoes(livro, ativosPorId, carregarInstituicoes(historico)));
+        LivroConferenciaMapper.posicoes(retrato),
+        retrato.quantidadesCompletas());
   }
 
-  @Transactional(readOnly = true)
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
   public PreviaOperacaoResponse prever(SolicitacaoPrevia solicitacao) {
     var ponto = pontos.findById(usuario.id());
     var historico = operacoes.historico(usuario.id());
@@ -141,7 +142,10 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
     var instituicoesPorId = carregarInstituicoes(alterado);
     if (anterior != null) instituicoesPorId.putAll(carregarInstituicoes(List.of(anterior)));
     if (anterior != null) ativosPorId.putAll(carregarAtivos(List.of(anterior)));
-    var livro = LivroMapper.calcular(alterado, new ArrayList<>(ativosPorId.values()));
+    var retratoAtual = conferencia.carregar(null);
+    ativosPorId.putAll(retratoAtual.ativos());
+    instituicoesPorId.putAll(retratoAtual.instituicoes());
+    var livro = conferencia.validarCandidato(alterado);
     Operacao exibida = candidato == null ? anterior : candidato;
     Long calculoId = candidato == null ? null : -1L;
     var calculo =
@@ -186,7 +190,7 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
     if (anterior != null) validarAlteracao(anterior);
     var nova = candidato(dados, anterior, chave, fingerprint, historico);
     var alterado = historicoCandidato(historico, anterior, nova);
-    LivroMapper.calcular(alterado, new ArrayList<>(carregarAtivos(alterado).values()));
+    conferencia.validarCandidato(alterado);
     if (anterior != null) {
       anterior.encerrar(SituacaoOperacao.SUBSTITUIDA, dados.motivo(), usuario.id(), agora);
       operacoes.flush();
@@ -213,7 +217,7 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
     validarRevisao(ponto, cancelamento.revisao());
     validarAlteracao(anterior);
     var alterado = historicoCandidato(historico, anterior, null);
-    LivroMapper.calcular(alterado, new ArrayList<>(carregarAtivos(alterado).values()));
+    conferencia.validarCandidato(alterado);
     anterior.encerrar(SituacaoOperacao.CANCELADA, cancelamento.motivo(), usuario.id(), agora());
     operacoes.flush();
     ponto.avancarRevisao(usuario.id(), agora());
@@ -342,7 +346,7 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
 
   private OperacaoResponse responder(Operacao operacao, List<Operacao> historico) {
     var ativosPorId = carregarAtivos(historico);
-    var livro = LivroMapper.calcular(historico, new ArrayList<>(ativosPorId.values()));
+    var livro = LivroConferenciaMapper.livro(conferencia.carregar(null));
     var calculo =
         livro.calculos().stream()
             .filter(c -> c.operacaoId().equals(operacao.getId()))

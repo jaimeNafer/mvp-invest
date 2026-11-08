@@ -9,6 +9,7 @@ import io.github.jaimenafer.lastro.importacoes.application.port.ILeitorRelatorio
 import io.github.jaimenafer.lastro.importacoes.application.usecase.IImportacaoUseCase;
 import io.github.jaimenafer.lastro.importacoes.domain.exception.*;
 import io.github.jaimenafer.lastro.importacoes.domain.model.*;
+import io.github.jaimenafer.lastro.importacoes.domain.repository.IArquivoRecebidoRepository;
 import io.github.jaimenafer.lastro.importacoes.domain.repository.IImportacaoRepository;
 import io.github.jaimenafer.lastro.instituicoes.application.contract.IConsultaInstituicoes;
 import io.github.jaimenafer.lastro.operacoes.application.contract.*;
@@ -23,9 +24,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ImportacaoUseCaseImpl implements IImportacaoUseCase {
+  private void validarArquivoNaoRecebido(String hash) {
+    if (recebidos.buscarPorHash(usuario.id(), hash).isPresent())
+      throw new ImportacaoConflitanteException(
+          "Este arquivo já foi recebido no Histórico. Continue a conferência dos registros"
+              + " recebidos para evitar uma segunda aplicação.");
+  }
+
   private final IUsuarioAtual usuario;
   private final ILeitorRelatorio leitor;
   private final IImportacaoRepository repositorio;
+  private final IArquivoRecebidoRepository recebidos;
+  private final IRecebimentoConferencia conferencia;
   private final IImportacaoOperacoes livro;
   private final IConsultaAtivos ativos;
   private final IConsultaInstituicoes instituicoes;
@@ -40,6 +50,9 @@ public class ImportacaoUseCaseImpl implements IImportacaoUseCase {
   @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
   public PreviaImportacaoResponse prever(byte[] conteudo, DecisoesImportacao decisoes) {
     ArquivoInterpretado arquivo = interpretar(conteudo);
+    validarArquivoNaoRecebido(arquivo.hash());
+    conferencia.validarReferenciasDisponiveis(
+        arquivo.eventos().stream().map(EventoImportacao::referencia).toList());
     List<ErroImportacaoResponse> erros = diagnosticos(arquivo, decisoes);
     if (!erros.isEmpty())
       return new PreviaImportacaoResponse(arquivo.hash(), "0", "", 0, 0, erros, List.of());
@@ -87,6 +100,9 @@ public class ImportacaoUseCaseImpl implements IImportacaoUseCase {
     if (repositorio.buscarPorHash(usuario.id(), hash).isPresent())
       throw new ImportacaoConflitanteException(
           "Este arquivo já foi confirmado. Consulte seu recibo no histórico de importações.");
+    validarArquivoNaoRecebido(arquivo.hash());
+    conferencia.validarReferenciasDisponiveis(
+        arquivo.eventos().stream().map(EventoImportacao::referencia).toList());
     ResultadoLoteOperacoes resultado =
         livro.confirmar(movimentos, decisoes.posicaoAnteriorZerada(), revisar(revisao));
     int reconhecidos =

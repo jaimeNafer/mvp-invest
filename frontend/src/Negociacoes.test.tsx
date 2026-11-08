@@ -173,6 +173,7 @@ describe("ciclo de negociações", () => {
     const revisoes = { operacoes: "2", posicoes: "1" };
     const r = servidor({ revisoes, itens: [operacao] });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Seu histórico foi atualizado durante a consulta.",
     );
@@ -196,6 +197,7 @@ describe("ciclo de negociações", () => {
     const revisoes = { operacoes: "1", posicoes: "1" };
     servidor({ revisoes, itens: [operacao] });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await screen.findByRole("region", { name: "Posição atual global" });
     revisoes.operacoes = "2";
     fireEvent.change(screen.getByLabelText("Filtrar ativo"), { target: { value: "2" } });
@@ -218,6 +220,7 @@ describe("ciclo de negociações", () => {
         }),
     });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await preencher();
     await screen.findByRole("region", { name: "Prévia da operação" });
     fireEvent.click(screen.getByRole("button", { name: "Confirmar operação" }));
@@ -236,6 +239,7 @@ describe("ciclo de negociações", () => {
   it("apresenta preço unitário recebido na prévia com todas as casas decimais", async () => {
     servidor();
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await preencher();
     const previa = await screen.findByRole("region", { name: "Prévia da operação" });
     expect(
@@ -246,6 +250,7 @@ describe("ciclo de negociações", () => {
   it("registra aporte como BRL sem enviar campos residuais de negociação", async () => {
     const r = servidor();
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await preencher();
     fireEvent.change(screen.getByLabelText("Tipo de operação"), { target: { value: "APORTE" } });
     fireEvent.change(screen.getByLabelText("Quantidade"), { target: { value: "1.000,15" } });
@@ -270,6 +275,7 @@ describe("ciclo de negociações", () => {
     async (taxaAtivoId) => {
       const r = servidor();
       render(<Operacoes />);
+      fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
       await preencher("VENDA");
       fireEvent.change(screen.getByLabelText("Moeda de cotação"), { target: { value: "3" } });
       fireEvent.change(screen.getByLabelText("Cotação histórica em reais por unidade"), {
@@ -305,6 +311,7 @@ describe("ciclo de negociações", () => {
     const historica = { ...operacao, id: "31", situacao: "CANCELADA", calculo: null };
     servidor({ itens: [abertura, historica], detalhe: abertura });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     const detalhe = await screen.findByRole("button", {
       name: `Detalhes da operação ${operacao.id}`,
     });
@@ -318,6 +325,7 @@ describe("ciclo de negociações", () => {
   it("consulta a prévia sem gravar e confirma com revisão, UUID, decimais e fuso explícito", async () => {
     const r = servidor();
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await preencher();
     expect(screen.getByRole("button", { name: "Confirmar operação" })).toBeDisabled();
     await screen.findByRole("region", { name: "Prévia da operação" });
@@ -353,6 +361,7 @@ describe("ciclo de negociações", () => {
         }),
     });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await preencher();
     await waitFor(() => expect(resolver).toBeDefined());
     fireEvent.change(screen.getByLabelText("Quantidade"), { target: { value: "" } });
@@ -365,6 +374,7 @@ describe("ciclo de negociações", () => {
   it("repete comando e chave após rede incerta e protege o formulário contra perda", async () => {
     const r = servidor({ falha: "rede" });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await preencher();
     await screen.findByRole("region", { name: "Prévia da operação" });
     fireEvent.click(screen.getByRole("button", { name: "Confirmar operação" }));
@@ -383,6 +393,7 @@ describe("ciclo de negociações", () => {
   it("preserva campos e exige nova confirmação quando a revisão muda", async () => {
     const r = servidor({ falha: "revisao" });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await preencher();
     await screen.findByRole("region", { name: "Prévia da operação" });
     fireEvent.click(screen.getByRole("button", { name: "Confirmar operação" }));
@@ -400,6 +411,7 @@ describe("ciclo de negociações", () => {
   it("mantém os dados após rejeição e permite corrigir sem reutilizar prévia", async () => {
     servidor({ falha: "validacao" });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     await preencher();
     await screen.findByRole("region", { name: "Prévia da operação" });
     fireEvent.click(screen.getByRole("button", { name: "Confirmar operação" }));
@@ -413,6 +425,7 @@ describe("ciclo de negociações", () => {
   it("filtra por ativo e carteira e apresenta posição global com custódia", async () => {
     const r = servidor({ itens: [operacao] });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     const posicoes = await screen.findByRole("region", { name: "Posição atual global" });
     expect(within(posicoes).getByText("R$ 20.000,00")).toBeVisible();
     expect(within(posicoes).getByText(/Binance: 0,01 BTC/)).toBeVisible();
@@ -432,6 +445,7 @@ describe("ciclo de negociações", () => {
   it("corrige e cancela negociações com motivo e prévia obrigatória", async () => {
     const r = servidor({ itens: [operacao] });
     render(<Operacoes />);
+    fireEvent.click(screen.getByRole("button", { name: "Negociações" }));
     fireEvent.click(
       await screen.findByRole("button", { name: `Corrigir operação ${operacao.id}` }),
     );

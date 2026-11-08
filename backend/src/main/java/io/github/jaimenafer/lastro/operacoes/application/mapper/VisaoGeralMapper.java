@@ -51,7 +51,10 @@ public final class VisaoGeralMapper {
                     p.custoMedioBrl(),
                     p.custoTotalBrl(),
                     percentual(p.custoTotalBrl(), resumo.custoSaldosBrl()),
-                    p.instituicoes()))
+                    p.instituicoes(),
+                    p.quantidadeDisponivel(),
+                    p.comAjustes(),
+                    p.causas()))
             .toList();
     return new VisaoGeralResponse(
         Long.toString(revisao),
@@ -73,7 +76,13 @@ public final class VisaoGeralMapper {
             .filter(p -> moedaDePagamento(ativos.get(Long.valueOf(p.ativoId()))))
             .map(p ->
                 new SaldoMoedaResponse(
-                    p.ativoId(), p.ativoTicker(), p.ativoNome(), p.quantidade(), p.instituicoes()))
+                    p.ativoId(),
+                    p.ativoTicker(),
+                    p.ativoNome(),
+                    p.quantidade(),
+                    p.instituicoes(),
+                    p.quantidadeDisponivel(),
+                    p.comAjustes()))
             .toList(),
         new EvolucaoResultadoResponse(
             "0",
@@ -84,7 +93,9 @@ public final class VisaoGeralMapper {
                         m.dataFim(),
                         numero(m.resultadoBrl()),
                         numero(m.acumuladoBrl()),
-                        m.operacoes()))
+                        m.operacoes(),
+                        numero(m.resultadoBrl()),
+                        numero(m.acumuladoBrl())))
                 .toList()),
         resultados.stream()
             .sorted(
@@ -100,9 +111,20 @@ public final class VisaoGeralMapper {
                     numero(r.negociacaoBrl()),
                     numero(r.moedaBrl()),
                     numero(r.taxaBrl()),
+                    numero(r.totalBrl()),
                     numero(r.totalBrl())))
             .toList(),
-        new ConferenciaResponse(custoZero, referenciasRepetidas));
+        new ConferenciaResponse(custoZero, referenciasRepetidas),
+        new ResumoConferenciaResponse(0, 0, 0, 0, 0, "0", 0, 0, List.of(), "", 0, 0, 0, 0, 0),
+        new DisponibilidadeVisaoGeralResponse(
+            resumo.custoSaldosBrl() != null,
+            resumo.resultadoRealizadoBrl() != null,
+            resumo.taxasBrl() != null,
+            false,
+            numero(resumo.custoSaldosBrl()),
+            numero(resumo.resultadoRealizadoBrl()),
+            numero(resumo.taxasBrl()),
+            true));
   }
 
   public static AvisosConferenciaResponse avisos(
@@ -143,7 +165,7 @@ public final class VisaoGeralMapper {
   }
 
   private static String percentual(String custo, BigDecimal total) {
-    return total.signum() <= 0
+    return custo == null || total == null || total.signum() <= 0
         ? null
         : numero(
             new BigDecimal(custo)

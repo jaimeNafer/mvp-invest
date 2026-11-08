@@ -98,3 +98,10 @@ Retiradas continuam como entrega separada no roteiro; não há esse tipo no mode
 A série mensal de **custo dos saldos** continua distinta e pendente. A prioridade atual passou a ser a série de resultado realizado acima. Valor de mercado e rentabilidade dependem de proposta própria. [Backlog](ideias-futuras/evolucao-e-valoracao/README.md).
 
 Proposta simples para cotações históricas/manuais: valor em BRL por identidade de ativo, instante e origem rastreável, separado dos fatos financeiros. Uma futura consulta deverá informar cobertura ausente, parcial ou desatualizada; ausência de preço não será zero nem custo de aquisição. Valor de mercado e retorno terão indicadores próprios. Não criar agora tabelas, clients, provedores ou preços simulados.
+
+
+## Históricos em conferência
+
+A visão geral incorpora observações e ajustes aceitos pelo [fluxo progressivo](21-contrato-conciliacao.md). Ajustes não são aportes, receitas, negociações ou resultado. Custódia continua discriminada e custo permanece global por usuário/ativo.
+
+A resposta acrescenta resumo de conciliação e disponibilidade. `quantidadesCompletas` informa se os registros relevantes possuem data, ativo, quantidade e aplicação resolvidos, além de custódias consistentes. Campo ausente ou custo desconhecido não é zero: totais incompletos são nulos, com subtotais conhecidos separados. Sem cobertura, não afirmar carteira vazia, ausência de realização ou composição completa. Gráfico e tabela preservam períodos desconhecidos sem desenhar resultados fictícios.

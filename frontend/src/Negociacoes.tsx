@@ -33,6 +33,7 @@ type Dados = {
   carteiras: Carteira[];
   operacoes: ListaOperacoes;
   posicoes: Posicao[];
+  quantidadesCompletas?: boolean;
 };
 type Janela =
   | { tipo: "form"; operacao: Operacao | null }
@@ -90,7 +91,14 @@ export default function Negociacoes({
           );
           return;
         }
-        setDados({ ativos, instituicoes, carteiras, operacoes, posicoes: posicoes.itens });
+        setDados({
+          ativos,
+          instituicoes,
+          carteiras,
+          operacoes,
+          posicoes: posicoes.itens,
+          quantidadesCompletas: posicoes.quantidadesCompletas,
+        });
       } catch (falha) {
         if (!signal?.aborted && consulta === consultaAtual.current)
           setErro(mensagemOperacao(falha));
@@ -240,7 +248,7 @@ export default function Negociacoes({
                 </button>
               </div>
             </section>
-            <PosicoesAtuais posicoes={dados.posicoes} />
+            <PosicoesAtuais posicoes={dados.posicoes} completo={dados.quantidadesCompletas} />
           </>
         )
       )}

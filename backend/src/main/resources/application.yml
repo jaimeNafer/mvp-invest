@@ -31,3 +31,11 @@ lastro:
   importacoes:
     max-bytes: ${LASTRO_IMPORTACAO_MAX_BYTES:10485760}
     max-eventos: ${LASTRO_IMPORTACAO_MAX_EVENTOS:5000}
+
+  conferencia:
+    max-bytes: ${LASTRO_CONFERENCIA_MAX_BYTES:10485760}
+    max-registros: ${LASTRO_CONFERENCIA_MAX_REGISTROS:10000}
+    max-descompactados: ${LASTRO_CONFERENCIA_MAX_DESCOMPACTADOS:104857600}
+
+  conciliacao:
+    janela-associacao: ${LASTRO_JANELA_ASSOCIACAO:2s}

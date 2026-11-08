@@ -5,9 +5,11 @@ import type { Posicao } from "./services/operacoes";
 export default function PosicoesAtuais({
   posicoes,
   previa = false,
+  completo = true,
 }: {
   posicoes: Posicao[];
   previa?: boolean;
+  completo?: boolean;
 }) {
   return (
     <section
@@ -21,8 +23,18 @@ export default function PosicoesAtuais({
           posição.
         </p>
       )}
+      {!completo && (
+        <p className="field-hint">
+          Há registros sem aplicação, data, ativo ou quantidade resolvidos. As posições abaixo são
+          parciais.
+        </p>
+      )}
       {posicoes.length === 0 ? (
-        <p className="empty-state">Nenhuma posição encontrada.</p>
+        <p className="empty-state">
+          {completo
+            ? "Nenhuma posição encontrada."
+            : "As posições ainda não podem ser apresentadas como completas."}
+        </p>
       ) : (
         <div className="table-scroll">
           <table>
@@ -38,8 +50,14 @@ export default function PosicoesAtuais({
             <tbody>
               {posicoes.map((p) => (
                 <tr key={p.ativoId}>
-                  <td>{p.ativoTicker}</td>
-                  <td>{decimalPtBr(p.quantidade)}</td>
+                  <td>
+                    {p.ativoTicker}
+                    {p.comAjustes && <small>Com ajustes provisórios</small>}
+                  </td>
+                  <td>
+                    {decimalPtBr(p.quantidade)}
+                    {p.quantidadeDisponivel === false && <small>Precisa de correção</small>}
+                  </td>
                   <td>
                     <ValorMonetario valor={p.custoTotalBrl} />
                   </td>

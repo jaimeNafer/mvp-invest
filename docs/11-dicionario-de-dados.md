@@ -184,3 +184,70 @@ Vínculos entre eventos de arquivos confirmados e operações financeiras.
 | operacao_id | BIGINT UNSIGNED, NOT NULL | Operação financeira registrada ou reconhecida. |
 
 UNIQUE `(importacao_id,referencia)`. FKs para `importacoes.id` e `operacoes.id`, sem exclusão em cascata. O vínculo usa a operação original mesmo depois de correção/cancelamento. [Regras e API](19-importacao-binance.md).
+
+
+## Conciliação progressiva — V13
+
+| Tabela | Campos | Finalidade |
+| --- | --- | --- |
+| contas_custodia | id, perfil_ref, instituicao_id, codigo, nome, criado_em | Conta única por proprietário, instituição e código; legado associado a Não especificada. |
+| registros_conferencia | id, perfil_ref, arquivo_ref, origem_ref, instituicao_id, original_json, erros_json, proposta_json, aplicada_json, versao, revisado_por, revisado_em, criado_em | Originais imutáveis, proposta versionada e última proposta aplicada separados; origem única por proprietário. |
+| ajustes_conciliatorios | id, perfil_ref, lacuna_ref, ancora_ref, conta_custodia_id, instituicao_id, ativo_id, quantidade, custo_total_brl, versao, ativo, vigente, anterior_id, aceito_por, criado_em, encerrado_em | Versões aceitas de lacunas com custo opcional e posição técnica pela âncora. Marcador vigente gerado limita uma versão ativa. |
+| comandos_conciliacao | id, perfil_ref, chave, fingerprint, resposta_json, criado_em | Chave idempotente por proprietário e resposta original. |
+| arquivos_recebidos | id, perfil_ref, hash, nome_arquivo, versao_leitor, registros, criado_em, conteudo | Arquivos originais recebidos, únicos por proprietário e hash. |
+
+Custos desconhecidos permanecem NULL. Quantidades usam DECIMAL(38,18), custos DECIMAL(38,8) e instantes DATETIME(6) UTC. Não há inferência de conta Spot nem alteração dos fatos legados. A edição da proposta não altera o snapshot aplicado até a confirmação transacional.
+
+
+### Histórico de propostas — V13
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| registro_id | BIGINT UNSIGNED, FK | Registro de conferência alterado. |
+| ordem | INT, parte da PK | Ordem da versão anterior. |
+| versao | BIGINT, NOT NULL | Versão dos dados preservados. |
+| proposta_json | JSON, NOT NULL | Dados anteriores à alteração. |
+| alterado_por | VARCHAR(120), utf8mb4_bin | Autor da alteração. |
+| alterado_em | DATETIME(6) | Alteração em UTC. |
+
+PK `(registro_id,ordem)`, FK para `registros_conferencia.id`, sem exclusão em cascata. Originais, dados aplicados e versões anteriores têm responsabilidades distintas. A proposta contém natureza `OBSERVADA`, `SALDO_ANTERIOR`, `APORTE`, `RETIRADA`, `SAIDA_CRIPTO`, `COMPRA` ou `VENDA`. Saídas de cripto podem registrar `finalidadeCripto`; dados ausentes continuam nulos. Custos de ajustes usam oito casas e HALF_EVEN antes da persistência. [Semântica e contrato](21-contrato-conciliacao.md).
+
+
+## Associação de registros — V14
+
+### grupos_associacao
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| id | BIGINT UNSIGNED, PK, AUTO_INCREMENT | Identificador interno que compõe o número OP-N. |
+| perfil_ref | VARCHAR(120), utf8mb4_bin, NOT NULL | Usuário proprietário. |
+| proposta_json | JSON, NOT NULL | Linhas, versões e papéis propostos; declaração de taxa zero, cotação opcional e desfazimento. |
+| aplicada_json | JSON, NULL | Snapshot incorporado ao livro; ausência indica proposta ainda não aplicada. |
+| versao | BIGINT, NOT NULL, maior que zero | Versão da proposta. |
+| alterado_por | VARCHAR(120), utf8mb4_bin, NOT NULL | Autor da última decisão. |
+| alterado_em | DATETIME(6), NOT NULL | Última decisão em UTC. |
+| criado_em | DATETIME(6), NOT NULL | Criação em UTC. |
+
+Índice por perfil. As linhas do JSON preservam identificador, versão, instituição, conta, ativo, código, ticker, instante exato, quantidade, tipo original, referência e papel. Papéis permitidos: RECEBIMENTO, PAGAMENTO, TAXA e NAO_DEFINIDO. Valores financeiros ausentes são nulos.
+
+### linhas_grupos_associacao
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| registro_id | BIGINT UNSIGNED, PK e FK para registros_conferencia | Linha reservada a um grupo. |
+| grupo_id | BIGINT UNSIGNED, FK para grupos_associacao | Grupo que reserva a linha. |
+
+A PK impede reservar a mesma linha para dois grupos. A reserva cobre a união da proposta e da versão aplicada até a confirmação; não identifica duas movimentações financeiras. Nenhuma FK exclui originais em cascata.
+
+### historico_grupos_associacao
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| grupo_id | BIGINT UNSIGNED, FK, parte da PK | Grupo alterado. |
+| ordem | INT, parte da PK | Ordem da versão preservada. |
+| versao | BIGINT, NOT NULL | Versão anterior. |
+| proposta_json | JSON, NOT NULL | Linhas e decisões da versão anterior. |
+| alterado_por | VARCHAR(120), utf8mb4_bin, NOT NULL | Autor da versão preservada. |
+| alterado_em | DATETIME(6), NOT NULL | Instante da decisão em UTC. |
+
+A confirmação não elimina propostas anteriores. Desfazer mantém grupo e histórico, liberando reservas somente ao aplicar. [Regras e contrato](22-associacao-registros-binance.md).

@@ -1,11 +1,13 @@
 # Classificações tipadas com enums — 03/11/2026
 
+A conciliação de importações usa também `CREDITO_AUTOMATICO` e os subtipos `BONIFICACAO`, `AIRDROP` e `RENDIMENTO` para identificar créditos; usa `RETIRADA` em `NaturezaRegistro` e no fato calculado pelo motor. A natureza da proposta é persistida no JSON versionado dos registros de conferência. A tabela legada `operacoes` e seu contrato de cadastro conservam os tipos anteriores.
+
 ## Análise e decisões
 
 | Campo ou valor | Decisão | Motivo |
 |---|---|---|
 | Ativo.tipo e AtivoResponse.tipo | TipoAtivo: FIAT, CRIPTO | Classificação fechada, controlada pelo sistema e restringida no banco |
-| Operacao.tipo | TipoOperacao: SALDO_INICIAL, APORTE, COMPRA, VENDA | Tipos implementados; V10 amplia a constraint para a entrega de negociações, sem antecipar operações futuras |
+| Operacao.tipo | TipoOperacao: SALDO_INICIAL, APORTE, COMPRA, VENDA | Tipos persistidos na tabela legada. RETIRADA é usada no replay da conciliação e não é gravada nessa tabela. |
 | Operacao.situacao, SaldoInicialResponse.situacao, filtros e repositories | SituacaoOperacao: CONFIRMADA, SUBSTITUIDA, CANCELADA | Estados fechados utilizados nas transições, consultas e unicidade |
 | Parâmetro HTTP situacao | String na fronteira de entrada, convertida uma vez no mapper | Preserva nomes aceitos, mensagem personalizada de erro e opção TODAS |
 | TODAS | Opção de consulta, não estado da operação | Convertida em ausência de restrição (null) no FiltroOperacoes; jamais persistida |
@@ -54,3 +56,6 @@ Contrato HTTP dos enums compatível com o frontend: mesmos campos e valores text
 Frontend aprovado em lint, 20 testes e build/typecheck. Protótipo aprovado em 1 teste. Backend check aprovado com 74 testes (35 unitários/arquiteturais, 39 MySQL), pacote bootJar com frontend reconstruído. Aplicação integrada iniciada em 8080, página e consultas de carteiras, instituições, ativos, saldos e posições com HTTP 200 para os dois perfis. Filtro de histórico conferido no navegador, sem alterar cadastros ou operações locais.
 
 Branch de publicação: codex/saldo-inicial-arquitetura. Escopo reúne saldo inicial e refatorações pendentes desde o merge do PR #13. Credenciais, backups, caches e builds permanecem ignorados. PR deve ficar aberto para revisão, sem merge automático.
+
+
+`NaturezaRegistro.MOVIMENTACAO_INTERNA` identifica aplicações e resgates Simple Earn reconhecidos na conferência. O valor integra propostas e versões aplicadas em JSON; não representa fato da tabela legada `operacoes` nem gera uma operação de compra ou venda. [Contrato](21-contrato-conciliacao.md#aplicações-e-resgates-simple-earn--07112026).

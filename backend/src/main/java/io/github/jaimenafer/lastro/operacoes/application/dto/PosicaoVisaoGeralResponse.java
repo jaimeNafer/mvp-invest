@@ -10,4 +10,7 @@ public record PosicaoVisaoGeralResponse(
     String custoMedioBrl,
     String custoTotalBrl,
     String participacaoPercentual,
-    List<CustodiaLivroResponse> instituicoes) {}
+    List<CustodiaLivroResponse> instituicoes,
+    boolean quantidadeDisponivel,
+    boolean comAjustes,
+    List<String> causas) {}

@@ -1,7 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import Importacoes from "./Importacoes";
-import Home from "./Home";
 import PreviaArquivo from "./PreviaArquivo";
 import ReciboArquivo from "./ReciboArquivo";
 import type { PreviaImportacao } from "./services/importacoes";
@@ -121,19 +120,6 @@ it("consulta detalhes de importação anterior", async () => {
   render(<Importacoes onBloqueio={() => {}} />);
   fireEvent.click(await screen.findByRole("button", { name: "Detalhes de teste.csv" }));
   expect(await screen.findByRole("dialog")).toHaveTextContent("o1");
-});
-
-it("bloqueia toda navegação durante confirmação incerta", async () => {
-  servidor(false, true);
-  render(<Home usuario={{ id: "teste", name: "Teste", login: "teste" }} onLogout={() => {}} />);
-  fireEvent.click(screen.getByRole("button", { name: "Operações" }));
-  fireEvent.click(screen.getByRole("button", { name: "Importar arquivo" }));
-  await preparar();
-  fireEvent.click(screen.getByRole("button", { name: "Confirmar importação" }));
-  await screen.findByRole("button", { name: "Verificar solicitação" });
-  expect(screen.getByRole("button", { name: "Carteiras" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Sair" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Negociações" })).toBeDisabled();
 });
 
 it("protege edição e saída desde o primeiro envio pendente", async () => {

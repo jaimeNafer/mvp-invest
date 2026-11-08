@@ -1,3 +1,21 @@
+## Conversões entre ativos — 07/11/2026
+
+Reconhecimento e associação de `Binance Convert`/`Convert`, com quantidades consolidadas, valoração independente e rastreabilidade. O custo e o resultado permanecem indisponíveis quando faltam valores confiáveis. [Contrato](22-associacao-registros-binance.md#conversões-entre-ativos--07112026).
+
+## Movimentações internas Simple Earn — 07/11/2026
+
+Aplicações e resgates reconhecidos são preservados na timeline e não produzem efeito patrimonial, mesmo sem contraparte. A alteração aplicada segue a confirmação global. [Contrato](21-contrato-conciliacao.md#aplicações-e-resgates-simple-earn--07112026).
+
+## Créditos automáticos de recompensas — 07/11/2026
+
+Reconhecimento dos três eventos Binance especificados, na timeline existente, com custo desconhecido separado da coerência e aplicação pela confirmação global. A migração V15 acrescenta os ativos dos exemplos. Produtos Earn completos e disponibilidade de negociação não estão incluídos. [Contrato](19-importacao-binance.md#créditos-automáticos-de-recompensas).
+
+## Associação e conciliação Binance — implementadas
+
+Grupos versionados, associação contextual e aplicação atômica de efeitos e ajustes foram entregues. Correspondências inequívocas de execuções parciais em CSV/XLSX usam janela configurável; ambiguidades continuam exigindo seleção explícita. [Contrato](22-associacao-registros-binance.md) e [validações](06-retomada.md).
+
+Próximo trabalho proposto: apurar separadamente a disponibilidade de custos, resultados e taxas na visão geral, preservando valores desconhecidos e explicando suas origens. Não está incluído nesta entrega.
+
 # Roteiro de entregas
 
 Estado em 03/11/2026: carteiras, execução Java 27 e saldo inicial implementados. Saldo inicial e refatorações publicados no [PR #14](https://github.com/jaimeNafer/mvp-invest/pull/14), com CI aprovada. Esclarecimento vigente: `contas` associa carteiras e instituições; operações são únicas por evento, pertencentes ao usuário/instituição e compartilhadas na visualização das carteiras. PR #12 e revisão Java 27/V8/modelagem do PR #13 integrados em `main`. [Retomada](06-retomada.md).
@@ -7,6 +25,10 @@ Estado em 03/11/2026: carteiras, execução Java 27 e saldo inicial implementado
 ## Importação Binance — primeira fatia implementada
 
 CSV enriquecido de depósitos e compras BRL, com prévia, confirmação transacional e recibos/proveniência. Verificações automatizadas aprovadas; aceite visual final pendente. Branch de entrega: `codex/importacao-binance`, com publicação autorizada sem merge. XLSX de movimentações e novos tipos financeiros seguem em entregas posteriores. [Contrato e sequência](19-importacao-binance.md), [estado e evidências](06-retomada.md).
+
+## Conciliação progressiva — primeiro ciclo implementado
+
+[Plano revisado de importação e timeline](20-conciliacao-progressiva.md). Primeiro incremento de ponta a ponta: receber registros → identificar lacuna por conta → aceitar ajuste provisório → consultar impacto → receber dado real → reduzir/encerrar ajuste. Inclui BRL e cripto com custo desconhecido. Primeiro ciclo implementado e verificado, com contrato em [21-conciliação](21-contrato-conciliacao.md), V13 e evidências na retomada. Facilidades adicionais de associação/edição vêm depois desse ciclo validado.
 
 ## Visão geral e consolidação financeira
 
@@ -76,7 +98,7 @@ Primeira fatia: [saldo inicial — contrato e exemplos](12-saldo-inicial.md). Pl
 - [x] Criar V10 para negociações, auditoria e revisão do livro, preservando dados e versões. Resultados e posições são calculados, sem projeções persistidas nesta entrega.
 - [x] Usar o mesmo motor Java na prévia e na confirmação; não duplicar regras financeiras no React. Tratar respostas de prévia fora de ordem e mudança de revisão antes de salvar.
 - [x] Implementar aporte em BRL, compra e venda entre React e MySQL, prévia e confirmação pelo mesmo motor, revisão, idempotência e posição atual. [Contrato](16-negociacoes.md).
-- [ ] Delimitar conversões/outros pares, retirada em BRL, transferência própria e pagamento de imposto.
+- [ ] Delimitar conversões/outros pares, transferência própria e pagamento de imposto. Retirada em BRL é reconhecida na conciliação de importações; cadastro manual independente permanece futuro.
 - [ ] Nas transferências entre instituições do próprio usuário, preservar custo global e alterar custódia, considerando a taxa de rede e o suporte à moeda em que ela foi cobrada. Não representar transferência como compra, venda ou aporte.
 - [x] Implementar taxas nas moedas da negociação, custo médio contínuo por usuário/ativo, custódia por usuário/instituição, parcelas de resultado e saldo suficiente; nunca vincular o histórico ao ID da associação da carteira.
 - [x] Implementar correção por substituição, cancelamento com motivo e histórico consultável para saldo inicial, aporte, compra e venda. Recalcular de forma transacional e impedir conflito de revisão e repetição da mesma submissão.
@@ -149,3 +171,7 @@ Decisões ou riscos relevantes:
 ```
 
 Este roteiro não cria issues automaticamente. Ao iniciar um marco, decompor somente o trabalho próximo em tarefas pequenas; detalhar tudo antecipadamente aumenta o custo de revisar decisões ainda não testadas.
+
+# Associação após edição — 07/11/2026
+
+Associações propostas permanecem visíveis após edições de motivo, sem alterar originais; alterações relevantes exigem revisão antes da aplicação. Verificação e limitações registradas em [retomada](06-retomada.md).

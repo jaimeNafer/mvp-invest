@@ -1,0 +1,481 @@
+.historico-conciliacao {
+  margin: 16px 24px 32px;
+  min-width: 0;
+}
+.historico-cabecalho,
+.resumo-conciliacao,
+.registro-linha,
+.resumo-operacao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.associacao-destinos,
+.associacao-opcoes {
+  margin: 0 0 12px;
+  border: 0;
+  padding: 0;
+}
+.associacao-destino {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.associacao-destino input {
+  min-height: 0;
+  accent-color: #126d5b;
+}
+.associacao-destino small {
+  margin-inline-start: 8px;
+}
+.associacao-opcoes summary {
+  cursor: pointer;
+}
+.associacao-tabela {
+  overflow-x: auto;
+}
+.paginacao-conciliacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.historico-cabecalho h1 {
+  font-size: 28px;
+  margin: 0;
+}
+.historico-cabecalho {
+  justify-content: space-between;
+  align-items: center;
+}
+.historico-cabecalho > div:first-child {
+  flex: 1 1 320px;
+}
+.historico-cabecalho p {
+  color: #52696d;
+}
+.historico-cabecalho p,
+.resumo-conciliacao p {
+  margin: 4px 0;
+}
+.conciliacao-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+.historico-conciliacao button,
+.resumo-conciliacao button {
+  min-height: 36px;
+}
+.recebimento-historico,
+.resumo-conciliacao,
+.previa-conciliacao,
+.confirmacao-pendente {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border: 1px solid #d7e3e1;
+  background: #fff;
+  border-radius: 8px;
+}
+.recebimento-historico label,
+.filtros-conciliacao label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.recebimento-conteudo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.recebimento-icone {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  height: 44px;
+  color: #126d5b;
+  background: #e7f3ef;
+  border-radius: 10px;
+}
+.recebimento-icone svg {
+  width: 23px;
+  height: 23px;
+}
+.recebimento-texto {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.recebimento-texto h2,
+.resumo-importacao h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.recebimento-texto p {
+  margin: 3px 0 0;
+  color: #52696d;
+  font-size: 13px;
+}
+.recebimento-texto small {
+  margin-top: 4px;
+}
+.recebimento-acoes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.recebimento-historico .recebimento-seletor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  cursor: pointer;
+}
+.recebimento-seletor input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.recebimento-seletor:focus-within {
+  outline: 3px solid #44bfa1;
+  outline-offset: 2px;
+}
+.recebimento-seletor.seletor-desabilitado {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.recebimento-selecao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e4eceb;
+  font-size: 12px;
+}
+.recebimento-selecao span {
+  color: #52696d;
+  overflow-wrap: anywhere;
+}
+.resumo-importacao {
+  display: block;
+}
+.resumo-importacao-topo {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.resumo-importacao-topo p,
+.resumo-ajustes {
+  color: #52696d;
+  font-size: 12px;
+}
+.resumo-percentual {
+  display: grid;
+  text-align: right;
+  white-space: nowrap;
+}
+.resumo-percentual strong {
+  color: #126d5b;
+  font-size: 19px;
+}
+.resumo-percentual span {
+  color: #52696d;
+  font-size: 12px;
+}
+.progresso-coerencia {
+  display: block;
+  width: 100%;
+  height: 7px;
+  margin: 10px 0 12px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 9px;
+  background: #e7eeec;
+  color: #12806a;
+}
+.progresso-coerencia::-webkit-progress-bar {
+  background: #e7eeec;
+}
+.progresso-coerencia::-webkit-progress-value {
+  background: #12806a;
+}
+.progresso-coerencia::-moz-progress-bar {
+  background: #12806a;
+}
+.resumo-indicadores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.resumo-indicadores > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f3f6f5;
+}
+.resumo-indicadores dt {
+  color: #52696d;
+  font-size: 12px;
+}
+.resumo-indicadores dd {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+.resumo-indicadores .indicador-coerente {
+  background: #edf6f0;
+  color: #14633a;
+}
+.resumo-indicadores .indicador-atencao {
+  background: #fff8e8;
+  color: #725005;
+}
+.recebimento-historico small,
+.coerencia-secundaria,
+.registro-linha small,
+.escolha-conciliacao small {
+  display: block;
+  color: #52696d;
+  font-size: 12px;
+  font-weight: 400;
+}
+.recebimento-historico small {
+  margin-top: 8px;
+}
+.filtros-conciliacao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 0;
+  border: 0;
+}
+.filtros-conciliacao legend {
+  font-size: 13px;
+  font-weight: 600;
+}
+.filtros-conciliacao select,
+.conferencia-form input,
+.conferencia-form select {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #b8cccd;
+  border-radius: 5px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  max-width: 100%;
+}
+.filtros-conciliacao label {
+  flex: 1 1 160px;
+  max-width: 280px;
+}
+.timeline-dia {
+  font-size: 13px;
+  margin: 12px 0 4px;
+  color: #52696d;
+}
+.registro-historico {
+  border: 1px solid #d7e3e1;
+  border-radius: 6px;
+  background: white;
+  margin-bottom: 4px;
+  scroll-margin-top: 16px;
+}
+.registro-credito {
+  background: #f5f7f7;
+  color: #40585b;
+}
+.registro-historico:focus-visible {
+  outline: 3px solid #44bfa1;
+}
+.registro-linha {
+  padding: 8px 12px;
+}
+.registro-linha > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+.registro-abrir {
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.registro-credito .registro-abrir {
+  font-weight: 500;
+}
+.registro-quantidade {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.registro-estados {
+  min-width: 160px;
+  text-align: right;
+}
+.estado-conferencia {
+  display: inline-block;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.estado-coerente {
+  color: #14633a;
+  background: #e3f3e8;
+}
+.estado-pendente {
+  color: #725005;
+  background: #fff1be;
+}
+.estado-correcao {
+  color: #9c2424;
+  background: #ffe5e3;
+}
+.registro-detalhes {
+  padding: 12px 16px;
+  border-top: 1px solid #d7e3e1;
+}
+.registro-metadados,
+.campos-originais dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.registro-metadados dt,
+.campos-originais dt {
+  color: #52696d;
+}
+.registro-metadados dd,
+.campos-originais dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.registro-pendencias {
+  padding-left: 20px;
+  font-size: 13px;
+}
+.registro-pendencias span,
+.escolha-conciliacao span > span {
+  display: block;
+}
+.campos-originais {
+  margin-top: 12px;
+  font-size: 13px;
+}
+.campos-originais summary {
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.conferencia-form h3 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+.conferencia-form fieldset {
+  border: 0;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(160px, 340px);
+  gap: 8px 12px;
+  align-items: center;
+  font-size: 13px;
+}
+.conferencia-form .form-orientacao {
+  grid-column: 2;
+  margin: 0;
+  font-size: 12px;
+}
+.previa-conciliacao h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.previa-conciliacao fieldset {
+  border: 0;
+  padding: 8px 0;
+  margin: 0;
+}
+.escolha-conciliacao {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  padding: 8px;
+  font-size: 13px;
+  border-bottom: 1px solid #e4eceb;
+}
+.escolha-conciliacao input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.paginacao-conciliacao {
+  margin-top: 12px;
+  font-size: 13px;
+}
+@media (max-width: 760px) {
+  .historico-conciliacao {
+    margin: 12px;
+  }
+  .historico-cabecalho,
+  .resumo-conciliacao,
+  .registro-linha {
+    flex-wrap: wrap;
+    align-items: start;
+  }
+  .recebimento-conteudo {
+    flex-wrap: wrap;
+    align-items: start;
+  }
+  .recebimento-acoes {
+    width: 100%;
+  }
+  .recebimento-historico .recebimento-seletor {
+    min-height: 44px;
+  }
+  .resumo-indicadores {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .historico-conciliacao button,
+  .historico-conciliacao input,
+  .historico-conciliacao select,
+  .resumo-conciliacao button {
+    min-height: 44px;
+  }
+  .registro-linha > :first-child {
+    flex-basis: 100%;
+  }
+  .registro-quantidade,
+  .registro-estados {
+    text-align: left;
+  }
+  .conferencia-form fieldset {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .conferencia-form .form-orientacao {
+    grid-column: 1;
+  }
+  .paginacao-conciliacao {
+    flex-wrap: wrap;
+  }
+}

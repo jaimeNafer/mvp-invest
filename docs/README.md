@@ -1,6 +1,6 @@
 # Planejamento do Lastro — MVP local
 
-Atualizado em 02/11/2026. Responsável pelo desenvolvimento: Jaime.
+Atualizado em 07/11/2026. Responsável pelo desenvolvimento: Jaime.
 
 ## Objetivo desta documentação
 
@@ -10,6 +10,7 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 
 | Documento | Pergunta que responde |
 | --- | --- |
+| [Associação de registros Binance](22-associacao-registros-binance.md) | Como reconstruir negociações multilinhas preservando originais e evitando efeitos duplicados? |
 | [Visão geral compacta](18-visao-geral.md) | Como consultar custos e resultados por período sem confundir custo com valor de mercado? |
 | [Auditoria modular](13-auditoria-modular.md) | Quais fronteiras são públicas, quais dependências são permitidas e como são verificadas? |
 | [Backlog de ideias futuras](ideias-futuras/README.md) | Quais oportunidades podemos avaliar depois do MVP? |
@@ -33,7 +34,7 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 - Existem testes do motor JavaScript. Eles são uma referência de comportamento, não uma validação contábil independente.
 - A proposta original MySQL com 20 tabelas foi preservada. As primeiras migrations próprias de acesso/cadastros estão em `backend/src/main/resources/db/migration/` e foram verificadas em MySQL 8.0.42 descartável.
 - As sete capturas PNG estão em `prototype/screenshots/`, com nomes legíveis. O protótipo executável complementa os estados e interações que as imagens não mostram.
-- Spring Boot/Gradle e React/TypeScript estão estruturados. Login mockado no frontend; autenticação real será externa. O backend lê o Bearer em um filter e disponibiliza `IUsuarioAtual` por requisição. Carteiras e contas usam JPA/MySQL, separadas por `IUsuarioAtual.id()`, sem `X-Perfil-Id`. Saldo inicial está implementado; demais operações e motor completo permanecem pendentes.
+- Spring Boot/Gradle e React/TypeScript estão estruturados. Login mockado no frontend; autenticação real será externa. O backend lê o Bearer em um filter e disponibiliza `IUsuarioAtual` por requisição. Carteiras e contas usam JPA/MySQL, separadas por `IUsuarioAtual.id()`, sem `X-Perfil-Id`. Saldo inicial, negociações, importação e conferência progressiva estão implementados conforme seus contratos.
 - Verificações atuais e evidências estão na [nota de retomada](06-retomada.md). A CI foi executada com sucesso no [PR #11](https://github.com/jaimeNafer/mvp-invest/pull/11), incluindo protótipo, frontend e backend/MySQL.
 - MySQL local `lastro_local`, Java 27 e V8 reaplicada após autorização/backup na etapa anterior. Esclarecimento vigente: `contas` é associação N:N; operações futuras do usuário/instituição serão as mesmas nas carteiras que a selecionam, sem duplicação. Início por `scripts/Start-Lastro.ps1`; projeto em `backend/`. [Retomada](06-retomada.md).
 - O `PLAN.md` da raiz documenta a fase anterior do protótipo. Para a nova etapa local, prevalecem as decisões confirmadas nesta pasta; o experimento anterior com prazo de 30 dias e usuários externos não é o compromisso desta entrega.
@@ -63,7 +64,7 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 
 ## Entrega atual e próximo passo
 
-[Saldo inicial](12-saldo-inicial.md) implementado: seis ativos, data comum por usuário, custo conhecido, histórico de correções/cancelamentos, repetição segura e posição global. V9 aplicada localmente, 44 testes backend e 20 frontend aprovados. Evidências e limites na [retomada](06-retomada.md). Próximo passo é especificar compra/venda, taxas, custódia e arredondamentos de baixas; implementação e publicação remota serão tarefas posteriores.
+Conciliação progressiva de importações Binance, associação versionada e aplicação financeira por confirmação global estão disponíveis. Custos desconhecidos não são presumidos; dados de origem e versões são preservados. Consulte o [contrato de conciliação](21-contrato-conciliacao.md), a [associação de registros](22-associacao-registros-binance.md) e a [retomada](06-retomada.md) para verificações e limitações. O próximo trabalho proposto é distinguir a disponibilidade de custos, resultados e taxas na visão geral, com explicações úteis sobre valores desconhecidos.
 
 - [Revisão Clean Code do backend](14-clean-code-backend.md).
 
@@ -74,3 +75,5 @@ Esta é a base de planejamento e acompanhamento. A fundação Spring Boot/React 
 - [17 — Catálogo e elegibilidade de criptoativos](17-catalogo-de-ativos.md).
 
 - [Importação Binance: formato, proveniência e confirmação](19-importacao-binance.md).
+
+- [Plano revisado: conciliação progressiva e timeline](20-conciliacao-progressiva.md).

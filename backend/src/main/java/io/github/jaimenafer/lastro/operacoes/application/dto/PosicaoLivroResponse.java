@@ -8,4 +8,7 @@ public record PosicaoLivroResponse(
     String quantidade,
     String custoTotalBrl,
     String custoMedioBrl,
-    List<CustodiaLivroResponse> instituicoes) {}
+    List<CustodiaLivroResponse> instituicoes,
+    boolean quantidadeDisponivel,
+    boolean comAjustes,
+    List<String> causas) {}

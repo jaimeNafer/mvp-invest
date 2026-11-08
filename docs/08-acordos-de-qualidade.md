@@ -4,6 +4,8 @@ Consolidado em 01/11/2026, ao concluir a tela de login e o mock de JWT. Estas re
 
 ## Aprendizados que passam a ser padrão
 
+Por decisão de Jaime em 06/11/2026, delegar ao `gpt-6-luna` buscas delimitadas, análise de logs, documentação e alterações simples com requisitos claros. Inicialmente, no máximo um subagente ativo por vez, sem subdelegação. Fornecer objetivo, arquivos, limites e aceite; pedir retorno curto com evidências. Arquitetura, regras financeiras, concorrência e integração permanecem com o agente principal, que revisa sem repetir toda a investigação. Informar indisponibilidade de Luna, sem substituição silenciosa por modelo mais caro. Evitar delegações triviais, trabalho duplicado e conflitos de edição. As regras completas estão em [orquestração e subagentes](../AGENTS.md#orquestração-e-subagentes--06112026). A delegação não garante redução de tokens e não substitui testes nem responsabilidade pela entrega.
+
 | ID | Aprendizado | Aplicação obrigatória nas próximas tarefas |
 | --- | --- | --- |
 | Q01 | Cada responsabilidade precisa ter um lugar claro. | Componentes apresentam dados e recebem ações; serviços executam e coordenam comportamentos. Formatação de token e acesso ao armazenamento ficam em serviços próprios. O backend de negócio não gerencia autenticação de usuários. |
@@ -142,3 +144,41 @@ Rótulos financeiros devem explicar sua finalidade; termos internos podem recebe
 ## Importação e evidências
 
 Prévia sem gravação, confirmação atômica e repetição segura são parte da funcionalidade. Não deduplicar por mera coincidência de data/quantidade; comprovar identidade e comparar conteúdo financeiro. Preservar originais e versões posteriores. Testes financeiros usam expectativas independentes e fixtures sintéticas, sem dados pessoais em logs ou CI. [Contrato](19-importacao-binance.md).
+
+### Consolidação Binance e formatos de arquivo — 07/11/2026
+
+- CSV e XLSX da mesma origem alimentam um único fluxo de recebimento, consulta, associação, prévia e confirmação. Leitores específicos normalizam o formato; não duplicar regras de negócio por extensão.
+- Correspondência automática exige uma combinação inequívoca de usuário, instituição, custódia, tipo, direção e ativos. Proximidade temporal isolada ou ID numérico repetido não provam identidade.
+- A janela automática/manual é configurada em `application.yml` e mede a diferença total entre a primeira e a última linha; não encadear grupos que excedam o limite. A configuração pertence ao contexto de operações e sua interface de aplicação, sem dependência transversal indevida.
+- Consolidar execuções compatíveis por ativo e papel com BigDecimal, preservando cada registro original e sua proveniência. Cada linha só pode produzir efeito uma vez.
+- Ambiguidades permanecem pendentes. A interface apresenta candidatas em rádio sem escolha inicial; a escolha altera apenas a proposta e exige nova prévia/confirmação global para compor o livro.
+- Considerar zero a taxa não informada na importação. Taxas efetivamente informadas preservam seu ativo e valor. [Contrato](22-associacao-registros-binance.md).
+
+### Diretrizes para a próxima evolução
+
+No [planejamento de conciliação progressiva](20-conciliacao-progressiva.md), Coerente significa verificação automática, enquanto Revisada por você é anotação separada. Ajuste sintético explica uma lacuna, não um fato econômico; não cria aporte, lucro ou data fictícia. Separar disponibilidade de quantidade/custo/resultado e concentrar alertas por impacto. Validar primeiro o ciclo completo de ajuste e substituição pelo dado real; evitar ampliar heurísticas ou telas antes dele. Essas capacidades estão planejadas e não são funcionalidades já entregues.
+
+
+## Aprendizados da conciliação progressiva — 06/11/2026
+
+- Prévia e confirmação escolhem os mesmos snapshots efetivos. Edição impedida ou incompleta não faz desaparecer um efeito já aplicado.
+- Estado automático e revisão manual são independentes; informar campos parciais não certifica uma negociação.
+- Receber arquivo não altera a data contratual de uma abertura existente. Cobertura de dados e data econômica são conceitos distintos.
+- Idempotência considera arquivo, referência de evento, comando e versões encerradas; reabertura não reinicia a numeração.
+- Correspondências exigem unicidade recíproca. Coincidência e ordem de linhas não provam associação.
+- Validar ausência de efeitos parciais com falha de persistência dentro da confirmação, além dos caminhos bem-sucedidos.
+- Exercitar a interface com linhas inválidas: cobertura desconhecida não pode aparecer como carteira vazia ou total zero.
+
+- Preservar pernas quantitativas de um evento parcial desde a primeira aplicação; o aproveitamento não depende da ordem em que o usuário preenche a classificação financeira.
+- Não promover uma linha de movimentação a negociação completa sem resolver suas contrapartidas. Informações guardadas não equivalem a um evento econômico reconstruído.
+- Localizar a incerteza no tempo e no indicador afetado: pendência futura datada não apaga resultados mensais anteriores calculáveis. Filtros de apresentação não diminuem a contagem real de dependentes.
+
+
+## Associação de linhas: aprendizados permanentes
+
+- Uma ação contextual deve enviar o registro selecionado e oferecer a decisão que seu rótulo promete; abrir uma prévia global não equivale a associar.
+- Associação é decisão versionada, separada dos originais e dos efeitos aplicados. Reservar linhas e trocar a projeção atomicamente evita contabilizar grupo e linhas juntos.
+- Mesmo segundo e direção negativa não provam identidade ou finalidade. Preservar ambiguidades de associação.
+- Principal conhecido e custo final são informações distintas. Quantidades úteis continuam disponíveis sem fabricar resultados financeiros completos.
+- Correção e desfazimento recalculam o histórico vigente; não restauram snapshots de cálculos. Decisões anteriores e autoria permanecem auditáveis.
+- Preservar o rascunho após erro de revisão e invalidar sua prévia. Comparar horários com a precisão recebida, inclusive na diferença exibida.
