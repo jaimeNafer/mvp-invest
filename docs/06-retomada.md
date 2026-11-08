@@ -1,3 +1,125 @@
+## Verificação antes da publicação — 07/11/2026
+
+O frontend passou em lint, 123 testes e build. O backend passou em 197 testes unitários e arquiteturais; na suíte completa de integração, 155 dos 162 testes passaram. Os sete cenários com falha, que permanecem para investigação e correção, são:
+
+- `AssociacaoIntegrationTests.associacaoDeTaxaAnteriorEncerraAjusteSemRepetirQuantidades`
+- `AssociacaoIntegrationTests.editarLinhaNaoMudaGrupoAplicadoAntesDeReavaliar`
+- `AssociacaoIntegrationTests.manualAteDoisSegundosConfirmaTaxaZeroSemDuplicarEDesfaz`
+- `ConciliacaoCasosIntegrationTests.rejeitarAjustePreservaRegistroAplicadoComDeficitExplicito`
+- `ConciliacaoCasosIntegrationTests.revisarNaoResolveLacunaEEdicaoNaoHerdaRevisaoAnterior`
+- `ConciliacaoIntegrationTests.csvParcialAntesDoPrimeiroAceitePreservaAsDuasQuantidades`
+- `SaldosIniciaisIntegrationTests.catalogoSomenteLeituraEContextoObrigatorio`
+
+As falhas não foram corrigidas nem classificadas como inofensivas nesta publicação. As fixtures foram desvinculadas de identificadores e quantidades de dados reais antes do versionamento; arquivos privados continuam ignorados.
+
+## Conversões entre ativos — 07/11/2026
+
+`Binance Convert` e `Convert` são associados quando as contrapartidas são inequívocas; os originais e as propostas versionadas permanecem preservados. Quantidades podem ser aplicadas sem cotação; custo e resultado dependentes permanecem indisponíveis. Valores consistentes do relatório enriquecido sem taxa não zero ou uma cotação informada permitem cálculo financeiro. Taxas e execuções parciais usam o contrato em [Associação Binance](22-associacao-registros-binance.md#conversões-entre-ativos--07112026).
+
+Verificados 197 testes unitários de backend, 12 cenários integrados focados, lint, build e 123 testes de frontend. A suíte integral de integração não foi repetida; falhas anteriores continuam registradas abaixo. O pacote integrado foi atualizado em `http://127.0.0.1:8080/`; página, bundle e consulta autenticada do histórico responderam HTTP 200. Nenhuma migration foi adicionada nesta alteração.
+
+## Movimentações internas Simple Earn — 07/11/2026
+
+Aplicações e resgates Locked/Flexible com descrição e sinal reconhecidos são propostos como movimentações internas sem efeito patrimonial, inclusive quando apenas uma perna está presente. Rendimento segue como crédito. A reclassificação de efeito previamente aplicado exige confirmação global; o histórico anterior permanece até então. Nomes desconhecidos e sinais contraditórios não recebem essa classificação. [Contrato](21-contrato-conciliacao.md#aplicações-e-resgates-simple-earn--07112026).
+
+Verificados os testes unitários do backend, sete cenários integrados focados (incluindo compra/custo, quatro tipos, isolados, reimportação, histórico aplicado, rendimento e compatibilidade com Convert), 122 testes frontend, lint e build. A suíte integral de integração não foi repetida; falhas anteriores seguem registradas abaixo. O tratamento existente de `Binance Convert` nas linhas de movimentações não foi ampliado nesta entrega. Aplicação integrada atualizada em `http://127.0.0.1:8080/`: página, bundle e API autenticada do histórico responderam HTTP 200. Não houve migration nesta alteração.
+
+## Aplicação local atualizada — 07/11/2026
+
+O pacote integrado mais recente foi reconstruído e iniciado em `http://127.0.0.1:8080/`, com MySQL persistente. Foi criado backup privado antes da migration V15; o Flyway confirmou a versão 15. Página, bundle atualizado e consulta autenticada do histórico responderam HTTP 200. A regra de entregar o aplicativo em 8080 foi registrada em [AGENTS.md](../AGENTS.md). A situação das verificações de integração está descrita na seção de créditos automáticos abaixo.
+
+## Compatibilidade de associações anteriores
+
+Associações persistidas antes da inclusão de `taxaZeroDeclarada` voltam a ser lidas sem erro. A ausência do campo é interpretada como ausência de declaração, preservando o conteúdo armazenado. Testes focados de mapeamento, projeção, agrupamento e arquitetura passaram. Após reiniciar a instância local, as consultas de visão geral, histórico e contas responderam para os dois perfis, sem alteração dos registros.
+
+## Interface de importação
+
+A parte superior de Importações apresenta seleção de arquivos, nomes escolhidos e resumo de conferência com contagens e progresso. A barra considera os registros do histórico informados pela API; o resumo compacto da Visão Geral permanece disponível. O recebimento e a confirmação global mantêm seus fluxos existentes. Lint, build e 120 testes do frontend passaram; a tela foi aberta no navegador com dados existentes, sem importar arquivos.
+
+## Saídas de criptomoedas
+
+Retiradas de cripto identificadas na Binance são apresentadas como saídas, com finalidade informada separadamente: desconhecida, carteira própria, terceiros ou outra. A confirmação global continua necessária para aplicar o débito. A natureza da saída não comprova a contrapartida; a conferência não atribui situação fiscal. A falta de saldo anterior é sinalizada separadamente da identificação da movimentação.
+
+Quando o arquivo informa que a taxa está incluída, mas não discrimina seu valor, o detalhamento permanece pendente. A quantidade retirada é debitada uma única vez; informar a parcela de taxa não acrescenta um segundo débito. O custo e o resultado que dependem de informações ausentes não são apresentados como completos. Os registros originais permanecem disponíveis para consulta e correção.
+
+Passaram os testes focados de classificação, motor e arquitetura, dois cenários integrados em MySQL descartável, lint, build e 16 testes focados do frontend. O pacote atualizado responde em http://127.0.0.1:8081/ com o banco de revisão preservado. A suíte integrada completa e a conferência visual desta alteração permanecem pendentes.
+
+## Depósitos e retiradas em BRL
+
+Depósitos e retiradas em BRL são classificados automaticamente quando o sinal é compatível e não há indícios de transferência. Os registros já recebidos e não editados também são avaliados. Movimentos de cripto e casos com contrapartida possível entre contas seguem para conferência. A retirada debita a custódia sem gerar resultado realizado; os efeitos financeiros são aplicados pela confirmação global.
+
+Os 183 testes unitários do backend passaram antes do ajuste final da indicação de confirmação; depois desse ajuste, passaram os testes focados de domínio e arquitetura. Cinco testes integrados em MySQL descartável cobriram aporte, retirada, ambiguidade entre contas, correção manual, reclassificação de registro anterior e preservação dos resultados financeiros. Lint, build e 15 testes focados do frontend passaram. A versão foi iniciada em http://127.0.0.1:8081/ com o banco de revisão. Um XLSX sintético na instância confirmou aporte e retirada coerentes aguardando confirmação global. A suíte integrada completa de outras funcionalidades segue pendente.
+
+## Coerência e confirmação global
+
+A classificação usa a consistência dos dados e os efeitos calculados pelo motor. A confirmação global pendente é apresentada separadamente e não cria uma pendência para cada linha. O teste integrado cobre compra SOL/BRL com recursos suficientes, custo conhecido e origens preservadas antes da confirmação.
+
+## Taxas importadas e apresentação compacta — 07/11/2026
+
+Por decisão de Jaime, taxa não informada na importação é considerada zero. Taxas informadas continuam sendo processadas, inclusive pendências para taxas em terceiro ativo. O card agrupado mostra um resumo compacto e mantém registros originais recolhidos. Removida a confirmação individual de taxa zero da associação. Testes focados de frontend, domínio, arquitetura e integração foram executados; a suíte integrada completa continua pendente.
+
+## Vínculo automático e associação no card — 07/11/2026
+
+O Histórico agrupa correspondências inequívocas antes da confirmação global. Referências fortes diferentes podem formar operações separadas no mesmo instante. Escolhas manuais ficam no card, com rádio quando há vários destinos e campos adicionais recolhidos.
+
+Instância isolada em http://127.0.0.1:8081/ atualizada e confirmada por HTTP. Um XLSX sintético com NEAR/BRL e SOL/BRL no mesmo segundo apresentou duas operações automáticas, cada uma com duas linhas originais, antes da confirmação. Passaram os testes focados de frontend, de arquitetura e agrupamento e dois cenários integrados em MySQL. A suíte integrada completa e a inspeção visual no navegador seguem pendentes.
+
+## Revisão de Importações e Histórico — 07/11/2026
+
+A timeline reúne uma operação por número de associação antes de paginar. Os detalhes mantêm as linhas de origem e suas ações. CSV enriquecido distingue o identificador repetido da linha física e evita projetar novamente a contrapartida já representada em uma linha própria. Nas compras OCBS em BRL, a taxa incluída no total enviado é separada do principal.
+
+Pacote atualizado em http://127.0.0.1:8081/ com schema isolado em Docker. HTTP 200 com o bundle atualizado. Ensaio de API com CSV sintético confirmou uma compra consolidada, quatro linhas de origem, débito em BRL sem repetição e reimportação reconhecida. Lint, build, 22 testes focados de frontend e quatro cenários integrados de CSV em MySQL passaram. A primeira execução integrada com Docker encontrou oito falhas antes dos ajustes. A execução completa e a conferência visual no navegador precisam ser repetidas. A instância pessoal em 8080 conserva o pacote anterior.
+
+## Consolidação automática Binance — implementação em 07/11/2026
+
+Evolução em andamento na branch `codex/conciliacao-progressiva`: reconhecer automaticamente combinações únicas de linhas da Binance, somar execuções parciais dentro de janela temporal configurável e usar o mesmo fluxo para CSV/XLSX. A tela de Importações reúne recebimento e timeline; ambiguidades apresentam candidatas em rádio sem seleção inicial. Grupos e efeitos só entram no livro após confirmação global.
+
+Validação executada nesta retomada: frontend lint, 115 testes e build aprovados; suíte unitária/arquitetural completa do backend aprovada com 178 testes, incluindo agrupamento e leitores CSV/XLSX. O código dos testes integrados também compila. A configuração da janela integra o contexto de operações e é injetada por interface. A execução integrada MySQL não ocorreu porque Testcontainers não encontrou daemon Docker acessível; a conferência visual segue pendente. Nenhum acesso, limpeza ou escrita no MySQL pessoal foi feito.
+
+Nenhum commit ou publicação foi feito nesta retomada. [Contrato e critérios](22-associacao-registros-binance.md).
+
+## Associação de registros Binance — concluída em 07/11/2026
+
+O Histórico oferece associação contextual, prévia e edição de grupos pelo número interno. O reconhecimento automático exige instante exato e interpretação única. A janela manual é de até dois segundos entre os extremos. A confirmação global aplica as mudanças do grupo e dos ajustes em uma transação, preservando originais e versões. Taxas em terceiro ativo mantêm o débito conhecido e a valoração pendente. [Contrato](22-associacao-registros-binance.md).
+
+O pacote integrado passou com 171 testes unitários e arquiteturais e 131 integrados em MySQL, sem falhas ou ignorados. A cobertura do escopo verificado foi de 98,12% das linhas e 89,26% das ramificações. Lint, 115 testes e build do frontend aprovados. O ensaio em 8081 usou dados sintéticos e conferiu o agrupamento SOL/BRL, o encerramento do ajuste após confirmação e o desfazimento com reprocessamento. A preservação do ajuste enquanto a proposta aguarda confirmação também tem teste de regressão.
+
+O Lastro pessoal está disponível em http://127.0.0.1:8080/. O Flyway confirmou a V14, registrada em 06/11/2026. Nesta retomada foi feito um backup privado do schema vigente antes do reinício. A comparação das 17 tabelas fora do histórico do Flyway confirmou checksums iguais. Nenhuma limpeza ou importação real ocorreu nesta retomada.
+
+## Aplicação pessoal iniciada — 06/11/2026
+
+A pedido de Jaime, pacote integrado iniciado em http://127.0.0.1:8080/, usando MySQL local e configuração privada. Backup completo gerado antes da aplicação da V13; Flyway aplicou a migration e confirmou o schema atualizado no reinício. Processo antigo do Lastro que bloqueava a porta sem responder foi substituído. Frontend integrado respondeu HTTP 200. Nenhuma limpeza ou importação foi executada. A porta 8081 continua sendo o ambiente isolado com dados sintéticos; não confundir com o banco pessoal. Esta nota atualiza o estado operacional das notas abaixo, que preservam o contexto da verificação anterior.
+
+## Conciliação progressiva — implementação de 06/11/2026
+
+Primeiro ciclo implementado e verificado na branch `codex/conciliacao-progressiva`: receber CSV/XLSX, preservar originais e linhas inválidas, consultar timeline, aprovar ajustes BRL/cripto e encerrá-los ou reduzi-los ao informar a origem real. [Contrato HTTP e limites](21-contrato-conciliacao.md). Não houve commit, push ou alteração do banco pessoal nesta execução.
+
+Recepção e aplicação são separadas. Propostas editáveis e último snapshot aplicado impedem somar a entrada real ao ajuste anterior. Alterações ilegíveis ou impedidas preservam os efeitos anteriores; a prévia usa a mesma seleção da confirmação. Ajustes têm âncora técnica, aceite e versões, sem data econômica inventada. Revisão manual permanece independente do estado automático.
+
+V13 acrescenta contas de custódia, registros, histórico de propostas, ajustes, comandos e arquivos recebidos. V1–V12 permanecem intactas. Legados conservam a custódia Não especificada. Receber arquivo anterior não muda a data contratual de uma abertura confirmada.
+
+A Visão geral e posições usam o mesmo livro para históricos completos e progressivos. Ausência de custo ou cobertura gera informação indisponível e subtotais conhecidos; não uma carteira vazia ou resultado zero. Históricos completos mantêm os números anteriores.
+
+Verificação final: 273 testes backend (152 unitários/arquiteturais e 121 integrados MySQL), sem falhas, erros ou testes ignorados; `check` e pacote integrado aprovados. Cobertura do recorte verificado: 97,72% de linhas e 88,61% de branches, preservando mínimos de 90%/85%. Frontend: 104 testes, lint, TypeScript e build aprovados. Revisão independente das cinco correções finais não encontrou regressões diretas; não foi uma nova auditoria geral. CI não executada nesta entrega.
+
+Ensaio visual em `http://127.0.0.1:8081/`, com MySQL descartável e arquivos sintéticos privados: recebimento de linha válida/inválida, aceite de ajuste BTC e encerramento após nova entrada anterior confirmados. Pacote final reiniciado e conferido no navegador: três registros preservados, nenhum ajuste ativo após encerramento, totais incompletos indisponíveis e parcelas conhecidas separadas, sem apresentar carteira vazia ou zero fictício. O banco pessoal de `8080` não recebeu V13 nem dados de teste. Arquivos/evidências em `.local/conciliacao/`.
+
+Limites: sobreposições ambíguas e referências repetidas ficam preservadas e impedidas; não se eliminam ocorrências por coincidência. Associação inicial somente para duas pernas explícitas, opostas e reciprocamente únicas de transferência interna. Reconstrução geral de negociações multilinhas, taxas em BNB, Earn e apuração fiscal continuam fora desta fatia.
+
+As notas seguintes registram o planejamento e as entregas anteriores.
+
+## Revisão da próxima entrega — 06/11/2026
+
+Consolidado o [plano de conciliação progressiva e timeline](20-conciliacao-progressiva.md), incorporando a revisão enviada por Jaime. Direção preservada: receber histórico incompleto, aproveitar quantidades disponíveis, sugerir ajustes BRL/cripto com aceite em lote e corrigir posteriormente, sem inventar custos.
+
+Ajustes incorporados: Coerente separado de revisão manual; ajuste representa lacuna com âncora técnica, sem data fictícia; custódia por usuário/conta/ativo e custo global por usuário/ativo; disponibilidade de quantidade/custo/resultado separada; impacto antes do percentual; reprocessamento idempotente e primeiro ciclo completo antes de ampliar associações/edição.
+
+Adequações ao modelo: contas atual continua vínculo carteira/instituição; conta de custódia será conceito próprio, sem recriar titulares. Legado sem conta não será presumido Spot. A associação inicial será restrita à transferência interna observável e confirmada, sem motor genérico. Relatórios fiscais ficam futuros, com obrigação de separar fatos/ajustes quando existirem.
+
+Somente documentação alterada nesta revisão. Não implementados timeline, custódias, ajustes ou motor parcial. Ainda é necessário fechar contratos HTTP e modelagem física antes de codificar; não há migration V13 aplicada/criada. Testes da aplicação não foram reexecutados por esta mudança documental.
+
+A feature CSV anterior foi publicada na branch codex/importacao-binance, commit 5eef86c, sem PR ou merge. Esta revisão documental permanece sem publicação.
+
 ## Importação Binance — retomada de 06/11/2026
 
 Implementada a primeira fatia de importação do CSV enriquecido: depósitos BRL e compras OCBS/CONVERT em BRL, com prévia, confirmação atômica, recibo, arquivo original e proveniência. Interface em **Operações → Importar arquivo**. [Contrato](19-importacao-binance.md).
@@ -456,3 +578,23 @@ O Git do Windows recusou a credencial salva para push. A publicação foi realiz
 Jaime confirmou o merge do PR #11 e pediu o próximo passo. A main local foi atualizada para o merge. A atualização documental posterior ao merge foi preservada por cherry-pick na branch local `codex/planejamento-cadastros`, sem perder arquivos ou publicar código novo de negócio.
 
 Escolhas confirmadas: Spring Data JPA para os primeiros cadastros e espaços separados para Jaime e Eliane, com associação explícita no frontend entre perfil mockado e espaço de negócio. A organização de controller, service, repository e entity foi apresentada como proposta para titulares. Espaço agrupa titulares/contas, sem representar autenticação ou gestão de usuários. Os contratos da API continuam a definir. Consultar [proposta do cadastro de titulares](09-cadastro-de-carteiras.md).
+
+
+## Separação do domínio fiscal — 07/11/2026
+
+A diretriz arquitetural foi registrada em [Arquitetura](02-arquitetura.md#separação-do-domínio-fiscal--07112026). A resposta de conferência deixa de fornecer `estadoFiscal`; finalidade da saída, dados originais e pendências patrimoniais continuam separados. A evolução seguinte adiciona o reconhecimento dos três eventos especificados; o custo desconhecido segue separado da coerência técnica. Consulte o contrato em [Importação Binance](19-importacao-binance.md#créditos-automáticos-de-recompensas).
+
+
+## Créditos automáticos — 07/11/2026
+
+O reconhecimento cobre as três descrições documentadas, mantém o custo desconhecido e usa a confirmação global. A migration V15 acrescenta os ativos dos exemplos ao catálogo. Verificados 187 testes unitários de backend, seis testes de integração delimitados (créditos e migrations), build, lint e 121 testes de frontend. A execução integral de integração foi interrompida após registrar falhas em associação e conciliação; duas foram reproduzidas isoladamente e cobram expectativas incompatíveis com os acordos atuais de associação automática e coerência de saída cripto. Há outras falhas não investigadas. Earn completo e disponibilidade de negociação permanecem fora do escopo.
+
+# Associação preservada após edição — 07/11/2026
+
+Edições que alteram somente o motivo preservam a proposta de associação; a comparação usa a versão histórica e a proposta atual. A timeline mantém visível uma proposta desatualizada quando a alteração exige revisão, sem aplicá-la ao livro. A confirmação global atualiza o snapshot selecionado e preserva o histórico. Contrato em [associação de registros](22-associacao-registros-binance.md).
+
+Passaram 197 testes unitários e arquiteturais e os dois cenários integrados focados, incluindo inclusão e atualização de saldo anterior, confirmação, custo, quantidade e reimportação. Na execução da classe de associação, 37 dos 40 testes passaram; falharam `associacaoDeTaxaAnteriorEncerraAjusteSemRepetirQuantidades`, `editarLinhaNaoMudaGrupoAplicadoAntesDeReavaliar` e `manualAteDoisSegundosConfirmaTaxaZeroSemDuplicarEDesfaz`, em expectativas relacionadas ao agrupamento automático. A suíte integral de integração não foi executada nessa verificação. Frontend compilado e pacote integrado gerado. Aplicação reiniciada em 8080 com MySQL persistente; página e timeline responderam HTTP 200 e o vínculo relatado voltou a aparecer. Nenhuma migration nem escrita de negócio foi realizada na verificação local.
+
+## Visão geral: próximo trabalho proposto
+
+Créditos automáticos sem custo e conversões sem valoração preservam quantidades, mas impedem calcular os custos dependentes. A classificação de coerência é independente da disponibilidade financeira. A visão geral também usa uma condição ampla de ausência de classificação para resultado e taxas; revisar a disponibilidade de cada indicador, as parcelas conhecidas e a explicação das causas em entrega futura. Nenhuma mudança de cálculo foi implementada nessa investigação.

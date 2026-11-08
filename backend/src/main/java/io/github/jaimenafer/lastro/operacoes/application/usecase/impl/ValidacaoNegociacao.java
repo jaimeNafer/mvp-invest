@@ -20,10 +20,24 @@ public final class ValidacaoNegociacao {
 
   public static DadosNegociacao normalizar(
       CadastroOperacao cadastro, Map<Long, AtivoResumo> ativos, boolean correcao) {
+    return normalizar(cadastro, ativos, correcao, false);
+  }
+
+  public static DadosNegociacao normalizarConversao(
+      CadastroOperacao cadastro, Map<Long, AtivoResumo> ativos) {
+    return normalizar(cadastro, ativos, false, true);
+  }
+
+  private static DadosNegociacao normalizar(
+      CadastroOperacao cadastro, Map<Long, AtivoResumo> ativos, boolean correcao,
+      boolean permitirCriptoComoCotacao) {
     var ativo = buscarAtivo(ativos, cadastro.ativoId());
     if (cadastro.tipo() == null || cadastro.tipo() == TipoOperacao.SALDO_INICIAL)
       throw new OperacaoInvalidaException(
           "Use o cadastro de saldo inicial para registrar uma abertura.");
+    if (cadastro.tipo() == TipoOperacao.RETIRADA)
+      throw new OperacaoInvalidaException(
+          "Retiradas em reais são registradas pela conferência de importações.");
     Instant instante = normalizarInstante(cadastro.ocorridaEm());
     var quantidade = decimal(cadastro.quantidade(), ativo.casasDecimais(), "quantidade", false);
     String motivo = cadastro.motivo();
@@ -56,7 +70,8 @@ public final class ValidacaoNegociacao {
     if (!ativo.cripto())
       throw new OperacaoInvalidaException("Selecione um criptoativo do catálogo para negociar.");
     var moeda = buscarAtivo(ativos, cadastro.moedaCotacaoId());
-    if (!COTACOES.contains(moeda.codigo()) || moeda.id().equals(ativo.id()))
+    if ((!COTACOES.contains(moeda.codigo()) && !(permitirCriptoComoCotacao && moeda.cripto()))
+        || moeda.id().equals(ativo.id()))
       throw new OperacaoInvalidaException(
           "Selecione BRL, USDT ou USDC, diferente do ativo negociado.");
     var total = decimal(cadastro.totalBruto(), moeda.casasDecimais(), "total bruto", false);

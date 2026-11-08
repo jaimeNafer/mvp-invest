@@ -18,13 +18,13 @@ export type CadastroOperacao = {
   motivo?: string;
 };
 export type Calculo = {
-  valorBrutoBrl: string;
-  taxaBrl: string;
-  custoBaixadoBrl: string;
-  resultadoNegociacaoBrl: string;
-  resultadoMoedaBrl: string;
-  resultadoTaxaBrl: string;
-  resultadoTotalBrl: string;
+  valorBrutoBrl: string | null;
+  taxaBrl: string | null;
+  custoBaixadoBrl: string | null;
+  resultadoNegociacaoBrl: string | null;
+  resultadoMoedaBrl: string | null;
+  resultadoTaxaBrl: string | null;
+  resultadoTotalBrl: string | null;
 };
 export type Operacao = {
   id: string | null;
@@ -56,8 +56,11 @@ export type Posicao = {
   ativoId: string;
   ativoTicker: string;
   quantidade: string;
-  custoTotalBrl: string;
-  custoMedioBrl: string;
+  custoTotalBrl: string | null;
+  custoMedioBrl: string | null;
+  quantidadeDisponivel?: boolean;
+  comAjustes?: boolean;
+  causas?: string[];
   instituicoes: { instituicaoId: string; instituicaoNome: string; quantidade: string }[];
 };
 export type FiltrosOperacoes = {
@@ -104,7 +107,10 @@ export function listarOperacoes(filtros: FiltrosOperacoes, signal?: AbortSignal)
   return requisitarJson<ListaOperacoes>(`/operacoes?${params}`, { signal });
 }
 export const listarPosicoes = (signal?: AbortSignal) =>
-  requisitarJson<{ revisao: string; itens: Posicao[] }>("/posicoes", { signal });
+  requisitarJson<{ revisao: string; itens: Posicao[]; quantidadesCompletas?: boolean }>(
+    "/posicoes",
+    { signal },
+  );
 export const obterOperacao = (id: string, signal?: AbortSignal) =>
   requisitarJson<Operacao>(`/operacoes/${encodeURIComponent(id)}`, { signal });
 export const consultarPrevia = (pedido: PedidoPrevia, signal: AbortSignal) =>

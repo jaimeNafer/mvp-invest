@@ -7,4 +7,6 @@ public record ResultadoMensalResponse(
     LocalDate dataFim,
     String resultadoBrl,
     String acumuladoBrl,
-    long operacoes) {}
+    long operacoes,
+    String subtotalResultadoBrl,
+    String subtotalAcumuladoBrl) {}

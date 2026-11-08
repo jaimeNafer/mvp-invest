@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
-import Importacoes from "./Importacoes";
+import Historico from "./Historico";
 import Negociacoes from "./Negociacoes";
 import SaldosIniciais from "./SaldosIniciais";
 
 export default function Operacoes({ onBloqueio }: { onBloqueio?: (b: boolean) => void }) {
-  const [area, setArea] = useState<"negociacoes" | "saldos" | "importacoes">("negociacoes");
+  const [area, setArea] = useState<"importacoes" | "negociacoes" | "saldos">("importacoes");
   const [bloqueado, setBloqueado] = useState(false);
   const bloquear = useCallback(
     (valor: boolean) => {
@@ -16,6 +16,15 @@ export default function Operacoes({ onBloqueio }: { onBloqueio?: (b: boolean) =>
   return (
     <>
       <nav className="operations-navigation" aria-label="Áreas de operações">
+        <button
+          type="button"
+          className={area === "importacoes" ? "primary-button" : "secondary-button"}
+          aria-pressed={area === "importacoes"}
+          disabled={bloqueado}
+          onClick={() => setArea("importacoes")}
+        >
+          Importações
+        </button>
         <button
           type="button"
           className={area === "negociacoes" ? "primary-button" : "secondary-button"}
@@ -34,20 +43,11 @@ export default function Operacoes({ onBloqueio }: { onBloqueio?: (b: boolean) =>
         >
           Saldos iniciais
         </button>
-        <button
-          type="button"
-          className={area === "importacoes" ? "primary-button" : "secondary-button"}
-          aria-pressed={area === "importacoes"}
-          disabled={bloqueado}
-          onClick={() => setArea("importacoes")}
-        >
-          Importar arquivo
-        </button>
       </nav>
-      {area === "negociacoes" ? (
+      {area === "importacoes" ? (
+        <Historico onBloqueio={bloquear} />
+      ) : area === "negociacoes" ? (
         <Negociacoes onSaldos={() => setArea("saldos")} onBloqueio={bloquear} />
-      ) : area === "importacoes" ? (
-        <Importacoes onBloqueio={bloquear} />
       ) : (
         <SaldosIniciais />
       )}

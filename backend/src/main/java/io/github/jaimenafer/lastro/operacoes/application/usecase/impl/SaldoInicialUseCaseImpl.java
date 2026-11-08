@@ -11,7 +11,6 @@ import io.github.jaimenafer.lastro.carteiras.application.contract.IConsultaCarte
 import io.github.jaimenafer.lastro.instituicoes.application.contract.IConsultaInstituicoes;
 import io.github.jaimenafer.lastro.instituicoes.application.contract.InstituicaoResumo;
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
-import io.github.jaimenafer.lastro.operacoes.application.mapper.LivroMapper;
 import io.github.jaimenafer.lastro.operacoes.application.mapper.SaldoInicialMapper;
 import io.github.jaimenafer.lastro.operacoes.application.usecase.ISaldoInicialUseCase;
 import io.github.jaimenafer.lastro.operacoes.domain.exception.SaldoInicialConflitanteException;
@@ -50,6 +49,8 @@ public class SaldoInicialUseCaseImpl implements ISaldoInicialUseCase {
   private final IConsultaInstituicoes instituicoes;
   private final IConsultaCarteiras carteiras;
   private final IUsuarioAtual usuario;
+  private final io.github.jaimenafer.lastro.operacoes.application.port.IConsultaLivroConferencia
+      conferencia;
 
   @Transactional(readOnly = true)
   public ListaSaldosIniciais listar(
@@ -202,7 +203,7 @@ public class SaldoInicialUseCaseImpl implements ISaldoInicialUseCase {
                 .filter(o -> anterior == null || !o.getId().equals(anterior.getId()))
                 .toList());
     if (nova != null) candidato.add(nova);
-    LivroMapper.calcular(candidato, ativos.buscarPorIds(LivroMapper.ativosDoHistorico(candidato)));
+    conferencia.validarCandidato(candidato);
   }
 
   private InstituicaoResumo buscarInstituicaoAtiva(Long instituicaoId) {

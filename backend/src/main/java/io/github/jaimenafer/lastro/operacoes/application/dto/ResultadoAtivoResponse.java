@@ -7,4 +7,5 @@ public record ResultadoAtivoResponse(
     String negociacaoBrl,
     String moedaBrl,
     String taxaBrl,
-    String resultadoTotalBrl) {}
+    String resultadoTotalBrl,
+    String subtotalResultadoBrl) {}

@@ -1,5 +1,7 @@
 # Aporte, compra e venda — plano aprovado em 03/11/2026
 
+Na conciliação de arquivos, o motor também reconhece retirada em BRL e debita a custódia sem resultado realizado. Essa capacidade usa os registros versionados da importação. O cadastro manual pela API de operações permanece com os tipos definidos neste contrato.
+
 ## Objetivo e limites
 
 Ciclo manual completo: aporte BRL, compra e venda spot. Criptoativos do catálogo, conforme [elegibilidade vigente](17-catalogo-de-ativos.md); cotação BRL/USDT/USDC, moedas diferentes. Taxa em uma das duas moedas. Quantidade e total bruto do extrato são fatos; preço é derivado. Cotação histórica BRL informada para stablecoins, BRL=1. Data/hora Fortaleza e persistência UTC. Sem taxa em BNB como terceira moeda, transferência, retirada, importação ou tributação.

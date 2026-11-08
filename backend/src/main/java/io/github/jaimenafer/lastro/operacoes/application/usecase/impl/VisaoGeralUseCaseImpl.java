@@ -28,6 +28,8 @@ public class VisaoGeralUseCaseImpl implements IVisaoGeralUseCase {
   private final IConsultaAtivos ativos;
   private final IConsultaInstituicoes instituicoes;
   private final IUsuarioAtual usuario;
+  private final io.github.jaimenafer.lastro.operacoes.application.port.IConsultaLivroConferencia
+      conferencia;
 
   @Override
   @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -45,33 +47,19 @@ public class VisaoGeralUseCaseImpl implements IVisaoGeralUseCase {
             .filter(Operacao::confirmada)
             .filter(o -> periodo.ateFim(o.getOcorridaEm()))
             .toList();
-    Map<Long, AtivoResumo> ativosPorId =
-        ativos.buscarPorIds(LivroMapper.ativosDoHistorico(historico)).stream()
-            .collect(Collectors.toMap(AtivoResumo::id, Function.identity()));
-    var instituicaoIds =
-        historico.stream().map(Operacao::getInstituicaoId).collect(Collectors.toSet());
-    Map<Long, InstituicaoResumo> instituicoesPorId =
-        instituicoes.buscarPorIds(instituicaoIds).stream()
-            .collect(Collectors.toMap(InstituicaoResumo::id, Function.identity()));
-    ResultadoLivro livro = LivroMapper.calcular(historico, List.copyOf(ativosPorId.values()));
-    List<FatoLivro> fatos = historico.stream().map(LivroMapper::fato).toList();
-    ResumoVisaoGeral resumo = ConsolidadorVisaoGeral.resumir(fatos, livro, periodo);
-    return VisaoGeralMapper.de(
+    var retrato =
+        conferencia.carregar(
+            periodo
+                .fim()
+                .plusDays(1)
+                .atStartOfDay(ZoneId.of("America/Fortaleza"))
+                .toInstant()
+                .minusNanos(1));
+    return VisaoGeralConferenciaMapper.de(
         ponto.map(PontoPartida::getRevisao).orElse(0L),
         referencia,
         periodo,
-        !historico.isEmpty(),
-        resumo,
-        livro,
-        ativosPorId,
-        instituicoesPorId,
-        AnaliseResultado.mensal(fatos, livro, periodo),
-        AnaliseResultado.porAtivo(
-            fatos,
-            livro,
-            periodo,
-            ativosPorId.values().stream()
-                .collect(Collectors.toMap(AtivoResumo::id, AtivoResumo::codigo))),
+        retrato,
         ConferenciaRegistros.selecionar(historico, TipoAvisoConferencia.CUSTO_ZERO_DECLARADO)
             .size(),
         ConferenciaRegistros.selecionar(historico, TipoAvisoConferencia.REFERENCIA_REPETIDA)

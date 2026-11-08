@@ -1,3 +1,4 @@
+import ResumoConciliacao from "./ResumoConciliacao";
 import { useEffect, useState } from "react";
 import ComposicaoCustos from "./ComposicaoCustos";
 import ConferenciaVisaoGeral from "./ConferenciaVisaoGeral";
@@ -106,6 +107,23 @@ export default function VisaoGeral({ onOperacoes }: { onOperacoes: () => void })
               O histórico cadastrado começa em {dataLegivel(dados.dataReferencia)}.
             </p>
           )}
+          {dados.disponibilidade &&
+            (!dados.disponibilidade.custoCompleto ||
+              !dados.disponibilidade.resultadoCompleto ||
+              !dados.disponibilidade.taxasCompletas) && (
+              <p className="overview-note">
+                Totais incompletos. Parcelas conhecidas: custo{" "}
+                <ValorMonetario valor={dados.disponibilidade.subtotalCustoBrl} /> · resultado{" "}
+                <ValorMonetario valor={dados.disponibilidade.subtotalResultadoBrl} /> · taxas{" "}
+                <ValorMonetario valor={dados.disponibilidade.subtotalTaxasBrl} />. Valores
+                desconhecidos permanecem indisponíveis.
+              </p>
+            )}
+          {dados.disponibilidade?.comAjustes && (
+            <p className="overview-note">
+              Os saldos incluem ajustes provisórios. Ajustes não são aportes ou lucro.
+            </p>
+          )}
           {dados.possuiRegistrosAteFim && (
             <dl className="overview-indicators">
               <div>
@@ -132,10 +150,15 @@ export default function VisaoGeral({ onOperacoes }: { onOperacoes: () => void })
               </div>
             </dl>
           )}
+          {dados.conciliacao && dados.conciliacao.total > 0 && (
+            <ResumoConciliacao resumo={dados.conciliacao} onAbrirTimeline={onOperacoes} compact />
+          )}
           {!dados.possuiRegistrosAteFim ? (
             <div className="overview-empty">
               <p>
-                Nenhum registro até a data final. Consulte outro período ou registre suas operações.
+                {dados.conciliacao && dados.conciliacao.total > 0
+                  ? "Há registros recebidos aguardando conferência e aplicação."
+                  : "Nenhum registro até a data final. Consulte outro período ou registre suas operações."}
               </p>
               <button className="primary-button" type="button" onClick={onOperacoes}>
                 Ir para operações
@@ -145,17 +168,31 @@ export default function VisaoGeral({ onOperacoes }: { onOperacoes: () => void })
             <>
               {dados.resumo.operacoesNoPeriodo === 0 && (
                 <p className="overview-note">
-                  Nenhuma operação no período. Os saldos incluem os registros anteriores.
+                  {dados.disponibilidade?.resultadoCompleto === false
+                    ? "Há movimentações em conferência. A contagem considera somente operações com dados financeiros completos."
+                    : "Nenhuma operação no período. Os saldos incluem os registros anteriores."}
                 </p>
               )}
-              <SaldosMoedas saldos={dados.saldosMoedas} />
+              <SaldosMoedas
+                saldos={dados.saldosMoedas}
+                completo={dados.disponibilidade?.quantidadesCompletas}
+              />
               <div className="overview-analysis">
                 <EvolucaoResultado evolucao={dados.evolucaoResultado} />
-                <ResultadosPorAtivo resultados={dados.resultadosPorAtivo} />
+                <ResultadosPorAtivo
+                  resultados={dados.resultadosPorAtivo}
+                  completo={dados.disponibilidade?.resultadoCompleto}
+                />
               </div>
               <div className="overview-main">
-                <ComposicaoCustos posicoes={dados.posicoes} />
-                <SaldosVisaoGeral posicoes={dados.posicoes} />
+                <ComposicaoCustos
+                  posicoes={dados.posicoes}
+                  completo={dados.disponibilidade?.custoCompleto}
+                />
+                <SaldosVisaoGeral
+                  posicoes={dados.posicoes}
+                  completo={dados.disponibilidade?.quantidadesCompletas}
+                />
               </div>
             </>
           )}

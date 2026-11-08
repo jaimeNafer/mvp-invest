@@ -5,7 +5,6 @@ import io.github.jaimenafer.lastro.ativos.application.contract.*;
 import io.github.jaimenafer.lastro.instituicoes.application.contract.*;
 import io.github.jaimenafer.lastro.operacoes.application.contract.*;
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
-import io.github.jaimenafer.lastro.operacoes.application.mapper.LivroMapper;
 import io.github.jaimenafer.lastro.operacoes.domain.exception.*;
 import io.github.jaimenafer.lastro.operacoes.domain.model.*;
 import io.github.jaimenafer.lastro.operacoes.domain.repository.*;
@@ -28,7 +27,10 @@ public class ImportacaoOperacoesImpl implements IImportacaoOperacoes {
   private final IConsultaAtivos ativos;
   private final IConsultaInstituicoes instituicoes;
   private final IUsuarioAtual usuario;
+  private final io.github.jaimenafer.lastro.operacoes.application.port.IConsultaLivroConferencia
+      conferencia;
   private static final ZoneId FUSO = ZoneId.of("America/Fortaleza");
+
   @Override
   @Transactional(isolation = Isolation.READ_COMMITTED)
   public void bloquearHistorico(
@@ -65,7 +67,8 @@ public class ImportacaoOperacoesImpl implements IImportacaoOperacoes {
     validarLivro(historico, candidatos);
     var reconhecidas = chavesReconhecidas(candidatos);
     boolean novas = reconhecidas.size() != candidatos.size();
-    if (novas) operacoes.salvarLote(candidatos.values().stream().filter(o -> o.getId() == null).toList());
+    if (novas)
+      operacoes.salvarLote(candidatos.values().stream().filter(o -> o.getId() == null).toList());
     if (novas) ponto.avancarRevisao(usuario.id(), agora());
     return new ResultadoLoteOperacoes(
         Long.toString(ponto.getRevisao()), reconhecer(movimentos, candidatos, reconhecidas));
@@ -240,7 +243,7 @@ public class ImportacaoOperacoesImpl implements IImportacaoOperacoes {
   private void validarLivro(List<Operacao> historico, Map<String, Operacao> candidatos) {
     var completo = new ArrayList<>(historico);
     candidatos.values().stream().filter(o -> o.getId() == null).forEach(completo::add);
-    LivroMapper.calcular(completo, ativos.buscarPorIds(LivroMapper.ativosDoHistorico(completo)));
+    conferencia.validarCandidato(completo);
   }
 
   private List<ReconhecimentoOperacao> reconhecer(

@@ -21,6 +21,8 @@ class LoteOperacoesTests {
   IConsultaAtivos ativos = mock(IConsultaAtivos.class);
   IConsultaInstituicoes instituicoes = mock(IConsultaInstituicoes.class);
   IUsuarioAtual usuario = mock(IUsuarioAtual.class);
+  io.github.jaimenafer.lastro.operacoes.application.port.IConsultaLivroConferencia conferencia =
+      mock(io.github.jaimenafer.lastro.operacoes.application.port.IConsultaLivroConferencia.class);
   ImportacaoOperacoesImpl lote;
   List<Operacao> historico = new ArrayList<>();
   AtivoResumo brl = new AtivoResumo(1L, "fiat:BRL", "BRL", "Real", 2, true, true, false);
@@ -37,7 +39,12 @@ class LoteOperacoesTests {
     when(pontos.findById("teste")).thenReturn(Optional.empty());
     when(pontos.bloquear("teste")).thenReturn(Optional.empty());
     when(pontos.inserir(any())).thenAnswer(i -> i.getArgument(0));
-    lote = new ImportacaoOperacoesImpl(operacoes, pontos, ativos, instituicoes, usuario);
+    when(conferencia.validarCandidato(any()))
+        .thenAnswer(i ->
+            io.github.jaimenafer.lastro.operacoes.application.mapper.LivroMapper.calcular(
+                i.getArgument(0), List.of(brl, btc)));
+    lote =
+        new ImportacaoOperacoesImpl(operacoes, pontos, ativos, instituicoes, usuario, conferencia);
   }
 
   MovimentoImportado aporte(String valor) {

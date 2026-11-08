@@ -41,3 +41,8 @@ Sem carga de Eliane, importação, novos pares, BNB como terceira moeda de taxa,
 Backend aprovado em check e pacote integrado: 55 testes unitários/arquiteturais e 68 integrações MySQL. Oito testes de migration foram reexecutados com alvo histórico V11. Frontend: 46 testes, lint, typecheck/build; protótipo: 1 teste. Testes RED demonstraram a ausência de ativo adicional no catálogo, a seleção indevida de moeda fiduciária no formulário e a comparação de tipo insensível à caixa; correções verificadas.
 
 V11 aplicada localmente após backup; fatos/cadastros, metadados e ativos anteriores preservados por comparações privadas, incluindo respostas de ambos os perfis. Reinício sem reaplicação; catálogo e formulários conferidos no navegador sem gravar operações. Nenhum dado real entrou nas fixtures ou documentação versionada.
+
+
+## Ativos dos créditos automáticos — 07/11/2026
+
+A migration V15 inclui BNB, LISTA e IO como criptoativos, sem sobrescrever entradas existentes. A elegibilidade continua definida pelo catálogo. O reconhecimento dos eventos e as limitações de disponibilidade e custo estão no [contrato de importação](19-importacao-binance.md#créditos-automáticos-de-recompensas).

@@ -1,5 +1,47 @@
 # Acordos de desenvolvimento do Lastro
 
+## Aplicação local nas entregas — 07/11/2026
+
+- Ao entregar alterações utilizáveis, iniciar ou atualizar o Lastro integrado em `http://127.0.0.1:8080/`, com o frontend e o backend da versão entregue e o MySQL persistente configurado. Verificar que a aplicação responde e informar o resultado.
+- Preservar os dados existentes, inspecionar o processo que ocupa a porta antes de substituí-lo e executar as migrations necessárias com as precauções usuais. Se algum impedimento impossibilitar a inicialização ou a verificação, informar claramente na entrega.
+
+## Separação do domínio fiscal — 07/11/2026
+
+- O núcleo do Lastro trata operações, posições, custos, desempenho e patrimônio. Importação e conferência não exigem dados exclusivamente tributários nem atribuem situações fiscais.
+- Preço médio, custo de aquisição e lucro/prejuízo são conceitos de investimento. Recompensas, rendimentos e airdrops são eventos patrimoniais, sem exigência de valoração fiscal na importação; preservar os dados originais e a disponibilidade dos cálculos patrimoniais.
+- Um eventual módulo fiscal futuro poderá consumir o domínio de investimentos, sem dependência inversa. Não implementar agora cálculos tributários, DARF, declarações, tabelas ou serviços fiscais antecipados.
+
+## Associação e importação Binance — 07/11/2026
+
+- `Binance Convert` e `Convert` representam uma conversão entre ativos distintos, não uma movimentação neutra. O vínculo exige combinação única; sem valoração confiável, preservar as quantidades e a disponibilidade separada de custos/resultados. Não deduzir preço do custo anterior nem apresentar resultado fictício. Parcelas do mesmo ativo e papel são somadas antes da baixa de custo; registros de origem e confirmação global são preservados. [Contrato](docs/22-associacao-registros-binance.md).
+
+- Uma saída de cripto importada pode ser tecnicamente coerente com finalidade desconhecida. A finalidade é uma proposta versionada, aplicada na confirmação global; a conferência não atribui situação fiscal.
+- `Withdraw fee is included` sem valor preserva a saída total, registra detalhamento de taxa pendente e não presume taxa zero. Uma taxa posteriormente informada é parte da saída, sem novo débito. Não presumir quantidade recebida em outro destino.
+
+- Depósito BRL positivo e retirada BRL negativa importados são classificados automaticamente quando não há indícios de transferência. Contrapartidas compatíveis entre contas dentro da janela configurada permanecem para conferência. Criptoativos não são classificados como compra ou venda a partir de depósito/retirada.
+- Retirada BRL reduz custódia e saldo, sem gerar resultado realizado. A classificação é proposta até a confirmação global; edições manuais e vínculos de transferência prevalecem sobre classificações automáticas.
+
+- Classificação de coerência verifica dados e integridade financeira. Aguardando confirmação global é um estado de aplicação separado e não gera pendência de coerência em operação completa.
+
+- O Histórico mostra o vínculo automático como uma operação antes da confirmação financeira. Referências fortes distintas são avaliadas separadamente mesmo quando os horários coincidem.
+- A associação manual fica no card aberto, com rádio apenas quando há vários destinos e sem seleção inicial. Trocar de destino substitui a escolha anterior. Seleção de linhas adicionais, papéis e campos financeiros ficam recolhidos em opções de conferência.
+
+- Operações agrupadas preservam linhas originais e usam número interno estável `OP-N`, distinto de referências da corretora. Cada linha produz efeito uma única vez: grupo e linhas não podem compor simultaneamente o livro.
+- Reconhecimento automático usa `lastro.conciliacao.janela-associacao` em `application.yml` (inicialmente 2s), medindo do primeiro ao último instante, sem encadeamento. Exige usuário, instituição, conta, tipo/direções compatíveis e uma combinação única; execuções do mesmo ativo/papel são somadas exatamente. IDs numéricos recorrentes não identificam ordens. Ambiguidades ficam pendentes e são escolhidas por rádio sem seleção inicial. Associação manual respeita a mesma janela configurada.
+- Taxa não informada na importação é considerada zero. Taxa em terceiro ativo mantém débito quantitativo e pendência financeira, sem valoração inventada.
+- CSV e XLSX usam a área e o pipeline progressivo comuns. Leitores de formato produzem componentes rastreáveis; pagamentos, recebimentos e taxas derivados da mesma linha física têm identidades distintas sem perder sua proveniência.
+- Salvar associação grava proposta; somente a confirmação global substitui efeitos e aplica mudanças de ajustes atomicamente. Correção e desfazimento reprocessam o histórico vigente, preservando versões e autoria. Contrato em docs/22-associacao-registros-binance.md.
+
+## Orquestração e subagentes — 06/11/2026
+
+- Usar modelos proporcionais à tarefa. Delegar ao `gpt-6-luna` buscas delimitadas, análise de logs, documentação e alterações simples com requisitos claros quando houver benefício concreto. Inicialmente, manter no máximo um subagente ativo por vez, sem subdelegação. Esta regra substitui a orientação anterior de paralelizar frentes.
+- Cada delegação deve fornecer objetivo, arquivos relevantes e permitidos, limites, contratos necessários e critério de aceite. Solicitar resultado curto com evidências; enviar somente o contexto necessário, preferindo referências a arquivos a transcrições completas.
+- Manter no agente principal decisões arquiteturais, regras financeiras, concorrência e integração. Revisar os resultados sem repetir integralmente a investigação delegada; aprofundar somente lacunas, contradições ou riscos concretos.
+- Se `gpt-6-luna` estiver indisponível ou a ferramenta não permitir selecioná-lo, informar Jaime. Não substituir silenciosamente por um modelo mais caro, inclusive quando um perfil instalado fixar outro modelo.
+- Evitar delegações triviais cujo custo supere o trabalho, análises duplicadas e conflitos de edição. Economia de tokens e tempo é um objetivo, não uma garantia.
+- Aplicar AGENTS.md e os acordos do Lastro a todos os agentes. Perfis especializados não autorizam mudanças de arquitetura, escopo, permissões ou divulgação de dados; orientações fiscais exigem evidências e fontes oficiais pertinentes.
+- O catálogo VoltAgent foi instalado no ambiente pessoal em `~/.codex/agents/`, separado do código da aplicação. Usar os perfis adequados quando disponíveis; não declarar que um perfil foi carregado ou validado em execução apenas porque seu arquivo está instalado. A integração final e a declaração de conclusão permanecem responsabilidade do orquestrador.
+
 Estas instruções se aplicam ao repositório inteiro. Foram solicitadas por Jaime em 01/11/2026 e devem ser lidas antes de implementar ou revisar mudanças. Manter este arquivo atualizado com novos acordos explícitos.
 
 ## Qualidade desde a primeira entrega
@@ -180,3 +222,26 @@ Estas instruções se aplicam ao repositório inteiro. Foram solicitadas por Jai
 - Manter arquivo, decisões, versão do leitor, origem dos registros e operações na mesma transação. Prévia não grava. Idempotência distingue comando, arquivo e evento; reconhecer fatos originais não desfaz correções/cancelamentos.
 - Não adaptar taxas em BNB, movimentações ou custos desconhecidos aos tipos suportados. Evidência insuficiente bloqueia carga; importação não equivale a conciliação ou apuração fiscal.
 - Dados e arquivos reais ficam fora de Git, CI e logs. Cenários públicos são sintéticos. Executar testes de atomicidade, sobreposição, concorrência e isolamento. [Contrato](docs/19-importacao-binance.md).
+
+## Conciliação progressiva — diretrizes da revisão de 06/11/2026
+
+- Histórico incompleto é tratado pelo primeiro ciclo de conciliação em docs/20-conciliacao-progressiva.md e contrato docs/21-contrato-conciliacao.md. Receber registros, aproveitar quantidades e calcular custos/resultados são capacidades separadas. O CSV legado permanece estrito e compatível, com proteção contra reaplicação de referências recebidas no fluxo progressivo.
+- Usar Coerente, Com pendência e Precisa de correção para verificação automática. Revisada por você é anotação separada, que não elimina uma lacuna nem certifica valores.
+- Ajustes provisórios representam lacunas, sem provar fato econômico. Sugerir e confirmar em lote; preservar âncora técnica, origem, aceite e versões, sem fabricar data real ou contabilizar aporte, receita, negociação ou lucro.
+- Custódia por conta não reutiliza contas (vínculo carteira/instituição) nem recria titulares. Proprietário vem de IUsuarioAtual; custos permanecem globais por usuário/ativo. Não presumir que o legado é Spot.
+- Buscar correspondências antes de sugerir ajustes. Reprocessar sem multiplicar ajustes, apresentar mudanças de ajustes aceitos e aplicar fatos e alterações atomicamente. Ausência de custo não vira zero; pendência não pode ser escondida por revisão manual.
+- Priorizar impacto e resolução contextual numa timeline compacta. Percentual de coerência é secundário e não mede acurácia financeira. Relatórios fiscais e motor genérico de associações não fazem parte desta revisão.
+
+
+## Conciliação progressiva — regras de implementação
+
+- Receber e editar preserva originais, versões anteriores e snapshot aplicado. Somente a confirmação incorpora propostas aproveitáveis e modifica ajustes, na mesma transação; proposta impedida usa o snapshot aplicado também na prévia.
+- Não alterar a data comum de uma abertura confirmada ao receber arquivo anterior. Preservar revisões, bloqueios e o custo global por usuário/ativo, com quantidade por conta de custódia.
+- Ajustes encerrados continuam na cadeia de versões. Reaparecimento da lacuna utiliza a próxima versão e vínculo anterior; não recriar versão 1.
+- Eventos repetidos entre arquivos ou fluxos não podem gerar um novo efeito sem conciliação. Preservar multiplicidade; pares internos exigem exatamente duas pernas permitidas e reciprocamente únicas.
+- Informações desconhecidas não viram zero nem estado Coerente. Quantidade, custo, resultado e cobertura têm disponibilidades próprias. Totais incompletos são nulos; subtotais conhecidos são identificados como parciais. Nunca apresentar uma fonte ilegível como carteira vazia.
+- Timestamps econômicos permanecem intactos ao editar outros campos. Ajustes usam âncora técnica e aceite real, sem data econômica inventada. Proveniência e versão real chegam à timeline.
+- Reutilizar o motor para leituras e validação dos caminhos manuais e importados. Preservar os contratos legados de históricos completos. Testar reabertura, propostas ilegíveis, referências reexportadas, correspondências ambíguas e rollback de confirmação.
+
+- Na importação progressiva, separar observações quantitativas e proposta financeira: dados de negociação incompletos não eliminam as pernas documentadas. Um relatório enriquecido só se expande em envio, recebimento e taxa quando esses componentes constam explicitamente na origem; manter rastreabilidade e não inferir outros eventos.
+- Verificar cobertura de todas as pernas, incluindo moeda/quantidade ainda não identificadas. Incerteza datada não contamina automaticamente meses anteriores; prioridade conta dependentes antes de aplicar filtros visuais.

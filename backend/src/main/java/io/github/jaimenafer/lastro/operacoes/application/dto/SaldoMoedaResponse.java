@@ -7,4 +7,6 @@ public record SaldoMoedaResponse(
     String ativoTicker,
     String ativoNome,
     String quantidade,
-    List<CustodiaLivroResponse> instituicoes) {}
+    List<CustodiaLivroResponse> instituicoes,
+    boolean quantidadeDisponivel,
+    boolean comAjustes) {}
