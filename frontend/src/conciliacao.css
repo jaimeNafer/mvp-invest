@@ -76,7 +76,7 @@
   margin: 12px 0;
   padding: 12px 16px;
   border: 1px solid #d7e3e1;
-  background: #fff;
+  background: var(--cor-superficie);
   border-radius: 8px;
 }
 .recebimento-historico label,
@@ -142,7 +142,7 @@
   opacity: 0;
 }
 .recebimento-seletor:focus-within {
-  outline: 3px solid #44bfa1;
+  outline: 3px solid var(--cor-foco);
   outline-offset: 2px;
 }
 .recebimento-seletor.seletor-desabilitado {
@@ -264,7 +264,6 @@
   font-size: 13px;
   font-weight: 600;
 }
-.filtros-conciliacao select,
 .conferencia-form input,
 .conferencia-form select {
   min-height: 36px;
@@ -297,7 +296,7 @@
   color: #40585b;
 }
 .registro-historico:focus-visible {
-  outline: 3px solid #44bfa1;
+  outline: 3px solid var(--cor-foco);
 }
 .registro-linha {
   padding: 8px 12px;

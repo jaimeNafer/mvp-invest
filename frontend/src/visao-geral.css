@@ -58,7 +58,7 @@
 .overview-indicators > div,
 .overview-panel {
   background: white;
-  border: 1px solid #dce5e9;
+  border: 1px solid var(--cor-borda);
   border-radius: 8px;
   padding: 12px;
   min-width: 0;
@@ -200,7 +200,7 @@
 .overview-empty,
 .overview-error {
   padding: 12px;
-  border: 1px solid #dce5e9;
+  border: 1px solid var(--cor-borda);
   border-radius: 8px;
   background: white;
   font-size: 13px;
