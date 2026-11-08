@@ -1,3 +1,19 @@
+# Retomada — Componentes fundamentais, 08/11/2026
+
+Button, Input, Select, FormField e PageHeader têm contratos documentados em `docs/design-system/components.md`. Integração limitada ao formulário e cabeçalho de Carteiras e aos selects do filtro do Histórico; migração dos usos legados permanece futura. Testes automatizados de semântica, rótulos, descrição, seleção e botão foram adicionados. Não houve validação visual no navegador.
+
+A suíte frontend passou com 127 testes antes do ajuste final nos três selects do Histórico; após o ajuste, passaram os 31 testes direcionados de componentes, Carteiras e Histórico, lint e build. `bootJar -PincludeFrontend` foi gerado. A aplicação desta versão não iniciou em 8080: a porta está ocupada por processo de outro worktree. O MySQL persistente está ativo, mas o Flyway informou schema versão 17, superior à última migration 15 deste checkout; nenhuma migration foi aplicada. Preservar processo e dados e verificar compatibilidade antes de substituir a instância. A resposta HTTP 200 observada pertence à instância anterior, não à versão desta entrega.
+
+---
+
+# Retomada — Design System, 08/11/2026
+
+Iniciada a auditoria do Design System. Um conjunto inicial de cores existentes foi centralizado em tokens CSS sem mudar seus valores, e `docs/design-system/` registra inventário e regras iniciais. A padronização e migração de componentes, páginas, dimensões, estados e acessibilidade ainda não estão concluídas; a documentação identifica essa limitação. `frontend/AGENTS.md` registra a governança solicitada.
+
+Nesta etapa passaram lint, build e 123 testes frontend; `bootJar -PincludeFrontend` foi gerado. A aplicação integrada iniciou em 8080 com o MySQL local e a página respondeu HTTP 200. A auditoria visual no navegador e a validação de APIs não foram realizadas nesta etapa.
+
+---
+
 ## Verificação antes da publicação — 07/11/2026
 
 O frontend passou em lint, 123 testes e build. O backend passou em 197 testes unitários e arquiteturais; na suíte completa de integração, 155 dos 162 testes passaram. Os sete cenários com falha, que permanecem para investigação e correção, são:

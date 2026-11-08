@@ -1,3 +1,4 @@
+import Select from "./Select";
 import { useState } from "react";
 import AssociacaoRegistros from "./AssociacaoRegistros";
 import { classesEstados, comandoConferencia, nomesEstados } from "./services/conciliacao";
@@ -156,9 +157,10 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
       )}
       <fieldset className="filtros-conciliacao" disabled={desabilitado}>
         <legend>Filtrar histórico</legend>
-        <label>
+        <label htmlFor="filtro-estado">
           Estado
-          <select
+          <Select
+            id="filtro-estado"
             value={filtro.estado}
             onChange={(evento) =>
               filtrar({ estado: evento.target.value as FiltroTimeline["estado"], pagina: 0 })
@@ -168,11 +170,12 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
             <option value="COERENTE">Coerentes</option>
             <option value="PENDENTE">Com pendências</option>
             <option value="CORRECAO_NECESSARIA">Precisam de correção</option>
-          </select>
+          </Select>
         </label>
-        <label>
+        <label htmlFor="filtro-ativo">
           Ativo
-          <select
+          <Select
+            id="filtro-ativo"
             value={filtro.ativoId}
             onChange={(evento) => filtrar({ ativoId: evento.target.value, pagina: 0 })}
           >
@@ -182,11 +185,12 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
                 {ativo.ticker}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
-        <label>
+        <label htmlFor="filtro-conta">
           Instituição / conta
-          <select
+          <Select
+            id="filtro-conta"
             value={filtro.contaId}
             onChange={(evento) => filtrar({ contaId: evento.target.value, pagina: 0 })}
           >
@@ -196,7 +200,7 @@ export default function Historico({ onBloqueio }: { onBloqueio?: (b: boolean) =>
                 {conta.instituicaoNome} · {conta.nome}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       </fieldset>
       {carregando && <p role="status">Carregando histórico…</p>}

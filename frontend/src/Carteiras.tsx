@@ -1,3 +1,4 @@
+import PageHeader from "./PageHeader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Icone from "./Icone";
 import Modal from "./Modal";
@@ -83,11 +84,12 @@ export default function Carteiras() {
 
   return (
     <section aria-labelledby="page-title">
-      <div className="intro">
-        <p className="eyebrow">CADASTROS</p>
-        <h1 id="page-title">Carteiras</h1>
-        <p className="intro-text">Organize suas contas em carteiras de investimento.</p>
-      </div>
+      <PageHeader
+        id="page-title"
+        eyebrow="CADASTROS"
+        title="Carteiras"
+        description="Organize suas contas em carteiras de investimento."
+      />
       {aviso && (
         <p className="message-success" role="status">
           {aviso}

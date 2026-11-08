@@ -1,3 +1,6 @@
+import Button from "./Button";
+import FormField from "./FormField";
+import Input from "./Input";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { CadastroCarteira, Carteira } from "./services/carteiras";
@@ -69,17 +72,18 @@ export default function CarteiraForm({
       onSubmit={enviar}
       aria-label={carteira ? "Editar carteira" : "Adicionar carteira"}
     >
-      <label htmlFor="nome-carteira">Nome da carteira</label>
-      <input
-        id="nome-carteira"
-        type="text"
-        value={nome}
-        onChange={(event) => setNome(event.target.value)}
-        maxLength={160}
-        required
-        disabled={salvando}
-        autoComplete="off"
-      />
+      <FormField id="nome-carteira" label="Nome da carteira">
+        <Input
+          id="nome-carteira"
+          type="text"
+          value={nome}
+          onChange={(event) => setNome(event.target.value)}
+          maxLength={160}
+          required
+          disabled={salvando}
+          autoComplete="off"
+        />
+      </FormField>
       <fieldset className="instituicoes-selecao" disabled={salvando}>
         <legend>Instituições</legend>
         <p className="field-hint">Selecione as instituições das contas desta carteira.</p>
@@ -90,9 +94,9 @@ export default function CarteiraForm({
             <p className="message-error" role="alert">
               {erroCatalogo}
             </p>
-            <button className="secondary-button" type="button" onClick={() => void carregar()}>
+            <Button variant="secondary" onClick={() => void carregar()}>
               Tentar novamente
-            </button>
+            </Button>
           </div>
         ) : instituicoes.length === 0 ? (
           <p className="field-hint">Nenhuma instituição disponível.</p>
@@ -132,16 +136,15 @@ export default function CarteiraForm({
         </p>
       )}
       <div className="form-actions">
-        <button
-          className="primary-button"
+        <Button
           type="submit"
           disabled={salvando || carregando || !!erroCatalogo || instituicoes.length === 0}
         >
           {salvando ? "Salvando…" : carteira ? "Salvar alterações" : "Salvar carteira"}
-        </button>
-        <button className="secondary-button" type="button" onClick={onCancelar} disabled={salvando}>
+        </Button>
+        <Button variant="secondary" onClick={onCancelar} disabled={salvando}>
           Cancelar
-        </button>
+        </Button>
       </div>
     </form>
   );
