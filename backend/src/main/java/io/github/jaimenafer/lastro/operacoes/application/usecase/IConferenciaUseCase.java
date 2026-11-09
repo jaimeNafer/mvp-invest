@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface IConferenciaUseCase {
   TimelineConferenciaResponse listar(
-      int pagina, int tamanho, String estado, Long ativoId, Long contaId);
+      int pagina, int tamanho, String estado, Long ativoId, Long contaId, String registroId);
 
   List<ContaConferenciaResponse> contas();
 
@@ -16,6 +16,8 @@ public interface IConferenciaUseCase {
   RegistroTimelineResponse editar(String id, EdicaoRegistroRequest request, String chave);
 
   RegistroTimelineResponse revisar(String id, RevisaoRegistroRequest request, String chave);
+
+  void excluirSaldoAnterior(String id, String revisao);
 
   RevisaoConferenciaResponse saldoAnterior(SaldoAnteriorConferenciaRequest request, String chave);
 }

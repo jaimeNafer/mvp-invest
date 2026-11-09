@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.jaimenafer.lastro.ativos.application.contract.AtivoResumo;
 import io.github.jaimenafer.lastro.instituicoes.application.contract.InstituicaoResumo;
+import io.github.jaimenafer.lastro.operacoes.application.dto.EstadoAgregadoVisaoGeral;
 import io.github.jaimenafer.lastro.operacoes.application.dto.ResumoConferenciaResponse;
 import io.github.jaimenafer.lastro.operacoes.application.dto.RetratoConferencia;
 import io.github.jaimenafer.lastro.operacoes.application.mapper.VisaoGeralConferenciaMapper;
@@ -69,6 +70,9 @@ class ProjecaoConferenciaTests {
     assertThat(resultado.resumo().resultadoRealizadoBrl()).isNull();
     assertThat(resultado.disponibilidade().quantidadesCompletas()).isFalse();
     assertThat(resultado.disponibilidade().subtotalCustoBrl()).isEqualTo("0");
+    assertThat(resultado.disponibilidade().custo().status())
+        .isEqualTo(EstadoAgregadoVisaoGeral.INDISPONIVEL);
+    assertThat(resultado.disponibilidade().custo().valorConhecido()).isNull();
     assertThat(resultado.evolucaoResultado().meses())
         .singleElement()
         .satisfies(m -> assertThat(m.resultadoBrl()).isNull());
@@ -133,6 +137,9 @@ class ProjecaoConferenciaTests {
     assertThat(resultado.resumo().resultadoRealizadoBrl()).isNull();
     assertThat(resultado.disponibilidade().subtotalCustoBrl()).isEqualTo("400");
     assertThat(resultado.disponibilidade().subtotalResultadoBrl()).isEqualTo("0");
+    assertThat(resultado.disponibilidade().custo().status()).isEqualTo(EstadoAgregadoVisaoGeral.PARCIAL);
+    assertThat(resultado.disponibilidade().custo().valorConhecido()).isEqualTo("400");
+    assertThat(resultado.disponibilidade().resultado().valorConhecido()).isNull();
     assertThat(resultado.posicoes())
         .filteredOn(p -> p.ativoTicker().equals("BTC"))
         .singleElement()

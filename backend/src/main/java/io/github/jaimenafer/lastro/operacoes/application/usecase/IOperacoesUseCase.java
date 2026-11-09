@@ -15,6 +15,8 @@ public interface IOperacoesUseCase {
 
   OperacaoResponse buscar(long id);
 
+  HistoricoOperacoesResponse historico(FiltroHistoricoOperacoes filtro);
+
   PreviaOperacaoResponse prever(SolicitacaoPrevia solicitacao);
 
   GravacaoOperacaoResponse gravar(ConfirmacaoOperacao confirmacao, String chave, Long anteriorId);

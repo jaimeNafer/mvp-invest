@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  comandoAtualizacaoCotacoes,
   comandoConferencia,
+  comandoExclusaoSaldoAnterior,
+  comandoValoracao,
   conferirHistorico,
   executarConferencia,
   listarContasCustodia,
@@ -16,18 +19,22 @@ import type {
   PreviaConciliacao as Previa,
   RegistroTimeline,
 } from "./services/conciliacao";
+import { obterGrupoAssociacao } from "./services/associacoes";
 import { ErroHttp } from "./services/http";
 import { listarAtivos } from "./services/saldosIniciais";
 import type { Ativo } from "./services/saldosIniciais";
 
 const filtroInicial: FiltroTimeline = { pagina: 0, estado: "", ativoId: "", contaId: "" };
-export default function useHistorico(onBloqueio?: (b: boolean) => void) {
-  const [filtro, setFiltro] = useState(filtroInicial);
+export default function useHistorico(
+  onBloqueio?: (b: boolean) => void,
+  contexto?: Pick<FiltroTimeline, "estado" | "registroId">,
+) {
+  const [filtro, setFiltro] = useState({ ...filtroInicial, ...contexto });
   const [pagina, setPagina] = useState<PaginaTimeline | null>(null);
   const [contas, setContas] = useState<ContaCustodia[]>([]);
   const [ativos, setAtivos] = useState<Ativo[]>([]);
   const [associando, setAssociando] = useState<string | null>(null);
-  const [aberto, setAberto] = useState<string | null>(null);
+  const [aberto, setAberto] = useState<string | null>(contexto?.registroId ?? null);
   const [previa, setPrevia] = useState<Previa | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [falhaAtualizacao, setFalhaAtualizacao] = useState(false);
@@ -37,6 +44,10 @@ export default function useHistorico(onBloqueio?: (b: boolean) => void) {
   const [comando, setComando] = useState<ComandoConferencia | null>(null);
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
+  const [atualizacaoCotacoesSolicitada, setAtualizacaoCotacoesSolicitada] = useState(false);
+  const [solicitandoCotacoes, setSolicitandoCotacoes] = useState(false);
+  const [exclusaoErro, setExclusaoErro] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
   const consultaAtual = useRef(0);
   const previaAtual = useRef(0);
   const emExecucao = useRef(false);
@@ -94,7 +105,7 @@ export default function useHistorico(onBloqueio?: (b: boolean) => void) {
     document.getElementById(`timeline-${id}`)?.focus();
   }, [pagina, carregando]);
   async function executar(proximo: ComandoConferencia) {
-    if (emExecucao.current) return;
+    if (emExecucao.current) return false;
     emExecucao.current = true;
     setComando(proximo);
     setExecutando(true);
@@ -112,6 +123,7 @@ export default function useHistorico(onBloqueio?: (b: boolean) => void) {
       setAssociando(null);
       setAviso(proximo.mensagem);
       await carregar();
+      return true;
     } catch (falha) {
       const incerta = !(falha instanceof ErroHttp) || falha.status >= 500;
       if (!incerta) {
@@ -125,10 +137,38 @@ export default function useHistorico(onBloqueio?: (b: boolean) => void) {
       setErro(
         `${mensagemConferencia(falha)}${incerta ? " O resultado ainda não foi confirmado. Repita a confirmação para conferir o mesmo comando." : ""}`,
       );
+      return false;
     } finally {
       emExecucao.current = false;
       setExecutando(false);
     }
+  }
+  async function salvarValoracao(registro: RegistroTimeline, valorTotalBrl: string) {
+    if (!pagina) return;
+    let versao = registro.versao;
+    if (registro.grupoNumero) {
+      try {
+        const grupo = await obterGrupoAssociacao(registro.grupoNumero);
+        if (!grupo.versao) throw new Error("Não foi possível obter a versão da operação agrupada.");
+        versao = grupo.versao;
+      } catch (falha) {
+        setErro(mensagemConferencia(falha));
+        return;
+      }
+    }
+    await executar(comandoValoracao(registro, pagina.revisao, valorTotalBrl, versao));
+  }
+
+  async function solicitarCotacoes() {
+    if (bloqueado || solicitandoCotacoes) return;
+    setSolicitandoCotacoes(true);
+    const solicitada = await executar(comandoAtualizacaoCotacoes());
+    if (solicitada) setAtualizacaoCotacoesSolicitada(true);
+    setSolicitandoCotacoes(false);
+  }
+
+  async function recarregarHistoricoCotacoes() {
+    await carregar();
   }
   async function analisar() {
     if (!pagina || bloqueado || analisando) return;
@@ -191,6 +231,35 @@ export default function useHistorico(onBloqueio?: (b: boolean) => void) {
     setAnalisando(false);
     await carregar();
   }
+  async function excluirSaldoAnterior(registro: RegistroTimeline) {
+    if (!pagina || excluindo || emExecucao.current) return false;
+    emExecucao.current = true;
+    const comando = comandoExclusaoSaldoAnterior(registro, pagina.revisao);
+    setExcluindo(true);
+    setExclusaoErro("");
+    bloquear(true);
+    try {
+      await executarConferencia(comando);
+      setPrevia(null);
+      setAberto(null);
+      setAviso(comando.mensagem);
+      await carregar();
+      return true;
+    } catch (falha) {
+      const incerta = !(falha instanceof ErroHttp) || falha.status >= 500;
+      if (!incerta) {
+        if (falha.status === 409) await carregar();
+      }
+      setExclusaoErro(
+        `${mensagemConferencia(falha)}${incerta ? " O resultado não foi confirmado. Atualize o histórico para verificar se o saldo foi excluído." : ""}`,
+      );
+      return false;
+    } finally {
+      emExecucao.current = false;
+      setExcluindo(false);
+      bloquear(false);
+    }
+  }
   function revisar(registro: RegistroTimeline) {
     if (!pagina) return;
     void executar(
@@ -234,6 +303,8 @@ export default function useHistorico(onBloqueio?: (b: boolean) => void) {
     executando,
     comando,
     erro,
+    atualizacaoCotacoesSolicitada,
+    solicitandoCotacoes,
     aviso,
     bloquear,
     carregar,
@@ -241,9 +312,16 @@ export default function useHistorico(onBloqueio?: (b: boolean) => void) {
     analisar,
     filtrar,
     salvar,
+    salvarValoracao,
+    solicitarCotacoes,
+    recarregarHistoricoCotacoes,
     proximaPendencia,
     recebido,
     revisar,
+    excluirSaldoAnterior,
+    exclusaoErro,
+    excluindo,
+    limparErroExclusao: () => setExclusaoErro(""),
     confirmar,
   };
 }

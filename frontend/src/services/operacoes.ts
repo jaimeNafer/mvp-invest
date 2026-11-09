@@ -1,4 +1,5 @@
 import { requisitarJson } from "./http";
+import type { RegistroTimeline } from "./conciliacao";
 
 export type TipoNegociacao = "APORTE" | "COMPRA" | "VENDA";
 export type TipoOperacao = "SALDO_INICIAL" | TipoNegociacao;
@@ -64,7 +65,14 @@ export type Posicao = {
   instituicoes: { instituicaoId: string; instituicaoNome: string; quantidade: string }[];
 };
 export type FiltrosOperacoes = {
-  tipo: TipoOperacao | "";
+  tipo:
+    | TipoOperacao
+    | "RETIRADA"
+    | "CONVERSAO"
+    | "CREDITO_AUTOMATICO"
+    | "SAIDA_CRIPTO"
+    | "MOVIMENTACAO_INTERNA"
+    | "";
   situacao: SituacaoOperacao | "TODAS";
   instituicaoId: string;
   ativoId: string;
@@ -78,6 +86,15 @@ export type ListaOperacoes = {
   tamanho: number;
   revisao: string;
   dataReferencia: string | null;
+};
+export type ItemHistoricoOperacao =
+  | { operacao: Operacao; importada: null; linhasOriginais: [] }
+  | { operacao: null; importada: RegistroTimeline; linhasOriginais: RegistroTimeline[] };
+export type HistoricoOperacoes = {
+  itens: ItemHistoricoOperacao[];
+  total: number;
+  pagina: number;
+  tamanho: number;
 };
 export type PedidoPrevia =
   | { acao: "CRIAR"; operacao: CadastroOperacao }
@@ -94,7 +111,7 @@ export type Confirmacao =
   | { revisao: string; motivo: string };
 export type ComandoOperacao = { caminho: string; entrada: Confirmacao; chave: string };
 
-export function listarOperacoes(filtros: FiltrosOperacoes, signal?: AbortSignal) {
+function parametrosOperacoes(filtros: FiltrosOperacoes) {
   const params = new URLSearchParams({
     pagina: String(filtros.pagina),
     tamanho: "50",
@@ -104,7 +121,19 @@ export function listarOperacoes(filtros: FiltrosOperacoes, signal?: AbortSignal)
   if (filtros.instituicaoId) params.set("instituicaoId", filtros.instituicaoId);
   if (filtros.ativoId) params.set("ativoId", filtros.ativoId);
   for (const id of filtros.carteiraIds) params.append("carteiraIds", id);
-  return requisitarJson<ListaOperacoes>(`/operacoes?${params}`, { signal });
+  return params;
+}
+export function listarOperacoes(filtros: FiltrosOperacoes, signal?: AbortSignal) {
+  return requisitarJson<ListaOperacoes>(`/operacoes?${parametrosOperacoes(filtros)}`, { signal });
+}
+export function listarHistoricoOperacoes(
+  filtros: FiltrosOperacoes,
+  arquivoId?: string,
+  signal?: AbortSignal,
+) {
+  const params = parametrosOperacoes(filtros);
+  if (arquivoId) params.set("arquivoId", arquivoId);
+  return requisitarJson<HistoricoOperacoes>(`/operacoes/historico?${params}`, { signal });
 }
 export const listarPosicoes = (signal?: AbortSignal) =>
   requisitarJson<{ revisao: string; itens: Posicao[]; quantidadesCompletas?: boolean }>(

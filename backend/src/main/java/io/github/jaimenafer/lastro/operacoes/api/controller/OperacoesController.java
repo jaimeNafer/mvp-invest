@@ -27,6 +27,11 @@ public class OperacoesController {
     return operacoes.listar(tipo, situacao, instituicaoId, ativoId, carteiraIds, pagina, tamanho);
   }
 
+  @GetMapping("/api/v1/operacoes/historico")
+  public HistoricoOperacoesResponse historico(@Valid @ModelAttribute FiltroHistoricoOperacoes filtro) {
+    return operacoes.historico(filtro);
+  }
+
   @GetMapping("/api/v1/operacoes/{id}")
   public OperacaoResponse buscar(@PathVariable @Positive long id) {
     return operacoes.buscar(id);

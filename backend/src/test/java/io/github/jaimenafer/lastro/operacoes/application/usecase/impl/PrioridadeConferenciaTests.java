@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import io.github.jaimenafer.lastro.acesso.application.contract.IUsuarioAtual;
 import io.github.jaimenafer.lastro.ativos.application.contract.IConsultaAtivos;
+import io.github.jaimenafer.lastro.operacoes.application.contract.IRecebimentoConferencia;
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
 import io.github.jaimenafer.lastro.operacoes.application.mapper.ConferenciaMapper;
 import io.github.jaimenafer.lastro.operacoes.application.port.*;
@@ -38,8 +39,9 @@ class PrioridadeConferenciaTests {
             consulta,
             mock(IPreparacaoConciliacao.class),
             mock(IConsultaAtivos.class),
-            mock(io.github.jaimenafer.lastro.operacoes.application.port.IAssociacoesLivro.class));
-    var resposta = usecase.listar(0, 50, null, 1L, null);
+            mock(io.github.jaimenafer.lastro.operacoes.application.port.IAssociacoesLivro.class),
+            mock(IRecebimentoConferencia.class));
+    var resposta = usecase.listar(0, 50, null, 1L, null, null);
     assertThat(resposta.itens()).hasSize(2);
     assertThat(resposta.proximaPendenciaId()).isEqualTo("registro:2");
   }

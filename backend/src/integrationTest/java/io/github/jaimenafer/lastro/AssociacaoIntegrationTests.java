@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -16,6 +18,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.*;
 import org.testcontainers.mysql.MySQLContainer;
 import tools.jackson.databind.JsonNode;
@@ -31,6 +34,295 @@ class AssociacaoIntegrationTests {
   @Autowired MockMvc mvc;
   @Autowired JdbcTemplate jdbc;
   @Autowired JsonMapper json;
+
+  @Test
+  @Transactional
+  void jornadaConsolidaOperacoesManuaisEImportadasSemDuplicarCarteirasCompartilhadas() throws Exception {
+    String perfil = "jornada-carteiras-" + UUID.randomUUID();
+    String binance = jdbc.queryForObject("SELECT id FROM instituicoes WHERE codigo = 'binance'", Long.class).toString();
+    String bitget = jdbc.queryForObject("SELECT id FROM instituicoes WHERE codigo = 'bitget'", Long.class).toString();
+    String brl = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo = 'fiat:BRL'", Long.class).toString();
+    var principal = carteiraDaJornada(perfil, "Principal", List.of(binance, bitget));
+    var compartilhada = carteiraDaJornada(perfil, "Cripto", List.of(binance));
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-01 09:00:00", "Spot", "Deposit", "BRL", "500"},
+        {"2024-06-02 09:00:00", "Spot", "Buy Crypto With Fiat", "BRL", "-100"},
+        {"2024-06-02 09:00:00", "Spot", "Buy Crypto With Fiat", "SOL", "1"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    var aporte = Map.of("tipo", "APORTE", "instituicaoId", bitget, "ativoId", brl,
+        "ocorridaEm", "2024-06-03T09:00:00-03:00", "quantidade", "50");
+    var previa = corpo(mvc.perform(post("/api/v1/operacoes/previa")
+        .header("Authorization", bearer(perfil)).contentType("application/json")
+        .content(json.writeValueAsString(Map.of("acao", "CRIAR", "operacao", aporte))))
+        .andExpect(status().isOk()));
+    mvc.perform(post("/api/v1/operacoes").header("Authorization", bearer(perfil))
+        .header("Idempotency-Key", UUID.randomUUID().toString()).contentType("application/json")
+        .content(json.writeValueAsString(Map.of("operacao", aporte, "revisao", previa.path("revisao").asText()))))
+        .andExpect(status().isCreated());
+
+    var arquivos = corpo(mvc.perform(get("/api/v1/importacoes/recebimentos")
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    String arquivoId = arquivos.path("itens").get(0).path("id").asText();
+    var consulta = "/api/v1/operacoes/historico";
+    mvc.perform(get(consulta).header("Authorization", bearer(perfil))
+        .param("carteiraIds", principal, compartilhada))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(3))
+        .andExpect(jsonPath("$.itens[0].operacao.instituicaoId").value(bitget))
+        .andExpect(jsonPath("$.itens[1].linhasOriginais.length()").value(2));
+    mvc.perform(get(consulta).header("Authorization", bearer(perfil))
+        .param("carteiraIds", compartilhada).param("arquivoId", arquivoId))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2));
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer(perfil))
+        .param("carteiraId", compartilhada).param("dataInicio", "2024-06-01").param("dataFim", "2024-06-03"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.disponibilidade.custo.valorConhecido").value("500"));
+    mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer(perfil))
+        .param("dataInicio", "2024-06-01").param("dataFim", "2024-06-03"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.disponibilidade.custo.valorConhecido").value("550"));
+    mvc.perform(get("/api/v1/importacoes/recebimentos").header("Authorization", bearer("outro-" + perfil)))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
+  }
+
+  private String carteiraDaJornada(String perfil, String nome, List<String> instituicoes) throws Exception {
+    return corpo(mvc.perform(post("/api/v1/carteiras").header("Authorization", bearer(perfil))
+        .contentType("application/json")
+        .content(json.writeValueAsString(Map.of("nome", nome, "instituicaoIds", instituicoes))))
+        .andExpect(status().isCreated())).path("id").asText();
+  }
+
+  @Test
+  @Transactional
+  void painelReconciliaCustosParciaisResultadoDeAtivoVendidoEAportesLiquidos() throws Exception {
+    String perfil = "consolidacao-parcial-" + UUID.randomUUID();
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-01 09:00:00", "Spot", "Deposit", "BRL", "500"},
+        {"2024-06-02 09:00:00", "Spot", "Buy Crypto With Fiat", "BRL", "-100"},
+        {"2024-06-02 09:00:00", "Spot", "Buy Crypto With Fiat", "SOL", "1"},
+        {"2024-06-03 09:00:00", "Spot", "Transaction Sold", "SOL", "-1"},
+        {"2024-06-03 09:00:00", "Spot", "Transaction Revenue", "BRL", "150"},
+        {"2024-06-04 09:00:00", "Spot", "Withdraw", "BRL", "-50"},
+        {"2024-06-04 10:00:00", "Spot", "Megadrop Rewards", "IO", "1"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    var painel = corpo(mvc.perform(get("/api/v1/visao-geral")
+        .param("dataInicio", "2024-06-01").param("dataFim", "2024-06-04")
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    var cobertura = painel.path("disponibilidade");
+    assertThat(cobertura.path("custo").path("status").asText()).isEqualTo("PARCIAL");
+    assertThat(cobertura.path("custo").path("valorConhecido").asText()).isEqualTo("500");
+    assertThat(cobertura.path("custo").path("componentesDesconhecidos").asInt()).isEqualTo(1);
+    assertThat(cobertura.path("resultado").path("valorConhecido").asText()).isEqualTo("50");
+    assertThat(cobertura.path("resultado").path("status").asText()).isEqualTo("COMPLETO");
+    assertThat(cobertura.path("aportesLiquidos").path("valorConhecido").asText()).isEqualTo("450");
+    assertThat(painel.path("resumo").path("operacoesNoPeriodo").asInt()).isEqualTo(5);
+    assertThat(painel.path("resultadosPorAtivo").get(0).path("ativoTicker").asText()).isEqualTo("SOL");
+    assertThat(painel.path("resultadosPorAtivo").get(0).path("subtotalResultadoBrl").asText())
+        .isEqualTo("50");
+    assertThat(painel.path("evolucaoResultado").path("meses").get(0).path("subtotalAcumuladoBrl").asText())
+        .isEqualTo("50");
+    var serie = corpo(mvc.perform(get("/api/v1/visao-geral/patrimonio-diario")
+        .param("dataInicio", "2024-06-01").param("dataFim", "2024-06-04")
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    assertThat(new java.math.BigDecimal(serie.get(1).path("aportesLiquidosBrl").asText()))
+        .isEqualByComparingTo("500");
+    assertThat(new java.math.BigDecimal(serie.get(3).path("aportesLiquidosBrl").asText()))
+        .isEqualByComparingTo("450");
+    assertThat(serie.get(3).path("valorTotalBrl").isNull()).isTrue();
+    assertThat(new java.math.BigDecimal(serie.get(3).path("valorConhecidoBrl").asText()))
+        .isEqualByComparingTo("500");
+  }
+
+  @Test
+  @Transactional
+  void patrimonioSeparaMovimentosNaMeiaNoiteDeFortaleza() throws Exception {
+    String perfil = "virada-patrimonio-" + UUID.randomUUID();
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-10 23:59:59", "Spot", "Deposit", "BRL", "100"},
+        {"2024-06-11 00:00:01", "Spot", "Deposit", "BRL", "50"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    JsonNode serie = corpo(mvc.perform(get("/api/v1/visao-geral/patrimonio-diario")
+        .param("dataInicio", "2024-06-10").param("dataFim", "2024-06-11")
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    assertThat(new java.math.BigDecimal(serie.get(0).path("valorTotalBrl").asText())).isEqualByComparingTo("100");
+    assertThat(new java.math.BigDecimal(serie.get(1).path("valorTotalBrl").asText())).isEqualByComparingTo("150");
+  }
+
+  @Test
+  @Transactional
+  void correcaoRetroativaRecalculaCompraEConversoesSemDuplicar() throws Exception {
+    String perfil = "cadeia-valoracao-" + UUID.randomUUID();
+    byte[] arquivo = planilha(new String[][] {
+        {"2024-05-01 09:00:00", "Spot", "Deposit", "BRL", "100"},
+        {"2024-05-02 09:00:00", "Spot", "Buy Crypto With Fiat", "BRL", "-100"},
+        {"2024-05-02 09:00:00", "Spot", "Buy Crypto With Fiat", "USDT", "10"},
+        {"2024-05-03 09:00:00", "Spot", "Binance Convert", "USDT", "-10"},
+        {"2024-05-03 09:00:00", "Spot", "Binance Convert", "SOL", "1"},
+        {"2024-05-04 09:00:00", "Spot", "Binance Convert", "SOL", "-1"},
+        {"2024-05-04 09:00:00", "Spot", "Binance Convert", "USDT", "11"},
+        {"2024-05-05 09:00:00", "Spot", "Binance Convert", "USDT", "-11"},
+        {"2024-05-05 09:00:00", "Spot", "Binance Convert", "BRL", "150"}
+    });
+    receber(perfil, arquivo).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    String compra = registro(perfil, "-10").path("grupoNumero").asText();
+    String conversao = registro(perfil, "-1").path("grupoNumero").asText();
+    informarValorManual(perfil, compra, "100");
+    informarValorManual(perfil, conversao, "130");
+    assertThat(resultadoDoAtivo(perfil, "SOL")).isEqualByComparingTo("30");
+    informarValorManual(perfil, compra, "120");
+    assertThat(resultadoDoAtivo(perfil, "SOL")).isEqualByComparingTo("10");
+    assertThat(resultadoDoAtivo(perfil, "USDT")).isEqualByComparingTo("40");
+    receber(perfil, arquivo).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    assertThat(registro(perfil, "-10").path("grupoNumero").asText()).isEqualTo(compra);
+    assertThat(resultadoDoAtivo(perfil, "SOL")).isEqualByComparingTo("10");
+    assertThat(resultadoDoAtivo(perfil, "USDT")).isEqualByComparingTo("40");
+  }
+
+  private void informarValorManual(String perfil, String numero, String valor) throws Exception {
+    JsonNode grupo = corpo(mvc.perform(get("/api/v1/conciliacao/associacoes/" + numero)
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    var pedido = Map.of("revisao", timeline(perfil).path("revisao").asText(),
+        "versao", grupo.path("versao").asText(), "valorTotalBrl", valor);
+    mvc.perform(put("/api/v1/conciliacao/associacoes/" + numero + "/valoracao")
+        .header("Authorization", bearer(perfil)).header("Idempotency-Key", UUID.randomUUID().toString())
+        .contentType("application/json").content(json.writeValueAsString(pedido)))
+        .andExpect(status().isOk());
+  }
+
+  private java.math.BigDecimal resultadoDoAtivo(String perfil, String ativo) throws Exception {
+    JsonNode painel = corpo(mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    return java.util.stream.StreamSupport.stream(painel.path("resultadosPorAtivo").spliterator(), false)
+        .filter(p -> p.path("ativoTicker").asText().equals(ativo))
+        .map(p -> new java.math.BigDecimal(p.path("resultadoTotalBrl").asText()))
+        .findFirst().orElseThrow();
+  }
+
+  @Test
+  @Transactional
+  void rejeitaValorManualIncompativelComCompraEVendaEmBrl() throws Exception {
+    String perfil = "brl-efetivo-" + UUID.randomUUID();
+    receber(perfil, planilha(new String[][] {
+        {"2024-05-01 09:00:00", "Spot", "Deposit", "BRL", "60"},
+        {"2024-05-02 09:00:00", "Spot", "Buy Crypto With Fiat", "BRL", "-60"},
+        {"2024-05-02 09:00:00", "Spot", "Buy Crypto With Fiat", "SOL", "1"},
+        {"2024-05-03 09:00:00", "Spot", "Transaction Sold", "SOL", "-1"},
+        {"2024-05-03 09:00:00", "Spot", "Transaction Revenue", "BRL", "100"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    String revisao = timeline(perfil).path("revisao").asText();
+    for (String quantidade : List.of("-60", "-1")) {
+      String numero = registro(perfil, quantidade).path("grupoNumero").asText();
+      JsonNode grupo = corpo(mvc.perform(get("/api/v1/conciliacao/associacoes/" + numero)
+          .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+      var pedido = Map.of("revisao", revisao, "versao", grupo.path("versao").asText(), "valorTotalBrl", "200");
+      mvc.perform(put("/api/v1/conciliacao/associacoes/" + numero + "/valoracao")
+          .header("Authorization", bearer(perfil)).header("Idempotency-Key", UUID.randomUUID().toString())
+          .contentType("application/json").content(json.writeValueAsString(pedido)))
+          .andExpect(status().isBadRequest());
+    }
+    assertThat(timeline(perfil).path("revisao").asText()).isEqualTo(revisao);
+    JsonNode painel = corpo(mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    assertThat(new java.math.BigDecimal(painel.path("resumo").path("resultadoRealizadoBrl").asText()))
+        .isEqualByComparingTo("40");
+    assertThat(new java.math.BigDecimal(painel.path("resumo").path("custoSaldosBrl").asText()))
+        .isEqualByComparingTo("100");
+  }
+
+  @Test
+  @Transactional
+  void taxaEmTerceiroAtivoComCotacaoAtualizaCustoSemRepetirDebito() throws Exception {
+    String perfil = "taxa-preco-" + UUID.randomUUID();
+    Long bnbId = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='cripto:BNB'", Long.class);
+    Long brlId = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='fiat:BRL'", Long.class);
+    jdbc.update("INSERT INTO pares_cotacao(ativo_base_id,ativo_cotacao_id,fonte,simbolo) VALUES (?,?,'BINANCE','BNBBRL')", bnbId, brlId);
+    Long par = jdbc.queryForObject("SELECT id FROM pares_cotacao WHERE simbolo='BNBBRL'", Long.class);
+    jdbc.update("INSERT INTO cotacoes_historicas(par_id,granularidade,instante,preco,obtido_em) VALUES (?,'HORA','2024-06-11 10:00:00',1000,UTC_TIMESTAMP(6)), (?,'HORA','2024-06-11 13:00:00',2000,UTC_TIMESTAMP(6))", par, par);
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-11 07:00:00", "Spot", "Megadrop Rewards", "BNB", "1"},
+        {"2024-06-11 08:00:00", "Spot", "Deposit", "BRL", "1000"},
+        {"2024-06-11 10:00:00", "Spot", "Buy Crypto With Fiat", "BRL", "-600"},
+        {"2024-06-11 10:00:00", "Spot", "Buy Crypto With Fiat", "SOL", "2"},
+        {"2024-06-11 10:00:00", "Spot", "Transaction Fee", "BNB", "-0.1"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    JsonNode posicoes = corpo(mvc.perform(get("/api/v1/posicoes").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    JsonNode sol = java.util.stream.StreamSupport.stream(posicoes.path("itens").spliterator(), false)
+        .filter(p -> p.path("ativoTicker").asText().equals("SOL")).findFirst().orElseThrow();
+    JsonNode bnb = java.util.stream.StreamSupport.stream(posicoes.path("itens").spliterator(), false)
+        .filter(p -> p.path("ativoTicker").asText().equals("BNB")).findFirst().orElseThrow();
+    assertThat(new java.math.BigDecimal(sol.path("quantidade").asText())).isEqualByComparingTo("2");
+    assertThat(new java.math.BigDecimal(sol.path("custoTotalBrl").asText())).isEqualByComparingTo("800");
+    assertThat(new java.math.BigDecimal(bnb.path("quantidade").asText())).isEqualByComparingTo("0.9");
+    assertThat(new java.math.BigDecimal(bnb.path("custoTotalBrl").asText())).isEqualByComparingTo("900");
+    JsonNode painel = corpo(mvc.perform(get("/api/v1/visao-geral").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    assertThat(new java.math.BigDecimal(painel.path("resumo").path("resultadoRealizadoBrl").asText()))
+        .isEqualByComparingTo("100");
+    JsonNode resultadoBnb = painel.path("resultadosPorAtivo").get(0);
+    assertThat(resultadoBnb.path("ativoTicker").asText()).isEqualTo("BNB");
+    assertThat(new java.math.BigDecimal(resultadoBnb.path("resultadoTotalBrl").asText()))
+        .isEqualByComparingTo("100");
+  }
+
+  @Test
+  @Transactional
+  void creditoComValorManualEPatrimonioDiarioComCoberturaParcial() throws Exception {
+    String perfil = "credito-manual-" + UUID.randomUUID();
+    Long bnbId = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='cripto:BNB'", Long.class);
+    Long brlId = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='fiat:BRL'", Long.class);
+    jdbc.update("INSERT INTO pares_cotacao(ativo_base_id,ativo_cotacao_id,fonte,simbolo) VALUES (?,?,'BINANCE','BNBBRL')", bnbId, brlId);
+    Long par = jdbc.queryForObject("SELECT id FROM pares_cotacao WHERE simbolo='BNBBRL'", Long.class);
+    jdbc.update("INSERT INTO cotacoes_historicas(par_id,granularidade,instante,preco,obtido_em) VALUES (?,'DIA','2024-06-10 00:00:00',1000,UTC_TIMESTAMP(6))", par);
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-10 10:30:00", "Spot", "Megadrop Rewards", "BNB", "0.5"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    JsonNode linha = registro(perfil, "0.5");
+    Map<String, Object> pedido = Map.of("revisao", timeline(perfil).path("revisao").asText(),
+        "versao", linha.path("versao").asText(), "valorTotalBrl", "400");
+    mvc.perform(put("/api/v1/conciliacao/registros/" + linha.path("id").asText() + "/valoracao")
+        .header("Authorization", bearer(perfil)).header("Idempotency-Key", UUID.randomUUID().toString())
+        .contentType("application/json").content(json.writeValueAsString(pedido)))
+        .andExpect(status().isOk());
+    JsonNode atual = registro(perfil, "0.5");
+    assertThat(atual.path("valoracao").path("statusValoracao").asText()).isEqualTo("MANUAL");
+    JsonNode posicoes = corpo(mvc.perform(get("/api/v1/posicoes").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    JsonNode bnb = java.util.stream.StreamSupport.stream(posicoes.path("itens").spliterator(), false)
+        .filter(p -> p.path("ativoTicker").asText().equals("BNB")).findFirst().orElseThrow();
+    assertThat(new java.math.BigDecimal(bnb.path("custoTotalBrl").asText())).isEqualByComparingTo("400");
+    JsonNode serie = corpo(mvc.perform(get("/api/v1/visao-geral/patrimonio-diario")
+        .param("dataInicio", "2024-06-10").param("dataFim", "2024-06-11")
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    assertThat(new java.math.BigDecimal(serie.get(0).path("valorTotalBrl").asText())).isEqualByComparingTo("500");
+    assertThat(serie.get(1).path("valorTotalBrl").isNull()).isTrue();
+    assertThat(serie.get(1).path("ativosSemPreco").asInt()).isEqualTo(1);
+  }
+
+  @Test
+  @Transactional
+  void solicitaPrecosDoHistoricoSemDuplicarPeriodos() throws Exception {
+    String perfil = "solicita-precos-" + UUID.randomUUID();
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-10 10:30:00", "Spot", "Megadrop Rewards", "BNB", "0.5"}
+    })).andExpect(status().isCreated());
+    JsonNode primeira = corpo(enviar(perfil, "/api/v1/conciliacao/cotacoes/atualizacoes", Map.of(), null)
+        .andExpect(status().isOk()));
+    assertThat(primeira.path("periodosAnalisados").asInt()).isPositive();
+    Integer antes = jdbc.queryForObject("SELECT COUNT(*) FROM cargas_cotacao", Integer.class);
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM cargas_cotacao c JOIN pares_cotacao p ON p.id=c.par_id WHERE p.simbolo IN ('BNBUSDT','USDTBRL') AND c.granularidade='HORA'", Integer.class)).isEqualTo(2);
+    enviar(perfil, "/api/v1/conciliacao/cotacoes/atualizacoes", Map.of(), null)
+        .andExpect(status().isOk());
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM cargas_cotacao", Integer.class)).isEqualTo(antes);
+    JsonNode outro = corpo(enviar("outro-" + UUID.randomUUID(), "/api/v1/conciliacao/cotacoes/atualizacoes", Map.of(), null)
+        .andExpect(status().isOk()));
+    assertThat(outro.path("periodosAnalisados").asInt()).isZero();
+  }
 
   @Test
   void conversaoCsvUsaProvenienciaDaLinhaEValorEmBrlConsistente() throws Exception {
@@ -181,6 +473,75 @@ class AssociacaoIntegrationTests {
     assertThat(new java.math.BigDecimal(bnb.path("custoTotalBrl").asText())).isEqualByComparingTo("1000");
   }
 
+  @Test
+  @Transactional
+  void conversaoCriptoUsaCotacaoHistoricaSemAlterarAssociacao() throws Exception {
+    String perfil = "convert-preco-" + UUID.randomUUID();
+    Long bnb = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='cripto:BNB'", Long.class);
+    Long brl = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='fiat:BRL'", Long.class);
+    jdbc.update("INSERT INTO pares_cotacao(ativo_base_id,ativo_cotacao_id,fonte,simbolo) VALUES (?,?,'BINANCE','BNBBRL')", bnb, brl);
+    Long par = jdbc.queryForObject("SELECT id FROM pares_cotacao WHERE simbolo='BNBBRL'", Long.class);
+    jdbc.update("INSERT INTO cotacoes_historicas(par_id,granularidade,instante,preco,obtido_em) VALUES (?,'HORA','2024-06-11 10:00:00',2000,UTC_TIMESTAMP(6))", par);
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-01 09:00:00", "Spot", "Deposit", "BRL", "1000"},
+        {"2024-06-01 10:00:00", "Spot", "Buy Crypto With Fiat", "BRL", "-1000"},
+        {"2024-06-01 10:00:01", "Spot", "Buy Crypto With Fiat", "BNB", "1"},
+        {"2024-06-11 07:54:00", "Spot", "Binance Convert", "BNB", "-0.5"},
+        {"2024-06-11 07:54:01", "Spot", "Binance Convert", "SOL", "2"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    JsonNode posicoes = corpo(mvc.perform(get("/api/v1/posicoes").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    JsonNode sol = java.util.stream.StreamSupport.stream(posicoes.path("itens").spliterator(),false)
+        .filter(p -> p.path("ativoTicker").asText().equals("SOL")).findFirst().orElseThrow();
+    assertThat(sol.path("custoTotalBrl").isTextual()).isTrue();
+    assertThat(new java.math.BigDecimal(sol.path("custoTotalBrl").asText())).isEqualByComparingTo("1000");
+    JsonNode painel = corpo(mvc.perform(get("/api/v1/visao-geral")
+        .param("dataInicio", "2024-06-01").param("dataFim", "2024-06-30")
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    assertThat(painel.path("resumo").path("resultadoRealizadoBrl").isTextual()).isTrue();
+    assertThat(new java.math.BigDecimal(painel.path("resumo").path("resultadoRealizadoBrl").asText()))
+        .isEqualByComparingTo("500");
+    assertThat(registro(perfil,"-0.5").path("grupoNumero").asText()).startsWith("OP-");
+    assertThat(registro(perfil,"2").path("grupoNumero").asText())
+        .isEqualTo(registro(perfil,"-0.5").path("grupoNumero").asText());
+  }
+
+  @Test
+  @Transactional
+  void valorManualDaConversaoPrevaleceSobreCotacaoHistorica() throws Exception {
+    String perfil = "convert-manual-" + UUID.randomUUID();
+    Long bnbId = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='cripto:BNB'", Long.class);
+    Long brlId = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='fiat:BRL'", Long.class);
+    jdbc.update("INSERT INTO pares_cotacao(ativo_base_id,ativo_cotacao_id,fonte,simbolo) VALUES (?,?,'BINANCE','BNBBRL')", bnbId, brlId);
+    Long par = jdbc.queryForObject("SELECT id FROM pares_cotacao WHERE simbolo='BNBBRL'", Long.class);
+    jdbc.update("INSERT INTO cotacoes_historicas(par_id,granularidade,instante,preco,obtido_em) VALUES (?,'HORA','2024-06-11 10:00:00',2000,UTC_TIMESTAMP(6))", par);
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-01 09:00:00", "Spot", "Deposit", "BRL", "1000"},
+        {"2024-06-01 10:00:00", "Spot", "Buy Crypto With Fiat", "BRL", "-1000"},
+        {"2024-06-01 10:00:01", "Spot", "Buy Crypto With Fiat", "BNB", "1"},
+        {"2024-06-11 07:54:00", "Spot", "Binance Convert", "BNB", "-0.5"},
+        {"2024-06-11 07:54:01", "Spot", "Binance Convert", "SOL", "2"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    String numero = registro(perfil, "-0.5").path("grupoNumero").asText();
+    JsonNode grupo = corpo(mvc.perform(get("/api/v1/conciliacao/associacoes/" + numero)
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    Map<String, Object> pedido = Map.of("revisao", timeline(perfil).path("revisao").asText(),
+        "versao", grupo.path("versao").asText(), "valorTotalBrl", "800");
+    mvc.perform(put("/api/v1/conciliacao/associacoes/" + numero + "/valoracao")
+        .header("Authorization", bearer(perfil)).header("Idempotency-Key", UUID.randomUUID().toString())
+        .contentType("application/json").content(json.writeValueAsString(pedido)))
+        .andExpect(status().isOk());
+    jdbc.update("UPDATE cotacoes_historicas SET preco=3000 WHERE par_id=?", par);
+    JsonNode posicoes = corpo(mvc.perform(get("/api/v1/posicoes").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    JsonNode sol = java.util.stream.StreamSupport.stream(posicoes.path("itens").spliterator(), false)
+        .filter(p -> p.path("ativoTicker").asText().equals("SOL")).findFirst().orElseThrow();
+    assertThat(new java.math.BigDecimal(sol.path("custoTotalBrl").asText())).isEqualByComparingTo("800");
+    assertThat(registro(perfil, "-0.5").path("grupoNumero").asText()).isEqualTo(numero);
+    assertThat(registro(perfil, "-0.5").path("valoracao").path("statusValoracao").asText()).isEqualTo("MANUAL");
+  }
   @Test
   void conversaoCriptoComCotacaoInformadaCalculaCustoEResultado() throws Exception {
     String perfil = "convert-valor-" + UUID.randomUUID();
@@ -370,6 +731,60 @@ class AssociacaoIntegrationTests {
         .filter(p -> p.path("ativoTicker").asText().equals("BNB")).findFirst().orElseThrow();
     assertThat(new java.math.BigDecimal(bnb.path("quantidade").asText())).isEqualByComparingTo("0.27536405");
     assertThat(bnb.path("custoTotalBrl").isNull()).isTrue();
+  }
+
+  @Test
+  @Transactional
+  void creditoUsaCotacaoDoCacheSemAlterarOsDadosOriginais() throws Exception {
+    String perfil = "credito-preco-" + UUID.randomUUID();
+    Long base = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='cripto:BNB'", Long.class);
+    Long brl = jdbc.queryForObject("SELECT id FROM ativos WHERE codigo='fiat:BRL'", Long.class);
+    jdbc.update("INSERT INTO pares_cotacao(ativo_base_id,ativo_cotacao_id,fonte,simbolo) VALUES (?,?,'BINANCE','BNBBRL')", base, brl);
+    Long par = jdbc.queryForObject("SELECT id FROM pares_cotacao WHERE simbolo='BNBBRL'", Long.class);
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-10 10:30:00", "Spot", "Megadrop Rewards", "BNB", "0.5"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    JsonNode antes = corpo(mvc.perform(get("/api/v1/posicoes").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    assertThat(antes.path("itens").get(0).path("custoTotalBrl").isNull()).isTrue();
+    jdbc.update("INSERT INTO cotacoes_historicas(par_id,granularidade,instante,preco,obtido_em) VALUES (?,'HORA','2024-06-10 13:00:00',200,UTC_TIMESTAMP(6))", par);
+    JsonNode posicoes = corpo(mvc.perform(get("/api/v1/posicoes").header("Authorization", bearer(perfil)))
+        .andExpect(status().isOk()));
+    JsonNode bnb = java.util.stream.StreamSupport.stream(posicoes.path("itens").spliterator(), false)
+        .filter(p -> p.path("ativoTicker").asText().equals("BNB")).findFirst().orElseThrow();
+    assertThat(bnb.path("custoTotalBrl").isTextual()).isTrue();
+    assertThat(new java.math.BigDecimal(bnb.path("custoTotalBrl").asText())).isEqualByComparingTo("100");
+    assertThat(jdbc.queryForObject("SELECT JSON_EXTRACT(proposta_json,'$.custoTotalBrl') IS NULL OR JSON_TYPE(JSON_EXTRACT(proposta_json,'$.custoTotalBrl'))='NULL' FROM registros_conferencia WHERE perfil_ref=?", Boolean.class, perfil)).isTrue();
+  }
+  @Test
+  void recompensaSemCustoNaoOcultaResultadoRealizadoNemTaxasConhecidas() throws Exception {
+    String perfil = "recompensa-resultado-" + UUID.randomUUID();
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-10 10:00:00", "Spot", "Megadrop Rewards", "BNB", "0.1"}
+    })).andExpect(status().isCreated());
+    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    JsonNode painel = corpo(mvc.perform(get("/api/v1/visao-geral").param("dataInicio", "2024-06-01").param("dataFim", "2024-06-30")
+        .header("Authorization", bearer(perfil))).andExpect(status().isOk()));
+    assertThat(painel.path("resumo").path("custoSaldosBrl").isNull()).isTrue();
+    assertThat(painel.path("resumo").path("resultadoRealizadoBrl").isTextual()).isTrue();
+    assertThat(new java.math.BigDecimal(painel.path("resumo").path("resultadoRealizadoBrl").asText())).isEqualByComparingTo("0");
+    assertThat(new java.math.BigDecimal(painel.path("resumo").path("taxasBrl").asText())).isEqualByComparingTo("0");
+  }
+  @Test
+  void recompensasSemCotacaoNaoGeramCriticasEmConversaoPosterior() throws Exception {
+    String perfil = "credito-conversao-" + UUID.randomUUID();
+    receber(perfil, planilha(new String[][] {
+        {"2024-06-10 10:00:00", "Spot", "Simple Earn Locked Rewards", "BNB", "0.3"},
+        {"2024-06-10 10:01:00", "Spot", "Simple Earn Locked Rewards", "BNB", "0.4"},
+        {"2024-06-10 10:02:00", "Spot", "Binance Convert", "BNB", "-0.2"}
+    })).andExpect(status().isCreated());
+    JsonNode conversao = registro(perfil, "-0.2");
+    List<String> ids = new ArrayList<>();
+    conversao.path("pendencias").forEach(p -> ids.add(p.path("id").asText()));
+    assertThat(ids).contains("natureza").noneMatch(id -> id.startsWith("custo:"));
+    assertThat(registro(perfil, "0.3").path("estado").asText()).isEqualTo("COERENTE");
+    assertThat(registro(perfil, "0.4").path("estado").asText()).isEqualTo("COERENTE");
   }
 
   @Test
@@ -679,30 +1094,35 @@ class AssociacaoIntegrationTests {
     assertThat(previa(perfil, pagina.path("revisao").asText()).path("grupos")).isEmpty();
   }
 
-  @Test
-  void saldoAnteriorPreservaCompraAutomaticamenteAssociada() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void saldoAnteriorPreservaCompraAutomaticamenteAssociada(boolean persistida) throws Exception {
     String perfil = "saldo-grupo-" + UUID.randomUUID();
     byte[] arquivo = planilha(new String[][] {
-        {"2024-05-26 19:05:32", "Spot", "Buy Crypto With Fiat", "SOL", "0.12345678", "Via CashBalance"},
+        {"2024-05-26 19:05:32", "Spot", "Buy Crypto With Fiat", "SOL", "0.11665843", "Via CashBalance"},
         {"2024-05-26 19:05:32", "Spot", "Buy Crypto With Fiat", "BRL", "-100", "Via CashBalance"}
     });
     receber(perfil, arquivo).andExpect(status().isCreated());
     JsonNode antes = timeline(perfil);
     assertThat(antes.path("linhasPorGrupo").iterator().next()).hasSize(2);
-    salvarGrupo(perfil, pedido(perfil, List.of(registro(perfil, "0.12345678"),
-        registro(perfil, "-100")), null, null, true, false));
-    for (String quantidade : List.of("0.12345678", "-100")) {
-      JsonNode linha = registro(perfil, quantidade);
-      Map<String, Object> edicao = new LinkedHashMap<>();
-      edicao.put("revisao", timeline(perfil).path("revisao").asText());
-      for (String campo : List.of("versao", "data", "contaId", "ativoId", "quantidade", "natureza"))
-        edicao.put(campo, linha.path(campo).asText());
-      edicao.put("motivo", "Conferência");
-      mvc.perform(put("/api/v1/conciliacao/registros/" + linha.path("id").asText())
-          .header("Authorization", bearer(perfil))
-          .header("Idempotency-Key", UUID.randomUUID().toString())
-          .contentType("application/json").content(json.writeValueAsString(edicao)))
-          .andExpect(status().isOk());
+    if (persistida) {
+      salvarGrupo(perfil, pedido(perfil, List.of(registro(perfil, "0.11665843"),
+          registro(perfil, "-100")), null, null, true, false));
+      for (String quantidade : List.of("0.11665843", "-100")) {
+        JsonNode linha = registro(perfil, quantidade);
+        Map<String, Object> edicao = new LinkedHashMap<>();
+        edicao.put("revisao", timeline(perfil).path("revisao").asText());
+        for (String campo : List.of("versao", "data", "contaId", "ativoId", "quantidade", "natureza"))
+          edicao.put(campo, linha.path(campo).asText());
+        edicao.put("motivo", "Conferência");
+        mvc.perform(put("/api/v1/conciliacao/registros/" + linha.path("id").asText())
+            .header("Authorization", bearer(perfil))
+            .header("Idempotency-Key", UUID.randomUUID().toString())
+            .contentType("application/json").content(json.writeValueAsString(edicao)))
+            .andExpect(status().isOk());
+      }
+    } else {
+      assertThat(antes.path("itens").get(0).path("grupoNumero").isNull()).isTrue();
     }
     antes = timeline(perfil);
     JsonNode brl = registro(perfil, "-100");
@@ -737,7 +1157,7 @@ class AssociacaoIntegrationTests {
     JsonNode sol = java.util.stream.StreamSupport.stream(posicoes.path("itens").spliterator(), false)
         .filter(item -> item.path("ativoTicker").asText().equals("SOL"))
         .findFirst().orElseThrow();
-    assertThat(new java.math.BigDecimal(sol.path("quantidade").asText())).isEqualByComparingTo("0.12345678");
+    assertThat(new java.math.BigDecimal(sol.path("quantidade").asText())).isEqualByComparingTo("0.11665843");
     assertThat(new java.math.BigDecimal(sol.path("custoTotalBrl").asText())).isEqualByComparingTo("100");
     receber(perfil, arquivo).andExpect(status().isCreated());
     assertThat(timeline(perfil).path("linhasPorGrupo").iterator().next()).hasSize(2);
@@ -918,8 +1338,7 @@ class AssociacaoIntegrationTests {
                 }))
         .andExpect(status().isCreated());
     JsonNode p = previa(perfil, timeline(perfil).path("revisao").asText());
-    assertThat(p.path("grupos").size()).isZero();
-    confirmarTudo(perfil, p);
+    assertThat(p.path("grupos").size()).isEqualTo(1);
     var pedido =
         pedido(
             perfil,
@@ -1208,6 +1627,9 @@ class AssociacaoIntegrationTests {
                   }
                 }))
         .andExpect(status().isCreated());
+    var compra = pedido(perfil, List.of(registro(perfil, "1"), registro(perfil, "-100")),
+        null, null, true, false);
+    salvarGrupo(perfil, compra);
     confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
     assertThat(timeline(perfil).path("resumo").path("ajustesAtivos").asInt()).isEqualTo(1);
     String numero =
@@ -1267,17 +1689,7 @@ class AssociacaoIntegrationTests {
                 }))
         .andExpect(status().isCreated());
     confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
-    var salvo =
-        salvarGrupo(
-            perfil,
-            pedido(
-                perfil,
-                List.of(registro(perfil, "1"), registro(perfil, "-100")),
-                null,
-                null,
-                true,
-                false));
-    confirmarTudo(perfil, previa(perfil, timeline(perfil).path("revisao").asText()));
+    String numero = registro(perfil, "1").path("grupoNumero").asText();
     var linha = registro(perfil, "1");
     var body = new LinkedHashMap<String, Object>();
     body.put("revisao", timeline(perfil).path("revisao").asText());
@@ -1309,7 +1721,6 @@ class AssociacaoIntegrationTests {
                 .asText())
         .isEqualTo("1");
     assertThat(registro(perfil, "2").path("pendencias").toString()).contains("grupo_desatualizado");
-    String numero = salvo.path("numero").asText();
     var grupo =
         corpo(
             mvc.perform(

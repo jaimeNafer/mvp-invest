@@ -16,6 +16,48 @@ import org.junit.jupiter.api.Test;
 
 class MotorConferenciaTests {
   @Test
+  void retratoEntrePernasDaTransferenciaPreservaPatrimonioECustodiaDoPrefixo() {
+    var entrada = entrada("a", 1, 2, "2", "600");
+    var saida = new ItemConferenciaLivro("b", 1L, 1L, 2L, DATA.plusSeconds(1), 2,
+        decimal("-1"), null, null, false, null, "transferencia");
+    var chegada = new ItemConferenciaLivro("c", 2L, 1L, 2L, DATA.plusSeconds(86401), 3,
+        decimal("1"), null, null, false, null, "transferencia");
+    var entre = DATA.plusSeconds(10);
+    var retratos = MotorLivro.posicoesAte(List.of(entrada, saida, chegada), CODIGOS,
+        List.of(entre, chegada.ocorridaEm()));
+    assertThat(retratos.get(entre)).singleElement().satisfies(p -> {
+      assertThat(p.quantidade()).isEqualByComparingTo("2");
+      assertThat(p.contas()).singleElement()
+          .satisfies(c -> assertThat(c.quantidade()).isEqualByComparingTo("2"));
+    });
+    assertThat(retratos.get(chegada.ocorridaEm())).singleElement().satisfies(p -> {
+      assertThat(p.quantidade()).isEqualByComparingTo("2");
+      assertThat(p.custoTotalBrl()).isEqualByComparingTo("600");
+      assertThat(p.contas()).hasSize(2).allSatisfy(c ->
+          assertThat(c.quantidade()).isEqualByComparingTo("1"));
+    });
+  }
+
+  @Test
+  void retratosEmVariosAnosPreservamOsSaldosDeCadaCorte() {
+    var entrada = entrada("a", 1, 2, "2", "600");
+    var venda = venda("b", 1, "1", "400");
+    var cortes = List.of(DATA.minusSeconds(1), DATA, DATA.plusSeconds(1), DATA.plusSeconds(90_000_000));
+    var retratos = MotorLivro.posicoesAte(List.of(venda, entrada), CODIGOS, cortes);
+    assertThat(retratos.get(cortes.get(0))).isEmpty();
+    assertThat(retratos.get(DATA)).singleElement()
+        .satisfies(p -> assertThat(p.quantidade()).isEqualByComparingTo("2"));
+    var depois = retratos.get(DATA.plusSeconds(1));
+    assertThat(depois).filteredOn(p -> p.ativoId().equals(2L)).singleElement().satisfies(p -> {
+      assertThat(p.quantidade()).isEqualByComparingTo("1");
+      assertThat(p.custoTotalBrl()).isEqualByComparingTo("300");
+    });
+    assertThat(depois).filteredOn(p -> p.ativoId().equals(1L)).singleElement()
+        .satisfies(p -> assertThat(p.quantidade()).isEqualByComparingTo("400"));
+    assertThat(retratos.get(cortes.getLast())).isEqualTo(depois);
+  }
+
+  @Test
   void saidaCriptoSemFinalidadePreservaCustoRemanescenteSemInventarResultado() {
     var saida = new ItemConferenciaLivro(
         "b", 1L, 1L, 2L, DATA.plusSeconds(1), 2,
@@ -87,12 +129,31 @@ class MotorConferenciaTests {
     assertThat(livro.efeitos().get(1).estado()).isEqualTo(EstadoConferencia.COERENTE);
     assertThat(livro.efeitos().get(1).calculo()).isNull();
     assertThat(livro.efeitos().get(2).calculo().resultadoTotalBrl()).isNull();
+    assertThat(livro.efeitos().get(2).estado()).isEqualTo(EstadoConferencia.COERENTE);
+    assertThat(livro.efeitos().get(2).causas()).doesNotContain("custo:b");
     assertThat(livro.posicoes()).filteredOn(p -> p.ativoId().equals(2L))
         .singleElement().satisfies(p -> {
           assertThat(p.quantidade()).isEqualByComparingTo("2");
           assertThat(p.custoTotalBrl()).isNull();
           assertThat(p.custoMedioBrl()).isNull();
         });
+  }
+
+  @Test
+  void creditoAutomaticoNaoOcultaPendenciaDeOutraEntradaSemCusto() {
+    var credito = new ItemConferenciaLivro(
+        "b", 1L, 1L, 2L, DATA.plusSeconds(1), 2, decimal("1"), null,
+        null, false, null, null, true);
+    var livro = MotorLivro.conferir(
+        List.of(entrada("a", 1, 2, "2", "1000"), credito,
+            entrada("c", 1, 2, "1", null), venda("d", 1, "1", "400")), CODIGOS);
+    var venda = livro.efeitos().get(3);
+    assertThat(venda.estado()).isEqualTo(EstadoConferencia.PENDENTE);
+    assertThat(venda.causas()).contains("custo:c").doesNotContain("custo:b");
+    assertThat(venda.calculo().custoBaixadoBrl()).isNull();
+    assertThat(venda.calculo().resultadoTotalBrl()).isNull();
+    assertThat(livro.posicoes()).filteredOn(p -> p.ativoId().equals(2L))
+        .singleElement().satisfies(p -> assertThat(p.causas()).contains("custo:b", "custo:c"));
   }
 
   @Test

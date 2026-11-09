@@ -11,6 +11,8 @@ public interface IConsultaConferencia {
 
   List<RegistroTimelineResponse> registros();
 
+  List<RegistroTimelineResponse> registrosAplicados();
+
   ResumoConferenciaResponse resumir(List<RegistroTimelineResponse> registros);
 
   List<ContaConferenciaResponse> contas();

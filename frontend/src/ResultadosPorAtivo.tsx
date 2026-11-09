@@ -45,7 +45,9 @@ export default function ResultadosPorAtivo({
                     valor={
                       completo
                         ? r.resultadoTotalBrl
-                        : (r.subtotalResultadoBrl ?? r.resultadoTotalBrl)
+                        : r.subtotalResultadoBrl === undefined
+                          ? r.resultadoTotalBrl
+                          : r.subtotalResultadoBrl
                     }
                   />
                   <details>

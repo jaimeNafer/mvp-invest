@@ -2,7 +2,6 @@ package io.github.jaimenafer.lastro.operacoes.application.mapper;
 
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
 import io.github.jaimenafer.lastro.operacoes.domain.model.*;
-import io.github.jaimenafer.lastro.operacoes.domain.service.AnaliseResultado;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -33,58 +32,77 @@ public final class VisaoGeralConferenciaMapper {
         livro.calculos().stream()
             .collect(Collectors.toMap(CalculoOperacao::operacaoId, Function.identity()));
     List<FatoLivro> noPeriodo = fatos.stream().filter(f -> periodo.contem(f.ocorridaEm())).toList();
-    boolean semClassificacao =
-        !retrato.quantidadesCompletas()
-            || retrato.itens().stream()
-                .anyMatch(i -> semClassificacao(i) && periodo.contem(i.ocorridaEm()));
+    List<GrupoEmConferencia> gruposPendentes = gruposPendentes(retrato, periodo);
+    Set<String> linhasAgrupadas = linhasAgrupadas(retrato);
+    long movimentosAmbiguos = retrato.itens().stream()
+        .filter(i -> semClassificacao(i) && periodo.contem(i.ocorridaEm()))
+        .filter(i -> !linhasAgrupadas.contains(idOrigem(i.id()))).count();
+    boolean coberturaIncerta = retrato.incertezaSemData()
+        || (retrato.primeiraDataPendente() != null
+            && !retrato.primeiraDataPendente().isAfter(periodo.fim()));
+    long pendenciasSemCalculo = movimentosAmbiguos + gruposPendentes.size();
+    long incertos = coberturaIncerta ? 1 : 0;
+    boolean semClassificacao = pendenciasSemCalculo + incertos > 0;
     List<CalculoOperacao> calculosPeriodo =
         noPeriodo.stream().map(f -> calculos.get(f.id())).toList();
-    BigDecimal subtotalCusto =
-        retrato.livro().posicoes().stream()
-            .filter(p -> p.quantidadeDisponivel() && p.custoTotalBrl() != null)
-            .map(PosicaoConferenciaLivro::custoTotalBrl)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    boolean custoCompleto =
-        retrato.quantidadesCompletas()
-            && retrato.livro().posicoes().stream()
-                .allMatch(p -> p.quantidadeDisponivel() && p.custoTotalBrl() != null)
-            && retrato.itens().stream()
-                .noneMatch(i -> semClassificacao(i) && i.quantidade().signum() < 0
-                    && retrato.ativos().get(i.ativoId()) != null
-                    && retrato.ativos().get(i.ativoId()).cripto());
-    BigDecimal subtotalResultado = subtotal(calculosPeriodo, CalculoOperacao::resultadoTotalBrl);
-    BigDecimal subtotalTaxas = subtotal(calculosPeriodo, CalculoOperacao::taxaBrl);
-    boolean resultadoCompleto =
-        !semClassificacao
-            && calculosPeriodo.stream().allMatch(c -> c != null && c.resultadoTotalBrl() != null);
-    boolean taxasCompletas =
-        !semClassificacao
-            && calculosPeriodo.stream().allMatch(c -> c != null && c.taxaBrl() != null);
-    BigDecimal aportes =
-        noPeriodo.stream()
-            .filter(f -> f.tipo() == TipoOperacao.APORTE)
-            .map(FatoLivro::quantidade)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    var resumo =
-        new ResumoVisaoGeral(
-            custoCompleto ? subtotalCusto : null,
-            resultadoCompleto ? subtotalResultado : null,
-            taxasCompletas ? subtotalTaxas : null,
-            semClassificacao ? null : aportes,
-            noPeriodo.size(),
-            total(calculosPeriodo, CalculoOperacao::resultadoNegociacaoBrl, semClassificacao),
-            total(calculosPeriodo, CalculoOperacao::resultadoMoedaBrl, semClassificacao),
-            total(calculosPeriodo, CalculoOperacao::resultadoTaxaBrl, semClassificacao));
-    List<FatoLivro> calculaveis =
-        fatos.stream()
-            .filter(f ->
-                calculos.get(f.id()) != null && calculos.get(f.id()).resultadoTotalBrl() != null)
-            .toList();
+    var custos = retrato.livro().posicoes();
+    long custosConhecidos = custos.stream()
+        .filter(p -> p.quantidadeDisponivel() && p.custoTotalBrl() != null).count();
+    BigDecimal subtotalCusto = custos.stream()
+        .filter(p -> p.quantidadeDisponivel() && p.custoTotalBrl() != null)
+        .map(PosicaoConferenciaLivro::custoTotalBrl).reduce(BigDecimal.ZERO, BigDecimal::add);
+    long custosDesconhecidos = custos.size() - custosConhecidos;
+    boolean custoCompleto = retrato.quantidadesCompletas()
+        && custosDesconhecidos == 0
+        && retrato.itens().stream().noneMatch(i -> semClassificacao(i)
+            && i.quantidade().signum() < 0 && retrato.ativos().get(i.ativoId()) != null
+            && retrato.ativos().get(i.ativoId()).cripto());
+
     Map<Long, String> codigos =
         retrato.ativos().values().stream().collect(Collectors.toMap(a -> a.id(), a -> a.codigo()));
-    List<ResultadoMensal> meses = AnaliseResultado.mensal(calculaveis, livro, periodo);
-    List<ResultadoAtivo> resultados =
-        AnaliseResultado.porAtivo(calculaveis, livro, periodo, codigos);
+    Map<Long, List<ParcelaResultadoAtivo>> parcelasPorFato = noPeriodo.stream()
+        .collect(Collectors.toMap(FatoLivro::id, f -> ParcelaResultadoAtivo.de(f, calculos.get(f.id()),
+            f.moedaCotacaoId() != null && "fiat:BRL".equals(codigos.get(f.moedaCotacaoId())))));
+    List<FatoLivro> negociacoes = noPeriodo.stream().filter(VisaoGeralConferenciaMapper::negociacao).toList();
+    long resultadosConhecidos = negociacoes.stream().filter(f -> resultadoCalculavel(calculos.get(f.id()))).count();
+    long resultadosDesconhecidos = negociacoes.size() - resultadosConhecidos + pendenciasSemCalculo + incertos;
+    BigDecimal subtotalResultado = parcelasPorFato.values().stream().flatMap(List::stream)
+        .map(VisaoGeralConferenciaMapper::subtotalParcela).reduce(BigDecimal.ZERO, BigDecimal::add);
+    boolean resultadoParcialConhecido = parcelasPorFato.values().stream().flatMap(List::stream)
+        .anyMatch(p -> valores(p).anyMatch(v -> v != null && v.signum() != 0));
+    BigDecimal subtotalTaxasGrupos = gruposPendentes.stream()
+        .flatMap(g -> g.resumo().taxas().stream())
+        .filter(t -> "fiat:BRL".equals(t.codigo()))
+        .map(ParcelaGrupo::quantidade).reduce(BigDecimal.ZERO, BigDecimal::add);
+    long taxasConhecidas = negociacoes.stream().map(f -> calculos.get(f.id()))
+        .filter(c -> c != null && c.taxaBrl() != null).count()
+        + gruposPendentes.stream().filter(VisaoGeralConferenciaMapper::taxasDoGrupoCompletas).count();
+    long taxasDesconhecidas = negociacoes.size() + gruposPendentes.size() - taxasConhecidas
+        + movimentosAmbiguos + incertos;
+    BigDecimal subtotalTaxas = negociacoes.stream().map(f -> calculos.get(f.id()))
+        .filter(Objects::nonNull).map(CalculoOperacao::taxaBrl)
+        .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add)
+        .add(subtotalTaxasGrupos);
+    var capital = capitalLiquido(retrato, periodo, linhasAgrupadas);
+    boolean resultadoCompleto = resultadosDesconhecidos == 0;
+    boolean taxasCompletas = taxasDesconhecidas == 0;
+    BigDecimal aportes = noPeriodo.stream().filter(f -> f.tipo() == TipoOperacao.APORTE)
+        .map(FatoLivro::quantidade).reduce(BigDecimal.ZERO, BigDecimal::add);
+    Map<YearMonth, Long> operacoesPorMes = new HashMap<>();
+    noPeriodo.forEach(f -> operacoesPorMes.merge(mes(f.ocorridaEm()), 1L, Long::sum));
+    gruposPendentes.forEach(g -> dataGrupo(g)
+        .ifPresent(data -> operacoesPorMes.merge(mes(data), 1L, Long::sum)));
+    retrato.itens().stream().filter(i -> i.creditoAutomatico() && periodo.contem(i.ocorridaEm()))
+        .forEach(i -> operacoesPorMes.merge(mes(i.ocorridaEm()), 1L, Long::sum));
+    var resumo = new ResumoVisaoGeral(
+        custoCompleto ? subtotalCusto : null,
+        resultadoCompleto ? subtotalResultado : null,
+        taxasCompletas ? subtotalTaxas : null,
+        capital.status() == EstadoAgregadoVisaoGeral.COMPLETO ? aportes : null,
+        operacoesPorMes.values().stream().mapToLong(Long::longValue).sum(),
+        total(calculosPeriodo, CalculoOperacao::resultadoNegociacaoBrl, semClassificacao),
+        total(calculosPeriodo, CalculoOperacao::resultadoMoedaBrl, semClassificacao),
+        total(calculosPeriodo, CalculoOperacao::resultadoTaxaBrl, semClassificacao));
     VisaoGeralResponse base =
         VisaoGeralMapper.de(
             revisao,
@@ -95,12 +113,12 @@ public final class VisaoGeralConferenciaMapper {
             livro,
             retrato.ativos(),
             retrato.instituicoes(),
-            meses,
-            resultados,
+            List.of(),
+            List.of(),
             custoZero,
             referenciasRepetidas);
     List<PosicaoVisaoGeralResponse> posicoes =
-        posicoes(retrato, custoCompleto ? subtotalCusto : null);
+        posicoes(retrato, subtotalCusto);
     return new VisaoGeralResponse(
         base.revisao(),
         base.dataInicio(),
@@ -128,8 +146,9 @@ public final class VisaoGeralConferenciaMapper {
                   p.comAjustes());
             })
             .toList(),
-        new EvolucaoResultadoResponse("0", meses(meses, retrato, noPeriodo, calculos, periodo)),
-        resultados(noPeriodo, calculos, retrato, codigos),
+        new EvolucaoResultadoResponse("0", meses(retrato, noPeriodo, calculos, parcelasPorFato,
+            periodo, operacoesPorMes, gruposPendentes, linhasAgrupadas)),
+        resultados(parcelasPorFato, retrato, periodo),
         base.conferencia(),
         retrato.resumo(),
         new DisponibilidadeVisaoGeralResponse(
@@ -140,11 +159,103 @@ public final class VisaoGeralConferenciaMapper {
             numero(subtotalCusto),
             numero(subtotalResultado),
             numero(subtotalTaxas),
-            retrato.quantidadesCompletas()));
+            retrato.quantidadesCompletas(),
+            indicador(subtotalCusto, custosConhecidos, custosDesconhecidos, custoCompleto, false,
+                custosDesconhecidos > 0 ? "Há posições sem custo identificado." : "Há posições pendentes de conferência."),
+            indicador(subtotalResultado, resultadosConhecidos, resultadosDesconhecidos, resultadoCompleto,
+                resultadoParcialConhecido, "Há operações ou parcelas sem resultado calculável."),
+            indicador(subtotalTaxas, taxasConhecidas, taxasDesconhecidas, taxasCompletas,
+                subtotalTaxasGrupos.signum() != 0,
+                "Há operações com taxas sem valor ou informação suficiente."),
+            capital));
   }
 
   private static boolean semClassificacao(ItemConferenciaLivro item) {
-    return !item.ajuste() && item.operacao() == null && item.transferenciaRef() == null;
+    return !item.ajuste() && !item.creditoAutomatico() && item.operacao() == null
+        && item.transferenciaRef() == null;
+  }
+
+  private static boolean negociacao(FatoLivro fato) {
+    return fato.tipo() == TipoOperacao.COMPRA || fato.tipo() == TipoOperacao.VENDA;
+  }
+
+  private static boolean resultadoCalculavel(CalculoOperacao calculo) {
+    return calculo != null && calculo.resultadoTotalBrl() != null;
+  }
+
+  private static java.util.stream.Stream<BigDecimal> valores(ParcelaResultadoAtivo p) {
+    return java.util.stream.Stream.of(p.negociacao(), p.moeda(), p.taxa());
+  }
+
+  private static BigDecimal subtotalParcela(ParcelaResultadoAtivo parcela) {
+    return valores(parcela).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+  }
+
+  private static boolean temResultadoConhecido(ParcelaResultadoAtivo parcela) {
+    return valores(parcela).allMatch(Objects::nonNull)
+        || valores(parcela).anyMatch(v -> v != null && v.signum() != 0);
+  }
+
+  private static CoberturaIndicadorResponse indicador(BigDecimal subtotal, long conhecidos,
+      long desconhecidos, boolean completo, boolean parcelaConhecida, String motivo) {
+    boolean temValor = completo || conhecidos > 0 || parcelaConhecida;
+    return new CoberturaIndicadorResponse(temValor ? numero(subtotal) : null,
+        completo ? EstadoAgregadoVisaoGeral.COMPLETO
+            : temValor ? EstadoAgregadoVisaoGeral.PARCIAL : EstadoAgregadoVisaoGeral.INDISPONIVEL,
+        conhecidos, desconhecidos, completo ? null : motivo);
+  }
+
+  private static List<GrupoEmConferencia> gruposPendentes(RetratoConferencia retrato,
+      PeriodoVisaoGeral periodo) {
+    Set<String> gruposCalculados = retrato.itens().stream().filter(i -> i.operacao() != null)
+        .map(ItemConferenciaLivro::id).collect(Collectors.toSet());
+    return retrato.gruposAplicados().stream()
+        .filter(g -> !g.proposta().desfazer() && g.resumo().natureza() != null)
+        .filter(g -> !gruposCalculados.contains(g.identificador()))
+        .filter(g -> dataGrupo(g).filter(periodo::contem).isPresent())
+        .toList();
+  }
+
+  private static Optional<java.time.Instant> dataGrupo(GrupoEmConferencia grupo) {
+    return grupo.proposta().linhas().stream().map(LinhaAssociacao::data).min(Comparator.naturalOrder());
+  }
+
+  private static boolean taxasDoGrupoCompletas(GrupoEmConferencia grupo) {
+    var taxas = grupo.resumo().taxas();
+    return taxas.isEmpty() ? grupo.proposta().taxaZeroConfirmada()
+        : taxas.stream().allMatch(t -> "fiat:BRL".equals(t.codigo()));
+  }
+
+  public static Set<String> linhasAgrupadas(RetratoConferencia retrato) {
+    return retrato.gruposAplicados().stream()
+        .filter(g -> !g.proposta().desfazer() && g.resumo().natureza() != null)
+        .flatMap(g -> g.proposta().linhas().stream()).map(l -> "registro:" + l.registroId())
+        .collect(Collectors.toSet());
+  }
+
+  public static boolean capitalIndeterminado(ItemConferenciaLivro item, Set<String> linhasAgrupadas) {
+    return semClassificacao(item) && !linhasAgrupadas.contains(idOrigem(item.id()));
+  }
+
+  private static String idOrigem(String id) {
+    int separador = id.indexOf(':', "registro:".length());
+    return id.startsWith("registro:") && separador >= 0 ? id.substring(0, separador) : id;
+  }
+
+  private static CoberturaIndicadorResponse capitalLiquido(RetratoConferencia retrato,
+      PeriodoVisaoGeral periodo, Set<String> linhasAgrupadas) {
+    List<BigDecimal> conhecidos = retrato.itens().stream()
+        .filter(i -> i.ocorridaEm() != null && periodo.contem(i.ocorridaEm()))
+        .map(ItemConferenciaLivro::operacao).filter(Objects::nonNull)
+        .map(FatoLivro::fluxoExternoBrl).filter(Objects::nonNull).toList();
+    long desconhecidos = retrato.itens().stream()
+        .filter(i -> i.ocorridaEm() != null && periodo.contem(i.ocorridaEm()))
+        .filter(i -> capitalIndeterminado(i, linhasAgrupadas)).count()
+        + (retrato.incertezaSemData() || (retrato.primeiraDataPendente() != null
+            && !retrato.primeiraDataPendente().isAfter(periodo.fim())) ? 1 : 0);
+    return indicador(conhecidos.stream().reduce(BigDecimal.ZERO, BigDecimal::add),
+        conhecidos.size(), desconhecidos, desconhecidos == 0, false,
+        "Há movimentações cuja origem ou destino externo ainda não foi identificado.");
   }
 
   private static BigDecimal subtotal(
@@ -181,6 +292,10 @@ public final class VisaoGeralConferenciaMapper {
                 p.quantidadeDisponivel(),
                 p.comAjustes(),
                 p.causas()))
+        .sorted(Comparator
+            .comparing((PosicaoVisaoGeralResponse p) -> p.custoTotalBrl() == null
+                ? null : new BigDecimal(p.custoTotalBrl()), Comparator.nullsLast(Comparator.reverseOrder()))
+            .thenComparing(PosicaoVisaoGeralResponse::ativoTicker))
         .toList();
   }
 
@@ -195,11 +310,12 @@ public final class VisaoGeralConferenciaMapper {
   }
 
   private static List<ResultadoMensalResponse> meses(
-      List<ResultadoMensal> calculaveis,
       RetratoConferencia retrato,
       List<FatoLivro> fatos,
       Map<Long, CalculoOperacao> calculos,
-      PeriodoVisaoGeral periodo) {
+      Map<Long, List<ParcelaResultadoAtivo>> parcelasPorFato,
+      PeriodoVisaoGeral periodo, Map<YearMonth, Long> quantidades,
+      List<GrupoEmConferencia> gruposPendentes, Set<String> linhasAgrupadas) {
     Set<YearMonth> incompletos = new HashSet<>();
     fatos.stream()
         .filter(
@@ -207,32 +323,44 @@ public final class VisaoGeralConferenciaMapper {
         .map(f -> mes(f.ocorridaEm()))
         .forEach(incompletos::add);
     retrato.itens().stream()
-        .filter(VisaoGeralConferenciaMapper::semClassificacao)
+        .filter(i -> capitalIndeterminado(i, linhasAgrupadas))
         .filter(i -> periodo.contem(i.ocorridaEm()))
         .map(i -> mes(i.ocorridaEm()))
         .forEach(incompletos::add);
-    Map<YearMonth, Long> quantidades =
-        fatos.stream()
-            .collect(Collectors.groupingBy(f -> mes(f.ocorridaEm()), Collectors.counting()));
+    gruposPendentes.forEach(g -> dataGrupo(g).ifPresent(data -> incompletos.add(mes(data))));
     boolean acumuladoCompleto = !retrato.incertezaSemData();
     List<ResultadoMensalResponse> resultado = new ArrayList<>();
-    for (ResultadoMensal m : calculaveis) {
-      boolean mesCompleto =
-          !retrato.incertezaSemData()
-              && (retrato.primeiraDataPendente() == null
-                  || YearMonth.from(m.dataInicio())
-                      .isBefore(YearMonth.from(retrato.primeiraDataPendente())))
-              && !incompletos.contains(YearMonth.from(m.dataInicio()));
+    Map<YearMonth, BigDecimal> conhecidos = new HashMap<>();
+    Set<YearMonth> mesesComParcela = new HashSet<>();
+    for (FatoLivro fato : fatos)
+      if (negociacao(fato)) {
+        var parcelas = parcelasPorFato.get(fato.id());
+        YearMonth mes = mes(fato.ocorridaEm());
+        if (resultadoCalculavel(calculos.get(fato.id()))
+            || parcelas.stream().anyMatch(VisaoGeralConferenciaMapper::temResultadoConhecido))
+          mesesComParcela.add(mes);
+        conhecidos.merge(mes, parcelas.stream().map(VisaoGeralConferenciaMapper::subtotalParcela)
+            .reduce(BigDecimal.ZERO, BigDecimal::add), BigDecimal::add);
+      }
+    BigDecimal acumulado = BigDecimal.ZERO;
+    boolean temAcumuladoConhecido = false;
+    for (YearMonth mes = YearMonth.from(periodo.inicio()); !mes.isAfter(YearMonth.from(periodo.fim()));
+        mes = mes.plusMonths(1)) {
+      LocalDate inicio = mes.atDay(1).isBefore(periodo.inicio()) ? periodo.inicio() : mes.atDay(1);
+      LocalDate fim = mes.atEndOfMonth().isAfter(periodo.fim()) ? periodo.fim() : mes.atEndOfMonth();
+      boolean mesCompleto = !retrato.incertezaSemData()
+          && (retrato.primeiraDataPendente() == null
+              || mes.isBefore(YearMonth.from(retrato.primeiraDataPendente())))
+          && !incompletos.contains(mes);
       acumuladoCompleto &= mesCompleto;
-      resultado.add(
-          new ResultadoMensalResponse(
-              m.dataInicio(),
-              m.dataFim(),
-              mesCompleto ? numero(m.resultadoBrl()) : null,
-              acumuladoCompleto ? numero(m.acumuladoBrl()) : null,
-              quantidades.getOrDefault(YearMonth.from(m.dataInicio()), 0L),
-              numero(m.resultadoBrl()),
-              numero(m.acumuladoBrl())));
+      BigDecimal conhecido = conhecidos.getOrDefault(mes, BigDecimal.ZERO);
+      acumulado = acumulado.add(conhecido);
+      boolean temMesConhecido = mesCompleto || mesesComParcela.contains(mes);
+      temAcumuladoConhecido |= temMesConhecido;
+      resultado.add(new ResultadoMensalResponse(inicio, fim,
+          mesCompleto ? numero(conhecido) : null, acumuladoCompleto ? numero(acumulado) : null,
+          quantidades.getOrDefault(mes, 0L), temMesConhecido ? numero(conhecido) : null,
+          temAcumuladoConhecido ? numero(acumulado) : null));
     }
     return List.copyOf(resultado);
   }
@@ -242,56 +370,50 @@ public final class VisaoGeralConferenciaMapper {
   }
 
   private static List<ResultadoAtivoResponse> resultados(
-      List<FatoLivro> fatos,
-      Map<Long, CalculoOperacao> calculos,
-      RetratoConferencia retrato,
-      Map<Long, String> codigos) {
-    Map<Long, List<CalculoOperacao>> porAtivo = new HashMap<>();
-    Map<Long, List<CalculoOperacao>> moedas = new HashMap<>();
-    for (FatoLivro fato : fatos) {
-      if (fato.tipo() == TipoOperacao.VENDA)
-        porAtivo
-            .computeIfAbsent(fato.ativoId(), ignorado -> new ArrayList<>())
-            .add(calculos.get(fato.id()));
-      else if (fato.tipo() == TipoOperacao.COMPRA
-          && !"fiat:BRL".equals(codigos.get(fato.moedaCotacaoId())))
-        moedas
-            .computeIfAbsent(fato.moedaCotacaoId(), ignorado -> new ArrayList<>())
-            .add(calculos.get(fato.id()));
-    }
-    Set<Long> ids = new TreeSet<>(porAtivo.keySet());
-    ids.addAll(moedas.keySet());
+      Map<Long, List<ParcelaResultadoAtivo>> parcelasPorFato, RetratoConferencia retrato,
+      PeriodoVisaoGeral periodo) {
+    Map<Long, List<ParcelaResultadoAtivo>> porAtivo = parcelasPorFato.values().stream()
+        .flatMap(List::stream).collect(Collectors.groupingBy(ParcelaResultadoAtivo::ativoId));
     List<ResultadoAtivoResponse> resultados = new ArrayList<>();
-    for (Long id : ids) {
-      List<CalculoOperacao> vendas = porAtivo.getOrDefault(id, List.of());
-      List<CalculoOperacao> compras = moedas.getOrDefault(id, List.of());
-      List<CalculoOperacao> todos = new ArrayList<>(vendas);
-      todos.addAll(compras);
+    for (var entrada : porAtivo.entrySet()) {
+      Long id = entrada.getKey();
+      List<ParcelaResultadoAtivo> parcelas = entrada.getValue();
       var ativo = retrato.ativos().get(id);
       boolean incompleto =
-          !retrato.quantidadesCompletas()
-              || retrato.itens().stream()
-                  .anyMatch(i -> semClassificacao(i) && i.ativoId().equals(id));
+          retrato.incertezaSemData() || retrato.itens().stream()
+              .anyMatch(i -> semClassificacao(i) && i.ativoId().equals(id) && periodo.contem(i.ocorridaEm()));
+      BigDecimal negociacao = totalParcelas(parcelas, ParcelaResultadoAtivo::negociacao, incompleto);
+      BigDecimal moeda = totalParcelas(parcelas, ParcelaResultadoAtivo::moeda, incompleto);
+      BigDecimal taxa = totalParcelas(parcelas, ParcelaResultadoAtivo::taxa, incompleto);
+      BigDecimal total = negociacao == null || moeda == null || taxa == null
+          ? null : negociacao.add(moeda).add(taxa);
+      BigDecimal conhecido = parcelas.stream().map(VisaoGeralConferenciaMapper::subtotalParcela)
+          .reduce(BigDecimal.ZERO, BigDecimal::add);
+      boolean temConhecido = total != null
+          || parcelas.stream().anyMatch(VisaoGeralConferenciaMapper::temResultadoConhecido);
       resultados.add(
           new ResultadoAtivoResponse(
               id.toString(),
               ativo.ticker(),
               ativo.nome(),
-              numero(total(vendas, CalculoOperacao::resultadoNegociacaoBrl, incompleto)),
-              numero(total(compras, CalculoOperacao::resultadoMoedaBrl, incompleto)),
-              numero(total(todos, CalculoOperacao::resultadoTaxaBrl, incompleto)),
-              numero(total(todos, CalculoOperacao::resultadoTotalBrl, incompleto)),
-              numero(subtotal(todos, CalculoOperacao::resultadoTotalBrl))));
+              numero(negociacao), numero(moeda), numero(taxa), numero(total),
+              temConhecido ? numero(conhecido) : null));
     }
     return resultados.stream()
         .sorted(
             Comparator.comparing(
-                    ResultadoAtivoResponse::resultadoTotalBrl,
-                    Comparator.nullsLast(
-                        Comparator.comparing((String valor) -> new BigDecimal(valor)).reversed()))
+                    (ResultadoAtivoResponse r) -> r.subtotalResultadoBrl() == null
+                        ? null : new BigDecimal(r.subtotalResultadoBrl()).abs(),
+                    Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(ResultadoAtivoResponse::ativoTicker)
                 .thenComparing(ResultadoAtivoResponse::ativoId))
         .toList();
+  }
+
+  private static BigDecimal totalParcelas(List<ParcelaResultadoAtivo> parcelas,
+      Function<ParcelaResultadoAtivo, BigDecimal> campo, boolean incompleto) {
+    if (incompleto || parcelas.stream().map(campo).anyMatch(Objects::isNull)) return null;
+    return parcelas.stream().map(campo).reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   private static String numero(BigDecimal valor) {

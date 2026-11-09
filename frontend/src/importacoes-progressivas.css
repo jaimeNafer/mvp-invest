@@ -1,0 +1,99 @@
+.importacoes-progressivas {
+  display: grid;
+  gap: 20px;
+  padding-top: 24px;
+}
+
+.importacoes-progressivas > .intro {
+  margin: 0;
+  padding: 0;
+}
+
+.importacoes-progressivas > .intro h1 {
+  font-size: clamp(1.65rem, 3vw, 2rem);
+  margin: 0 0 6px;
+}
+
+.importacoes-progressivas > .operations-panel h2,
+.importacoes-progressivas > .intro .intro-text {
+  margin: 0;
+}
+
+.importacoes-progressivas > .intro .eyebrow {
+  margin-bottom: 8px;
+}
+
+.importacoes-progressivas > .operations-panel {
+  margin: 0;
+  padding: 18px;
+}
+
+.importacao-requisito,
+.importacao-arquivos li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+.importacao-requisito p,
+.importacao-arquivos p {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+}
+
+.importacao-contexto {
+  display: grid;
+  gap: 14px;
+}
+
+.importacao-contexto > p {
+  margin: 0;
+}
+
+.importacao-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.importacao-contexto .importacao-campos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.importacao-arquivos {
+  padding: 0;
+  margin: 10px 0 0;
+  list-style: none;
+}
+
+.importacao-arquivos li {
+  padding: 12px 0;
+  border-top: 1px solid #dbe4e8;
+}
+
+.importacao-arquivos li:last-child {
+  padding-bottom: 0;
+}
+
+.importacao-arquivos strong {
+  overflow-wrap: anywhere;
+}
+
+.importacao-arquivos button,
+.importacao-requisito button {
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .importacao-contexto .importacao-campos {
+    grid-template-columns: 1fr;
+  }
+
+  .importacao-arquivos li,
+  .importacao-requisito {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

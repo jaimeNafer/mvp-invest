@@ -60,7 +60,7 @@ public class Importacao {
   @Getter
   private int reconhecidos;
 
-  @OneToMany(mappedBy = "importacao", cascade = CascadeType.PERSIST)
+  @OneToMany(mappedBy = "importacao", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
   @OrderBy("linha ASC, id ASC")
   private List<EventoImportado> eventos = new ArrayList<>();
 

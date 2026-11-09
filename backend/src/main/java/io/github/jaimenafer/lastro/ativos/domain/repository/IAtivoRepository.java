@@ -11,5 +11,7 @@ public interface IAtivoRepository {
 
   Optional<Ativo> findByCodigo(String codigo);
 
+  Ativo identificarNaBinance(String simbolo);
+
   List<Ativo> findAllByIdIn(java.util.Collection<Long> ids);
 }

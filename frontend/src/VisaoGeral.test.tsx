@@ -91,9 +91,17 @@ const dados = {
   ],
 };
 
-const resposta = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
+const resposta = (body: unknown) => {
+  const response = new Response(JSON.stringify(body), { status: 200 });
+  Object.defineProperty(response, "json", { value: async () => body });
+  return response;
+};
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  window.history.replaceState(null, "", "/");
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe("Visão geral", () => {
   it("apresenta resultado mensal e por ativo sem confundir com composição a custo", async () => {
@@ -118,6 +126,110 @@ describe("Visão geral", () => {
     expect(
       screen.getByText("Distribuição pelo custo de aquisição, sem cotação de mercado."),
     ).toBeVisible();
+  });
+
+  it("apresenta subtotais parciais sem duplicar o resumo do período", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        resposta({
+          ...dados,
+          disponibilidade: {
+            custo: {
+              valorConhecido: "900.50",
+              status: "PARCIAL",
+              componentesConhecidos: 2,
+              componentesDesconhecidos: 1,
+              motivo: "Um custo não foi identificado.",
+            },
+            resultado: {
+              valorConhecido: "-12.25",
+              status: "PARCIAL",
+              componentesConhecidos: 3,
+              componentesDesconhecidos: 2,
+              motivo: null,
+            },
+            taxas: {
+              valorConhecido: "4.10",
+              status: "COMPLETO",
+              componentesConhecidos: 2,
+              componentesDesconhecidos: 0,
+              motivo: null,
+            },
+            aportesLiquidos: {
+              valorConhecido: null,
+              status: "INDISPONIVEL",
+              componentesConhecidos: 0,
+              componentesDesconhecidos: 1,
+              motivo: "Aportes não calculáveis.",
+            },
+          },
+          posicoes: [
+            { ...dados.posicoes[0], custoTotalBrl: "900.50", participacaoPercentual: "100" },
+            {
+              ...dados.posicoes[0],
+              ativoId: "3",
+              ativoTicker: "ETH",
+              custoTotalBrl: null,
+              participacaoPercentual: null,
+            },
+          ],
+        }),
+      ),
+    );
+    render(<Home usuario={usuario} onLogout={vi.fn()} />);
+    expect((await screen.findAllByText("R$ 900,50")).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("1 componente desconhecido · Um custo não foi identificado."),
+    ).toBeVisible();
+    expect(screen.getByText("2 componentes desconhecidos")).toBeVisible();
+    expect(screen.getByText("Aportes não calculáveis.")).toBeVisible();
+    expect(screen.getByText(/Distribuição da parcela com custo identificado/)).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Resultado do período" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Totais incompletos/)).not.toBeInTheDocument();
+  });
+
+  it("atualiza visão geral e patrimônio quando o marcador global muda", async () => {
+    vi.useFakeTimers();
+    let marcadorConsultado = 0;
+    const fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/conciliacao/cotacoes/atualizacao")) {
+        marcadorConsultado += 1;
+        return Promise.resolve(
+          resposta({ atualizadaEm: marcadorConsultado === 1 ? null : "2026-10-07T12:00:00Z" }),
+        );
+      }
+      if (url.includes("patrimonio-diario")) return Promise.resolve(resposta([]));
+      return Promise.resolve(resposta(dados));
+    });
+    vi.stubGlobal("fetch", fetch);
+
+    render(<Home usuario={usuario} onLogout={vi.fn()} />);
+
+    await act(async () => {
+      for (let indice = 0; indice < 12; indice += 1) await Promise.resolve();
+    });
+
+    expect(screen.getByText("R$ 1.048,00")).toBeVisible();
+    const consultasPrincipais = () =>
+      fetch.mock.calls.filter(
+        ([url]) => String(url).includes("/visao-geral") && !String(url).includes("patrimonio"),
+      ).length;
+    expect(consultasPrincipais()).toBe(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+      for (let indice = 0; indice < 12; indice += 1) await Promise.resolve();
+    });
+
+    expect(
+      screen.getByText("Novas cotações carregadas; os cálculos foram atualizados."),
+    ).toBeVisible();
+    expect(consultasPrincipais()).toBe(2);
+    expect(
+      fetch.mock.calls.filter(([url]) => String(url).includes("patrimonio-diario")).length,
+    ).toBe(0);
+    vi.useRealTimers();
   });
 
   it("consulta avisos somente ao abrir e não os apresenta como erros", async () => {
@@ -153,7 +265,7 @@ describe("Visão geral", () => {
 
     await screen.findByText("R$ 1.048,00");
 
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls.some(([url]) => String(url).includes("/avisos"))).toBe(false);
 
     fireEvent.click(
       screen.getByRole("button", { name: /1 saldo inicial com custo zero declarado/ }),
@@ -163,7 +275,7 @@ describe("Visão geral", () => {
 
     expect(screen.getByText(/não comprovam erros/)).toBeVisible();
 
-    expect(fetch.mock.calls[1][0]).toBe(
+    expect(fetch.mock.calls.find(([url]) => String(url).includes("/avisos"))?.[0]).toBe(
       "/api/v1/visao-geral/avisos?dataFim=2026-10-06&tipo=CUSTO_ZERO_DECLARADO&pagina=0&tamanho=10",
     );
   });
@@ -242,26 +354,30 @@ describe("Visão geral", () => {
     vi.stubGlobal(
       "fetch",
 
-      vi.fn().mockResolvedValue(
-        resposta({
-          ...dados,
+      vi.fn((url: string) =>
+        Promise.resolve(
+          url.endsWith("/carteiras")
+            ? resposta([])
+            : resposta({
+                ...dados,
 
-          possuiRegistrosAteFim: false,
+                possuiRegistrosAteFim: false,
 
-          posicoes: [],
+                posicoes: [],
 
-          resumo: {
-            custoSaldosBrl: "0",
+                resumo: {
+                  custoSaldosBrl: "0",
 
-            resultadoRealizadoBrl: "0",
+                  resultadoRealizadoBrl: "0",
 
-            taxasBrl: "0",
+                  taxasBrl: "0",
 
-            aportesBrl: "0",
+                  aportesBrl: "0",
 
-            operacoesNoPeriodo: 0,
-          },
-        }),
+                  operacoesNoPeriodo: 0,
+                },
+              }),
+        ),
       ),
     );
 
@@ -273,7 +389,7 @@ describe("Visão geral", () => {
       ),
     ).toBeVisible();
 
-    expect(screen.getByRole("button", { name: "Ir para operações" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "Criar carteira" })).toBeEnabled();
 
     expect(screen.queryByRole("heading", { name: "Composição a custo" })).not.toBeInTheDocument();
 
@@ -281,19 +397,19 @@ describe("Visão geral", () => {
   });
 
   it("preserva filtros após rejeição e informa cobertura anterior", async () => {
-    const fetch = vi
-
-      .fn()
-
-      .mockResolvedValueOnce(resposta({ ...dados, dataInicio: "2026-10-01" }))
-
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ detail: "A data inicial não pode ser posterior à data final." }),
-
-          { status: 400 },
-        ),
-      );
+    const fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes("patrimonio-diario")) return Promise.resolve(resposta([]));
+      if ((init?.signal as AbortSignal | undefined)?.aborted)
+        return Promise.resolve(resposta(dados));
+      if (url.includes("dataInicio=2026-10-07"))
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ detail: "A data inicial não pode ser posterior à data final." }),
+            { status: 400 },
+          ),
+        );
+      return Promise.resolve(resposta({ ...dados, dataInicio: "2026-10-01" }));
+    });
 
     vi.stubGlobal("fetch", fetch);
 
@@ -313,7 +429,7 @@ describe("Visão geral", () => {
 
     expect(screen.getByLabelText("Até")).toHaveValue("2026-10-06");
 
-    expect(screen.queryByText("R$ 1.048,00")).not.toBeInTheDocument();
+    expect(screen.getByText("R$ 1.048,00")).toBeVisible();
   });
 
   it("abre após login e apresenta consolidação e custódia expansível", async () => {
@@ -345,11 +461,33 @@ describe("Visão geral", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Meu perfil" }));
 
-    expect(screen.getByRole("heading", { name: "Olá, Teste." })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Meu perfil" })).toBeVisible();
   });
 
   it("aplica o período somente ao enviar os filtros", async () => {
-    const fetch = vi.fn().mockImplementation(() => Promise.resolve(resposta(dados)));
+    const patrimonio = [
+      {
+        data: "2026-10-05",
+        valorTotalBrl: null,
+        valorConhecidoBrl: "950",
+        ativosComPreco: 1,
+        ativosSemPreco: 1,
+        quantidadesCompletas: true,
+      },
+      {
+        data: "2026-10-06",
+        valorTotalBrl: "1100.25",
+        valorConhecidoBrl: "1100.25",
+        ativosComPreco: 2,
+        ativosSemPreco: 0,
+        quantidadesCompletas: true,
+      },
+    ];
+    const fetch = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        Promise.resolve(resposta(url.includes("patrimonio-diario") ? patrimonio : dados)),
+      );
 
     vi.stubGlobal("fetch", fetch);
 
@@ -359,25 +497,75 @@ describe("Visão geral", () => {
 
     fireEvent.change(screen.getByLabelText("De"), { target: { value: "2026-10-01" } });
 
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(screen.getByText("Evolução diária do patrimônio")).toBeVisible();
+    expect(
+      fetch.mock.calls.filter(([url]) => String(url).includes("patrimonio-diario")),
+    ).toHaveLength(0);
+    fireEvent.click(screen.getByText("Evolução diária do patrimônio"));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(4));
+    expect(fetch.mock.calls.find(([url]) => String(url).includes("patrimonio-diario"))?.[0]).toBe(
+      "/api/v1/visao-geral/patrimonio-diario?dataInicio=2026-10-05&dataFim=2026-10-06",
+    );
+    expect(screen.getByText("Valor total indisponível")).toBeVisible();
+    expect(screen.getByText("R$ 950,00")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 
-    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(5));
 
-    expect(fetch.mock.calls[1][0]).toBe(
-      "/api/v1/visao-geral?dataInicio=2026-10-01&dataFim=2026-10-06",
+    expect(
+      fetch.mock.calls.find(
+        ([url]) => String(url).includes("/visao-geral?") && !String(url).includes("patrimonio"),
+      )?.[0],
+    ).toBe("/api/v1/visao-geral?dataInicio=2026-10-01&dataFim=2026-10-06");
+    expect(
+      fetch.mock.calls.filter(([url]) => String(url).includes("patrimonio-diario")),
+    ).toHaveLength(1);
+  });
+
+  it("limita a consulta patrimonial a um ano e permite tentar novamente após falha", async () => {
+    const dadosLongos = { ...dados, dataInicio: "2020-01-01", dataFim: "2026-10-06" };
+    const fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("patrimonio-diario"))
+        return fetch.mock.calls.filter(([chamada]) => String(chamada).includes("patrimonio-diario"))
+          .length === 1
+          ? Promise.resolve(
+              new Response(JSON.stringify({ detail: "Falha ao consultar" }), { status: 503 }),
+            )
+          : Promise.resolve(resposta([]));
+      if (url.includes("/conciliacao/cotacoes/atualizacao"))
+        return Promise.resolve(resposta({ atualizadaEm: null }));
+      return Promise.resolve(resposta(dadosLongos));
+    });
+    vi.stubGlobal("fetch", fetch);
+    render(<Home usuario={usuario} onLogout={vi.fn()} />);
+    await screen.findByText("R$ 1.048,00");
+    fireEvent.click(screen.getByText("Evolução diária do patrimônio"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Falha ao consultar");
+    expect(fetch.mock.calls.find(([url]) => String(url).includes("patrimonio-diario"))?.[0]).toBe(
+      "/api/v1/visao-geral/patrimonio-diario?dataInicio=2025-10-06&dataFim=2026-10-06",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
+    await waitFor(() =>
+      expect(
+        fetch.mock.calls.filter(([url]) => String(url).includes("patrimonio-diario")),
+      ).toHaveLength(2),
     );
   });
 
   it("exibe erro com nova tentativa sem fabricar indicadores", async () => {
-    const fetch = vi
-
-      .fn()
-
-      .mockRejectedValueOnce(new Error("offline"))
-
-      .mockImplementation(() => Promise.resolve(resposta(dados)));
+    let falharResumo = true;
+    const fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith("/carteiras")) return Promise.resolve(resposta([]));
+      if (url.includes("/conciliacao/cotacoes/atualizacao"))
+        return Promise.resolve(resposta({ atualizadaEm: null }));
+      if (falharResumo) {
+        falharResumo = false;
+        return Promise.reject(new Error("offline"));
+      }
+      return Promise.resolve(resposta(dados));
+    });
 
     vi.stubGlobal("fetch", fetch);
 

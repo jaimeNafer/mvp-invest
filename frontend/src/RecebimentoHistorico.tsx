@@ -6,10 +6,12 @@ import type { Recebimento } from "./services/conciliacao";
 export default function RecebimentoHistorico({
   disabled,
   onRecebido,
+  onArquivoRecebido,
   onBloqueio,
 }: {
   disabled: boolean;
   onRecebido: () => Promise<void>;
+  onArquivoRecebido?: (arquivos: { id: string; nomeArquivo: string }[]) => void;
   onBloqueio: (valor: boolean) => void;
 }) {
   const [arquivos, setArquivos] = useState<File[]>([]);
@@ -35,6 +37,13 @@ export default function RecebimentoHistorico({
       });
       setIncerto(false);
       onBloqueio(false);
+      onArquivoRecebido?.(
+        resposta.arquivos.flatMap((arquivo) =>
+          arquivo.id && /^\d+$/.test(arquivo.id)
+            ? [{ id: arquivo.id, nomeArquivo: arquivo.nomeArquivo }]
+            : [],
+        ),
+      );
       await onRecebido();
     } catch (falha) {
       const incerta = !(falha instanceof ErroHttp) || falha.status >= 500;

@@ -47,7 +47,8 @@ final class LeitorPlanilhaMovimentacoes {
     boolean fusoIdentificado = false;
     for (var row : sheet) {
       Map<Integer, String> valores = valores((XSSFRow) row);
-      if (valores.values().stream().allMatch(String::isBlank)) continue;
+      if (valores.values().stream().allMatch(String::isBlank)
+          || ValoresMovimentacao.mensagemSemResultados(valores.values())) continue;
       if (colunas.isEmpty()) {
         fusoIdentificado |=
             valores.values().stream()

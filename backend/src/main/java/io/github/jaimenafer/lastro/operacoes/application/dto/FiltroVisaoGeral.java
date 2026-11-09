@@ -1,6 +1,7 @@
 package io.github.jaimenafer.lastro.operacoes.application.dto;
 
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 
 public record FiltroVisaoGeral(
     @Pattern(
@@ -10,4 +11,5 @@ public record FiltroVisaoGeral(
     @Pattern(
             regexp = "\\d{4}-\\d{2}-\\d{2}",
             message = "Informe a data final no formato AAAA-MM-DD.")
-        String dataFim) {}
+        String dataFim,
+    @Positive Long carteiraId) {}

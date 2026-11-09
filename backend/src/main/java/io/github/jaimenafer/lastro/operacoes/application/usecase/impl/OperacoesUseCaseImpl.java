@@ -6,6 +6,7 @@ import io.github.jaimenafer.lastro.carteiras.application.contract.IConsultaCarte
 import io.github.jaimenafer.lastro.instituicoes.application.contract.*;
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
 import io.github.jaimenafer.lastro.operacoes.application.mapper.*;
+import io.github.jaimenafer.lastro.operacoes.application.port.IConsultaConferencia;
 import io.github.jaimenafer.lastro.operacoes.application.usecase.IOperacoesUseCase;
 import io.github.jaimenafer.lastro.operacoes.domain.exception.*;
 import io.github.jaimenafer.lastro.operacoes.domain.model.*;
@@ -28,6 +29,7 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
   private final IConsultaInstituicoes instituicoes;
   private final IConsultaCarteiras carteiras;
   private final IUsuarioAtual usuario;
+  private final IConsultaConferencia consultaConferencia;
   private final io.github.jaimenafer.lastro.operacoes.application.port.IConsultaLivroConferencia
       conferencia;
   private static final ZoneId FUSO = ZoneId.of("America/Fortaleza");
@@ -47,14 +49,7 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
     SituacaoOperacao situacaoSelecionada = SaldoInicialMapper.situacaoDoFiltro(situacao);
     if (instituicaoId != null) ValidacaoSaldoInicial.idValido(instituicaoId);
     if (ativoId != null) ValidacaoSaldoInicial.idValido(ativoId);
-    Set<Long> selecionadas = null;
-    if (carteiraIds != null && !carteiraIds.isEmpty()) {
-      carteiraIds.forEach(ValidacaoSaldoInicial::idValido);
-      selecionadas =
-          carteiras
-              .instituicoesVinculadas(carteiraIds)
-              .orElseThrow(() -> new OperacaoNaoEncontradaException("Carteira não encontrada."));
-    }
+    Set<Long> selecionadas = instituicoesDaCarteira(carteiraIds);
     var ponto = pontos.findById(usuario.id());
     var historico = operacoes.historico(usuario.id());
     var ativosPorId = carregarAtivos(historico);
@@ -91,6 +86,70 @@ public class OperacoesUseCaseImpl implements IOperacoesUseCase {
         tamanho,
         Long.toString(ponto.map(PontoPartida::getRevisao).orElse(0L)),
         ponto.map(PontoPartida::getDataReferencia).orElse(null));
+  }
+
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+  public HistoricoOperacoesResponse historico(FiltroHistoricoOperacoes filtro) {
+    Set<Long> selecionadas = instituicoesDaCarteira(filtro.carteiraIds());
+    SituacaoOperacao situacao = filtro.situacao() == null
+        ? SituacaoOperacao.CONFIRMADA : SaldoInicialMapper.situacaoDoFiltro(filtro.situacao());
+    List<ItemHistoricoOperacaoResponse> itens = new ArrayList<>();
+    if (filtro.arquivoId() == null) {
+      List<Operacao> historico = operacoes.historico(usuario.id());
+      var ativosPorId = carregarAtivos(historico);
+      var instituicoesPorId = carregarInstituicoes(historico);
+      var livro = LivroConferenciaMapper.livro(conferencia.carregar(null));
+      var calculos = livro.calculos().stream()
+          .collect(Collectors.toMap(CalculoOperacao::operacaoId, Function.identity()));
+      historico.stream()
+          .filter(o -> situacao == null || o.getSituacao() == situacao)
+          .filter(o -> corresponde(filtro.tipo(), o.getTipo().name()))
+          .filter(o -> corresponde(filtro.instituicaoId(), o.getInstituicaoId()))
+          .filter(o -> selecionadas == null || selecionadas.contains(o.getInstituicaoId()))
+          .filter(o -> filtro.ativoId() == null || filtro.ativoId().equals(o.getAtivoId())
+              || filtro.ativoId().equals(o.getMoedaCotacaoId())
+              || filtro.ativoId().equals(o.getTaxaAtivoId()))
+          .map(o -> new ItemHistoricoOperacaoResponse(
+              OperacoesMapper.de(o, calculos.get(o.getId()), ativosPorId, instituicoesPorId),
+              null, List.of()))
+          .forEach(itens::add);
+    }
+    if (situacao == null || situacao == SituacaoOperacao.CONFIRMADA) {
+      var importadas = consultaConferencia.registrosAplicados().stream()
+          .filter(r -> r.id().startsWith("registro:"))
+          .filter(r -> selecionadas == null || selecionadas.contains(Long.valueOf(r.instituicaoId())))
+          .filter(r -> corresponde(filtro.instituicaoId(), r.instituicaoId()))
+          .collect(Collectors.groupingBy(r -> r.chaveGrupo() == null ? r.id() : r.chaveGrupo(),
+              LinkedHashMap::new, Collectors.toList()));
+      for (var linhas : importadas.values()) {
+        RegistroTimelineResponse primeira = linhas.getFirst();
+        if (!corresponde(filtro.tipo(), primeira.natureza().name())) continue;
+        if (filtro.ativoId() != null && linhas.stream().noneMatch(l ->
+            corresponde(filtro.ativoId(), l.ativoId())
+                || corresponde(filtro.ativoId(), l.moedaCotacaoId())
+                || corresponde(filtro.ativoId(), l.taxaAtivoId()))) continue;
+        if (filtro.arquivoId() != null && linhas.stream().noneMatch(l ->
+            corresponde(filtro.arquivoId(), l.camposOriginais().get("Arquivo recebido")))) continue;
+        itens.add(new ItemHistoricoOperacaoResponse(null, primeira, List.copyOf(linhas)));
+      }
+    }
+    itens.sort(Comparator.comparing(ItemHistoricoOperacaoResponse::data,
+        Comparator.nullsLast(Comparator.reverseOrder())));
+    int pagina = filtro.paginaEfetiva(), tamanho = filtro.tamanhoEfetivo();
+    return new HistoricoOperacoesResponse(
+        itens.stream().skip((long) pagina * tamanho).limit(tamanho).toList(),
+        itens.size(), pagina, tamanho);
+  }
+
+  private Set<Long> instituicoesDaCarteira(List<Long> carteiraIds) {
+    if (carteiraIds == null || carteiraIds.isEmpty()) return null;
+    carteiraIds.forEach(ValidacaoSaldoInicial::idValido);
+    return carteiras.instituicoesVinculadas(carteiraIds)
+        .orElseThrow(() -> new OperacaoNaoEncontradaException("Carteira não encontrada."));
+  }
+
+  private boolean corresponde(Object filtro, Object valor) {
+    return filtro == null || filtro.toString().isBlank() || filtro.toString().equals(Objects.toString(valor));
   }
 
   @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)

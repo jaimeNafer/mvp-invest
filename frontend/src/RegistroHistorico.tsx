@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ConferenciaRegistroForm from "./ConferenciaRegistroForm";
+import ValoracaoHistorico from "./ValoracaoHistorico";
 import { classesEstados, nomesEstados } from "./services/conciliacao";
 import type {
   ContaCustodia,
@@ -29,7 +30,10 @@ export default function RegistroHistorico({
   ativos,
   onAbrir,
   onSalvar,
+  onSalvarValoracao,
   onRevisar,
+  onExcluirSaldoAnterior,
+  podeExcluirSaldoAnterior = false,
   onAssociar,
   emGrupo = false,
   associacao,
@@ -41,7 +45,10 @@ export default function RegistroHistorico({
   ativos: Ativo[];
   onAbrir: (aberto: boolean) => void;
   onSalvar: (dados: DadosConferencia, saldoAnterior: boolean) => void;
+  onSalvarValoracao?: (valorTotalBrl: string) => void | Promise<void>;
   onRevisar: () => void;
+  onExcluirSaldoAnterior?: () => void;
+  podeExcluirSaldoAnterior?: boolean;
   onAssociar: () => void;
   emGrupo?: boolean;
   associacao?: React.ReactNode;
@@ -147,6 +154,13 @@ export default function RegistroHistorico({
       </div>
       {aberto && (
         <div className="registro-detalhes">
+          {!emGrupo && registro.valoracao && (
+            <ValoracaoHistorico
+              valoracao={registro.valoracao}
+              disabled={disabled}
+              onSalvar={(valorTotalBrl) => onSalvarValoracao?.(valorTotalBrl)}
+            />
+          )}
           {registro.natureza === "CREDITO_AUTOMATICO" &&
             registro.subtipoCredito === "RENDIMENTO" && (
               <p>A disponibilidade para negociação depende das condições da instituição.</p>
@@ -303,6 +317,16 @@ export default function RegistroHistorico({
                   onClick={onRevisar}
                 >
                   Marcar como revisada por você
+                </button>
+              )}
+              {podeExcluirSaldoAnterior && (
+                <button
+                  className="secondary-button"
+                  disabled={disabled}
+                  type="button"
+                  onClick={onExcluirSaldoAnterior}
+                >
+                  Excluir saldo anterior
                 </button>
               )}
             </div>

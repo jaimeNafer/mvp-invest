@@ -26,14 +26,92 @@ public class RecebimentoConferencia implements IRecebimentoConferencia {
   private final IPontoPartidaRepository pontos;
   private final IOperacaoRepository operacoes;
   private final IRegistroConferenciaRepository registros;
+  private final IGrupoAssociacaoRepository grupos;
+  private final IAjusteConciliatorioRepository ajustes;
+  private final IComandoConciliacaoRepository comandos;
   private final IContaCustodiaRepository custodias;
   private final IConsultaAtivos ativos;
+  private final IDescobertaAtivos descobertaAtivos;
   private final IConsultaInstituicoes instituicoes;
   private static final ZoneId FUSO = ZoneId.of("America/Fortaleza");
 
   @Transactional(isolation = Isolation.READ_COMMITTED)
   public void bloquearHistorico() {
     bloquear();
+  }
+
+  @Transactional(isolation = Isolation.READ_COMMITTED)
+  public void excluirArquivo(String arquivoRef) {
+    PontoPartida ponto = bloquear();
+    List<RegistroConferencia> todos = registros.listar(usuario.id());
+    Set<Long> removidos = todos.stream()
+        .filter(r -> arquivoRef.equals(r.getArquivoRef()))
+        .map(RegistroConferencia::getId)
+        .collect(java.util.stream.Collectors.toSet());
+    excluirRegistros(ponto, todos, removidos);
+  }
+
+  @Transactional(isolation = Isolation.READ_COMMITTED)
+  public void excluirSaldoAnterior(String id, String revisao) {
+    PontoPartida ponto = bloquear();
+    if (!Long.toString(ponto.getRevisao()).equals(revisao))
+      throw new OperacaoConflitanteException(
+          "O histórico foi alterado. Atualize a conferência e tente novamente.");
+    RegistroConferencia registro = registros.buscar(usuario.id(), registroId(id));
+    OrigemRegistro origem = ConferenciaMapper.origem(registro);
+    if (!"MANUAL".equals(origem.origem())
+        || !"Saldo anterior declarado".equals(origem.operacao())
+        || registro.getArquivoRef() != null)
+      throw new OperacaoConflitanteException(
+          "Somente saldos anteriores declarados podem ser excluídos por esta ação.");
+    excluirRegistros(ponto, registros.listar(usuario.id()), Set.of(registro.getId()));
+  }
+
+  private void excluirRegistros(
+      PontoPartida ponto, List<RegistroConferencia> todos, Set<Long> removidos) {
+    Set<String> ancoras = new HashSet<>();
+    Set<String> numerosGruposRemovidos = new HashSet<>();
+    removidos.forEach(id -> ancoras.add("registro:" + id));
+    for (GrupoAssociacao grupo : grupos.listar(usuario.id())) {
+      List<PropostaGrupo> versoes = Arrays.asList(
+          grupo.getPropostaJson() == null ? null : ler(grupo.getPropostaJson(), PropostaGrupo.class),
+          grupo.getAplicadaJson() == null ? null : ler(grupo.getAplicadaJson(), PropostaGrupo.class));
+      PropostaGrupo proposta = versoes.get(0), aplicada = versoes.get(1);
+      boolean propostaAfetada = contemRegistros(proposta, removidos);
+      boolean aplicadaAfetada = contemRegistros(aplicada, removidos);
+      if (aplicadaAfetada || propostaAfetada && aplicada == null) {
+        numerosGruposRemovidos.add("OP-" + grupo.getId());
+        if (aplicada != null && !aplicada.linhas().isEmpty()) {
+          long primeira = aplicada.linhas().stream().mapToLong(LinhaAssociacao::registroId).min().orElseThrow();
+          ancoras.add("grupo:registro:" + primeira);
+          Set<Long> linhasGrupo = aplicada.linhas().stream().map(LinhaAssociacao::registroId)
+              .collect(java.util.stream.Collectors.toSet());
+          todos.stream().filter(r -> linhasGrupo.contains(r.getId()) && !removidos.contains(r.getId()))
+              .forEach(RegistroConferencia::retirarAplicacao);
+        }
+        grupos.excluir(grupo);
+      } else {
+        if (propostaAfetada) {
+          grupo.restaurarAplicada(usuario.id(), Instant.now());
+          grupos.sincronizarVinculos(grupo.getId(), aplicada.desfazer() ? List.of()
+              : aplicada.linhas().stream().map(LinhaAssociacao::registroId).distinct().sorted().toList());
+        }
+        grupo.removerHistorico(json -> ler(json, PropostaGrupo.class).linhas().stream()
+            .anyMatch(l -> removidos.contains(l.registroId())));
+      }
+    }
+    ajustes.listarAtivos(usuario.id()).stream()
+        .filter(a -> ancoras.contains(a.getAncoraRef()))
+        .forEach(a -> a.encerrar(Instant.now()));
+    comandos.excluirRespostasDeRegistros(usuario.id(), removidos.stream().map(id -> "registro:" + id).toList());
+    comandos.excluirRespostasDeGrupos(usuario.id(), numerosGruposRemovidos);
+    todos.stream().filter(r -> removidos.contains(r.getId())).forEach(registros::excluir);
+    registros.flush();
+    ponto.avancarRevisao(usuario.id(), Instant.now());
+  }
+
+  private boolean contemRegistros(PropostaGrupo grupo, Set<Long> ids) {
+    return grupo != null && grupo.linhas().stream().anyMatch(l -> ids.contains(l.registroId()));
   }
 
   public void validarReferenciasDisponiveis(List<String> referencias) {
@@ -120,9 +198,7 @@ public class RecebimentoConferencia implements IRecebimentoConferencia {
       Optional<AtivoResumo> ativo =
           porMoeda.computeIfAbsent(
               linha.moeda(),
-              k ->
-                  ativos.buscarPorCodigo(
-                      k.equals("BRL") || k.equals("USD") ? "fiat:" + k : "cripto:" + k));
+              descobertaAtivos::identificarNaBinance);
       BigDecimal quantidade = linha.quantidade();
       if (quantidade != null
           && (Math.max(0, quantidade.stripTrailingZeros().scale()) > 18

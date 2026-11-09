@@ -42,6 +42,7 @@ export type CandidatosAssociacaoResponse = {
   linhas: LinhaAssociacaoResponse[];
   grupo: GrupoAssociacaoResponse | null;
   avisos?: string[];
+  janelaMilissegundos?: number;
 };
 export type LinhaAssociacaoRequest = { id: string; versao: string; papel: PapelAssociacao };
 export type RequestAssociacao = {

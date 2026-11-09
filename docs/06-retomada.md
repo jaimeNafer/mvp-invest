@@ -1,3 +1,49 @@
+# Críticas de custo de créditos automáticos — 08/11/2026
+
+A conferência deixa de propagar como pendências obrigatórias os custos não valorados de recompensas, rendimentos e airdrops em operações posteriores. A rastreabilidade das origens e a indisponibilidade de custos e resultados sem dados continuam preservadas; causas distintas permanecem na conferência. O contrato foi atualizado em [Associação Binance](22-associacao-registros-binance.md).
+
+Passaram os testes unitários do backend e três integrações focadas que abrangem recompensas sem cotação e cálculo com cotação disponível. A aplicação integrada foi atualizada em `http://127.0.0.1:8081/`; os registros reportados foram consultados antes e depois no banco persistente, sem alterações nos dados ou migrations.
+
+# Recebimentos sem movimentações — 08/11/2026
+
+CSV e XLSX sem movimentações agora apresentam erro por arquivo e não geram recebimento ou registro de conferência. Linhas com apenas a mensagem de ausência de resultados e linhas CSV com campos vazios são ignoradas; linhas incompletas que contenham outros dados permanecem para conferência. Contrato em [Importação Binance](19-importacao-binance.md).
+
+Após backup privado do banco, o arquivo de teste sem movimentações e seu registro foram removidos pela API. A conferência foi verificada sem pendências individuais. Passaram 233 testes unitários e arquiteturais e um teste integrado focado em CSV e XLSX vazios. A aplicação corrigida foi iniciada em `http://127.0.0.1:8081/` com MySQL persistente, migrations validadas e consultas respondendo; nenhuma migration nova foi necessária.
+
+# Alinhamento das ações — 08/11/2026
+
+Os ícones de cancelamento de operações e exclusão de saldo anterior ocupam a mesma coluna no histórico. Passaram os 14 testes da tela, lint e build; a aplicação integrada foi atualizada em `http://127.0.0.1:8081/` e o alinhamento foi verificado no navegador.
+
+# Ícone de exclusão de saldo — 08/11/2026
+
+A ação de excluir saldo anterior no histórico de operações usa o mesmo ícone das demais ações, preservando a confirmação e o nome acessível. Passaram 14 testes da tela, lint e build; a aplicação integrada foi atualizada em `http://127.0.0.1:8081/` e a confirmação foi verificada sem excluir dados.
+
+# Remoção individual de saldo anterior — 08/11/2026
+
+Saldos anteriores declarados manualmente podem ser excluídos individualmente em Operações e Conferência, após confirmação. O cancelamento dos demais lançamentos manuais não foi alterado. Não há vínculo automático com a operação usada como referência. O contrato está em [Importação Binance](19-importacao-binance.md).
+
+Passaram 227 testes unitários e arquiteturais do backend, dois testes integrados focados para saldos antes e depois da confirmação, e 147 testes frontend; lint, typecheck e builds passaram. A aplicação integrada foi atualizada em `http://127.0.0.1:8081/` com o MySQL persistente. A tela e o diálogo de confirmação foram verificados sem excluir dados reais. Nenhuma migration foi necessária para esta alteração.
+
+# Interface atual e exclusão — 08/11/2026
+
+A versão mais recente da navegação e da valoração histórica foi integrada aos fontes deste workspace, preservando as alterações de exclusão e cadastro provisório de ativos. A exclusão está em **Importações → Recebimentos anteriores**, com confirmação identificando o arquivo. O contrato paginado de recebimentos foi preservado. Os fontes anteriores à integração foram guardados em `.local/antes-integracao-interface-atual/`; o outro worktree permaneceu intacto.
+
+Na versão integrada passaram 227 testes unitários e arquiteturais do backend, nove integrações focadas de exclusão e 142 testes frontend; lint e builds passaram. A suíte integral de integração dessa combinação não foi executada. A aplicação foi atualizada em `http://127.0.0.1:8081/`, e os endpoints de importação dos dois perfis responderam HTTP 200. Nenhum arquivo real foi excluído na verificação.
+
+# Exclusão de arquivo importado — 08/11/2026
+
+A tela lista arquivos recebidos e importações legadas do usuário e permite excluí-los após confirmação. A operação remove o arquivo e seus registros e efeitos, libera a reimportação, preserva os dados de outros arquivos e desfaz associações afetadas. Valorações e respostas de comandos associadas aos registros removidos também são limpas. A remoção ocorre sob bloqueio do histórico e na mesma transação. Detalhes em [Importação Binance](19-importacao-binance.md).
+
+Passaram 11 testes integrados focados, incluindo concorrência, rollback, reimportação, associação entre arquivos, operações legadas compartilhadas e valorações; passaram os testes unitários/arquiteturais, 128 testes frontend, lint e builds. Na suíte integral anterior houve 10 falhas em 173 testes: sete já registradas nesta nota, duas expectativas de migrations corrigidas e aprovadas isoladamente, e `pernaEnviadaConhecidaEhAproveitadaMesmoSemAtivoRecebidoIdentificado`, que passou isoladamente após falhar na suíte. A suíte integral não foi repetida após os ajustes.
+
+As migrations V16 e V17 foram incorporadas dos arquivos versionados do worktree de valoração, com checksums idênticos aos do banco local. Backup privado criado antes da aplicação da V18. A aplicação desta versão está em `http://127.0.0.1:8081/`, pois a porta 8080 está em uso por uma instância do outro worktree. Página e consulta autenticada dos dois perfis responderam HTTP 200; lista e confirmação de exclusão foram verificadas no navegador sem excluir arquivo real.
+
+# Trabalho em andamento — ativos identificados na importação
+
+O recebimento progressivo passou a registrar símbolos novos sob `binance:<símbolo>`, com nome e tipo desconhecidos, e a reutilizar o cadastro por código. A migration V18 e o contrato de descoberta ainda precisam de revisão integrada com as migrations V16–V17 do outro worktree antes de aplicação ao banco persistente. O fluxo legado e registros recebidos anteriormente não foram adaptados. Tipo desconhecido ainda impede algumas classificações automáticas, inclusive créditos; não considerar o trabalho concluído. Não há enriquecimento externo.
+
+Passaram dois testes integrados focados em cadastro e concorrência, os 197 testes unitários/arquiteturais e o build frontend. A suíte integral de integração e o pacote integrado não foram verificados. A versão alterada não foi iniciada em 8080 e a V18 não foi aplicada ao banco persistente.
+
 # Retomada — Componentes fundamentais, 08/11/2026
 
 Button, Input, Select, FormField e PageHeader têm contratos documentados em `docs/design-system/components.md`. Integração limitada ao formulário e cabeçalho de Carteiras e aos selects do filtro do Histórico; migração dos usos legados permanece futura. Testes automatizados de semântica, rótulos, descrição, seleção e botão foram adicionados. Não houve validação visual no navegador.

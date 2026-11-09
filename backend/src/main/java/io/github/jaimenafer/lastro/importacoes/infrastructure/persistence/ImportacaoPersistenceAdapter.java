@@ -19,6 +19,15 @@ import org.springframework.stereotype.Repository;
 public class ImportacaoPersistenceAdapter implements IImportacaoRepository {
   private final IImportacaoJpaRepository jpa;
 
+  public List<Long> operacoesCompartilhadas(String perfil, long importacaoId, java.util.Collection<Long> ids) {
+    return ids.isEmpty() ? List.of() : jpa.operacoesCompartilhadas(perfil, importacaoId, ids);
+  }
+
+  public void excluir(Importacao importacao) {
+    jpa.delete(importacao);
+    jpa.flush();
+  }
+
   public Optional<Importacao> buscarPorChave(String perfil, String chave) {
     return jpa.findByPerfilRefAndChaveRequisicao(perfil, chave);
   }

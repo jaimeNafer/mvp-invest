@@ -24,6 +24,12 @@ public class OperacaoPersistenceAdapter implements IOperacaoRepository {
   private final IOperacaoJpaRepository jpa;
 
   @Override
+  public void excluir(Operacao operacao) {
+    jpa.delete(operacao);
+    jpa.flush();
+  }
+
+  @Override
   public Operacao buscarObrigatoria(Long operacaoId, String perfilRef) {
     return jpa.findByIdAndPerfilRef(operacaoId, perfilRef)
         .orElseThrow(() -> new SaldoInicialNaoEncontradoException("Saldo inicial não encontrado."));

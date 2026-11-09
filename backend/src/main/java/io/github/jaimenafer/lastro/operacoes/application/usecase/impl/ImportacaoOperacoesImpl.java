@@ -32,6 +32,39 @@ public class ImportacaoOperacoesImpl implements IImportacaoOperacoes {
   private static final ZoneId FUSO = ZoneId.of("America/Fortaleza");
 
   @Override
+  public List<Long> versoesImportadas(List<Long> ids) {
+    Set<Long> resultado = new HashSet<>(ids);
+    List<Operacao> historico = operacoes.historico(usuario.id());
+    boolean mudou;
+    do {
+      mudou = false;
+      for (Operacao operacao : historico)
+        if (operacao.getSubstituiId() != null && resultado.contains(operacao.getSubstituiId()))
+          mudou |= resultado.add(operacao.getId());
+    } while (mudou);
+    return List.copyOf(resultado);
+  }
+
+  @Override
+  public void excluirVersoesImportadas(List<Long> ids, List<Long> compartilhadas) {
+    List<Operacao> historico = operacoes.historico(usuario.id());
+    Set<Long> protegidos = new HashSet<>(compartilhadas);
+    boolean mudou;
+    do {
+      mudou = false;
+      for (Operacao operacao : historico)
+        if (operacao.getSubstituiId() != null && ids.contains(operacao.getId())
+            && (protegidos.contains(operacao.getId()) || protegidos.contains(operacao.getSubstituiId()))) {
+          mudou |= protegidos.add(operacao.getId());
+          mudou |= protegidos.add(operacao.getSubstituiId());
+        }
+    } while (mudou);
+    historico.stream().filter(o -> ids.contains(o.getId()) && !protegidos.contains(o.getId()))
+        .sorted(Comparator.comparing(Operacao::getId).reversed()).forEach(operacoes::excluir);
+    pontos.bloquear(usuario.id()).ifPresent(p -> p.avancarRevisao(usuario.id(), agora()));
+  }
+
+  @Override
   @Transactional(isolation = Isolation.READ_COMMITTED)
   public void bloquearHistorico(
       List<MovimentoImportado> movimentos, boolean posicaoAnteriorZerada) {

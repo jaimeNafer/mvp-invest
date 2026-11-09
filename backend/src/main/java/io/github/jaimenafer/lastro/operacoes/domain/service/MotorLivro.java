@@ -17,6 +17,8 @@ import io.github.jaimenafer.lastro.operacoes.domain.model.ResultadoLivro;
 import io.github.jaimenafer.lastro.operacoes.domain.model.TipoOperacao;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -36,6 +38,36 @@ public final class MotorLivro {
 
   public static ResultadoConferenciaLivro conferir(
       List<ItemConferenciaLivro> itens, Map<Long, String> codigosAtivos) {
+    return conferir(itens, codigosAtivos, new ArrayDeque<>(), new TreeMap<>());
+  }
+
+  public static Map<Instant, List<PosicaoConferenciaLivro>> posicoesAte(
+      List<ItemConferenciaLivro> itens, Map<Long, String> codigosAtivos, List<Instant> cortes) {
+    Map<Instant, List<PosicaoConferenciaLivro>> retratos = new TreeMap<>();
+    var ordenados = cortes.stream().distinct().sorted().toList();
+    if (ordenados.isEmpty()) return Map.of();
+    var transferencias = agruparTransferencias(itens);
+    boolean atravessaCorte = transferencias.values().stream().anyMatch(pernas ->
+        ordenados.stream().anyMatch(corte -> pernas.stream().anyMatch(i -> !i.ocorridaEm().isAfter(corte))
+            && pernas.stream().anyMatch(i -> i.ocorridaEm().isAfter(corte))));
+    if (atravessaCorte) {
+      for (Instant corte : ordenados) {
+        List<ItemConferenciaLivro> prefixo = new ArrayList<>(itens.stream()
+            .filter(i -> !i.ajuste() && !i.ocorridaEm().isAfter(corte)).toList());
+        Set<String> ancoras = new LinkedHashSet<>();
+        prefixo.forEach(i -> ancoras.add(i.id()));
+        itens.stream().filter(i -> i.ajuste() && ancoras.contains(i.ancoraId())).forEach(prefixo::add);
+        retratos.put(corte, conferir(prefixo, codigosAtivos).posicoes());
+      }
+    } else {
+      conferir(itens, codigosAtivos, new ArrayDeque<>(ordenados), retratos);
+    }
+    return Map.copyOf(retratos);
+  }
+
+  private static ResultadoConferenciaLivro conferir(List<ItemConferenciaLivro> itens,
+      Map<Long, String> codigosAtivos, ArrayDeque<Instant> cortes,
+      Map<Instant, List<PosicaoConferenciaLivro>> retratos) {
     Map<Long, PosicaoLivro> posicoes = new TreeMap<>();
     Map<Long, Long> instituicoes = new TreeMap<>();
     Map<Long, Set<String>> causas = new TreeMap<>();
@@ -43,7 +75,19 @@ public final class MotorLivro {
     List<EfeitoConferenciaLivro> efeitos = new ArrayList<>();
     List<LacunaLivro> lacunas = new ArrayList<>();
     Map<String, List<ItemConferenciaLivro>> transferencias = agruparTransferencias(itens);
+    Set<String> custosCreditosAutomaticos = itens.stream()
+        .filter(ItemConferenciaLivro::creditoAutomatico)
+        .map(i -> "custo:" + i.id())
+        .collect(java.util.stream.Collectors.toSet());
+    Map<String, Instant> datasAncoras = new HashMap<>();
+    if (!cortes.isEmpty())
+      itens.stream().filter(i -> !i.ajuste()).forEach(i -> datasAncoras.put(i.id(), i.ocorridaEm()));
     for (ItemConferenciaLivro item : ordenarConferencia(itens)) {
+      if (!cortes.isEmpty()) {
+        Instant data = item.ajuste() ? datasAncoras.get(item.ancoraId()) : item.ocorridaEm();
+        while (!cortes.isEmpty() && (data == null || cortes.getFirst().isBefore(data)))
+          retratos.put(cortes.removeFirst(), posicoesConferencia(posicoes, instituicoes, causas));
+      }
       instituicoes.put(item.contaId(), item.instituicaoId());
       if (item.ajuste() && !ajusteValido(item, itens)) {
         efeitos.add(
@@ -86,7 +130,7 @@ public final class MotorLivro {
         }
       }
       Set<String> pendencias = new LinkedHashSet<>(dependencias);
-      if (item.creditoAutomatico()) pendencias.remove("custo:" + item.id());
+      pendencias.removeAll(custosCreditosAutomaticos);
       EstadoConferencia estado =
           deficit
               ? EstadoConferencia.CORRECAO_NECESSARIA
@@ -94,9 +138,14 @@ public final class MotorLivro {
       efeitos.add(
           new EfeitoConferenciaLivro(item.id(), estado, List.copyOf(pendencias), calculo));
     }
-    List<PosicaoConferenciaLivro> resultado =
-        posicoes.values().stream().map(p -> posicaoConferencia(p, instituicoes, causas)).toList();
+    List<PosicaoConferenciaLivro> resultado = posicoesConferencia(posicoes, instituicoes, causas);
+    while (!cortes.isEmpty()) retratos.put(cortes.removeFirst(), resultado);
     return new ResultadoConferenciaLivro(resultado, efeitos, lacunas);
+  }
+
+  private static List<PosicaoConferenciaLivro> posicoesConferencia(Map<Long, PosicaoLivro> posicoes,
+      Map<Long, Long> instituicoes, Map<Long, Set<String>> causas) {
+    return posicoes.values().stream().map(p -> posicaoConferencia(p, instituicoes, causas)).toList();
   }
 
   private static boolean entradaComCustoDesconhecido(
@@ -184,9 +233,11 @@ public final class MotorLivro {
   private static Set<String> dependenciasDaOperacao(
       ItemConferenciaLivro item, Map<Long, Set<String>> causas) {
     Long ativoConsumido = ativoConsumido(item);
-    return ativoConsumido == null
-        ? new LinkedHashSet<>()
-        : new LinkedHashSet<>(causas.getOrDefault(ativoConsumido, Set.of()));
+    Set<String> resultado = ativoConsumido == null
+        ? new LinkedHashSet<>() : new LinkedHashSet<>(causas.getOrDefault(ativoConsumido, Set.of()));
+    if (item.operacao() != null && item.operacao().taxaExternaBrl() != null)
+      resultado.addAll(causas.getOrDefault(item.operacao().taxaAtivoId(), Set.of()));
+    return resultado;
   }
 
   private static Long ativoConsumido(ItemConferenciaLivro item) {
@@ -279,7 +330,8 @@ public final class MotorLivro {
         fato.totalBruto(),
         fato.cotacaoBrl(),
         fato.taxaAtivoId(),
-        fato.taxaQuantidade());
+        fato.taxaQuantidade(),
+        fato.valorTotalValoradoBrl(), fato.taxaExternaBrl());
   }
 
   private static List<Long> ativosAlterados(
@@ -400,6 +452,7 @@ public final class MotorLivro {
     BigDecimal brutoBrl = valorBrutoBrl(fato, codigosAtivos);
     BigDecimal taxaQuantidade = taxaQuantidade(fato);
     boolean taxaNaCotacao = fato.moedaCotacaoId().equals(fato.taxaAtivoId());
+    boolean taxaExterna = fato.taxaExternaBrl() != null;
     BigDecimal taxaBrl = valorTaxaBrl(fato, brutoBrl, codigosAtivos);
     BigDecimal custoPrincipal =
         debitar(
@@ -410,7 +463,9 @@ public final class MotorLivro {
             tolerarDeficit,
             codigosAtivos);
     BigDecimal custoTaxa =
-        taxaNaCotacao
+        taxaExterna
+            ? debitar(posicoes, fato, fato.taxaAtivoId(), taxaQuantidade, tolerarDeficit, codigosAtivos)
+            : taxaNaCotacao
             ? debitar(
                 posicoes,
                 fato,
@@ -420,13 +475,15 @@ public final class MotorLivro {
                 codigosAtivos)
             : ZERO;
     BigDecimal quantidadeAdquirida =
-        taxaNaCotacao ? fato.quantidade() : fato.quantidade().subtract(taxaQuantidade);
-    BigDecimal custoAdquirido = taxaNaCotacao ? brutoBrl.add(taxaBrl) : brutoBrl;
+        taxaNaCotacao || taxaExterna ? fato.quantidade() : fato.quantidade().subtract(taxaQuantidade);
+    BigDecimal custoAdquirido = taxaNaCotacao || taxaExterna ? brutoBrl.add(taxaBrl) : brutoBrl;
     creditar(posicoes, fato.ativoId(), fato.instituicaoId(), quantidadeAdquirida, custoAdquirido);
     BigDecimal resultadoMoeda =
         resultadoSaidaMoeda(fato.moedaCotacaoId(), brutoBrl, custoPrincipal, codigosAtivos);
     BigDecimal resultadoTaxa =
-        taxaNaCotacao
+        taxaExterna
+            ? resultadoSaidaMoeda(fato.taxaAtivoId(), taxaBrl, custoTaxa, codigosAtivos)
+            : taxaNaCotacao
             ? resultadoSaidaMoeda(fato.moedaCotacaoId(), taxaBrl, custoTaxa, codigosAtivos)
             : ZERO;
     return resultado(
@@ -447,11 +504,14 @@ public final class MotorLivro {
     BigDecimal brutoBrl = valorBrutoBrl(fato, codigosAtivos);
     BigDecimal taxaQuantidade = taxaQuantidade(fato);
     boolean taxaNaCotacao = fato.moedaCotacaoId().equals(fato.taxaAtivoId());
+    boolean taxaExterna = fato.taxaExternaBrl() != null;
     BigDecimal taxaBrl = valorTaxaBrl(fato, brutoBrl, codigosAtivos);
     BigDecimal custoPrincipal =
         debitar(posicoes, fato, fato.ativoId(), fato.quantidade(), tolerarDeficit, codigosAtivos);
     BigDecimal custoTaxa =
-        taxaNaCotacao
+        taxaExterna
+            ? debitar(posicoes, fato, fato.taxaAtivoId(), taxaQuantidade, tolerarDeficit, codigosAtivos)
+            : taxaNaCotacao
             ? ZERO
             : debitar(
                 posicoes, fato, fato.ativoId(), taxaQuantidade, tolerarDeficit, codigosAtivos);
@@ -473,6 +533,8 @@ public final class MotorLivro {
   }
 
   private static BigDecimal valorBrutoBrl(FatoLivro fato, Map<Long, String> codigosAtivos) {
+    if ("fiat:BRL".equals(codigosAtivos.get(fato.moedaCotacaoId()))) return arredondar(fato.totalBruto());
+    if (fato.valorTotalValoradoBrl() != null) return arredondar(fato.valorTotalValoradoBrl());
     return arredondar(fato.totalBruto().multiply(cotacaoBrl(fato, codigosAtivos)));
   }
 
@@ -480,6 +542,7 @@ public final class MotorLivro {
       FatoLivro fato, BigDecimal brutoBrl, Map<Long, String> codigosAtivos) {
     BigDecimal taxa = taxaQuantidade(fato);
     if (taxa.signum() == 0) return ZERO;
+    if (fato.taxaExternaBrl() != null) return arredondar(fato.taxaExternaBrl());
     if (fato.moedaCotacaoId().equals(fato.taxaAtivoId())) {
       return arredondar(taxa.multiply(cotacaoBrl(fato, codigosAtivos)));
     }

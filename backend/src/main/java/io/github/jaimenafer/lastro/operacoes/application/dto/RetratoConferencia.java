@@ -16,10 +16,19 @@ public record RetratoConferencia(
     Map<Long, InstituicaoResumo> instituicoes,
     boolean quantidadesCompletas,
     boolean incertezaSemData,
-    LocalDate primeiraDataPendente) {
+    LocalDate primeiraDataPendente,
+    List<GrupoEmConferencia> gruposAplicados) {
+  public RetratoConferencia(List<ItemConferenciaLivro> itens, ResultadoConferenciaLivro livro,
+      ResumoConferenciaResponse resumo, Map<Long, AtivoResumo> ativos,
+      Map<Long, InstituicaoResumo> instituicoes, boolean quantidadesCompletas,
+      boolean incertezaSemData, LocalDate primeiraDataPendente) {
+    this(itens, livro, resumo, ativos, instituicoes, quantidadesCompletas, incertezaSemData,
+        primeiraDataPendente, List.of());
+  }
   public RetratoConferencia {
     itens = List.copyOf(itens);
     ativos = Map.copyOf(ativos);
     instituicoes = Map.copyOf(instituicoes);
+    gruposAplicados = List.copyOf(gruposAplicados);
   }
 }

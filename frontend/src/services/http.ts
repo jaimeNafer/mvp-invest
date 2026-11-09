@@ -38,5 +38,6 @@ export async function requisitarJson<T>(caminho: string, opcoes: RequestInit = {
         : "Não foi possível concluir a solicitação. Tente novamente.",
     );
   }
+  if (resposta.status === 204) return undefined as T;
   return resposta.json();
 }

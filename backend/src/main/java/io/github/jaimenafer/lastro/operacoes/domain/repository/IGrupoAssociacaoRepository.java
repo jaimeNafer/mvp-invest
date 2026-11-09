@@ -10,6 +10,8 @@ public interface IGrupoAssociacaoRepository {
 
   GrupoAssociacao salvar(GrupoAssociacao grupo);
 
+  void excluir(GrupoAssociacao grupo);
+
   void sincronizarVinculos(Long grupo, List<Long> registros);
 
   void flush();

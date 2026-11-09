@@ -72,3 +72,14 @@ export const listarImportacoes = (pagina: number, signal?: AbortSignal) =>
   requisitarJson<ListaImportacoes>(`/importacoes?pagina=${pagina}&tamanho=20`, { signal });
 export const obterImportacao = (id: string, signal: AbortSignal) =>
   requisitarJson<ReciboImportacao>(`/importacoes/${encodeURIComponent(id)}`, { signal });
+
+export const listarArquivosRecebidos = (pagina: number, signal?: AbortSignal) =>
+  requisitarJson<{
+    itens: { id: string; nomeArquivo: string; criadoEm: string; registros: number }[];
+    pagina: number;
+    tamanho: number;
+    total: number;
+  }>(`/importacoes/recebimentos?pagina=${pagina}&tamanho=20`, { signal });
+
+export const excluirRecebimento = (id: string) =>
+  requisitarJson<void>(`/importacoes/recebimentos/${encodeURIComponent(id)}`, { method: "DELETE" });

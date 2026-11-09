@@ -4,8 +4,8 @@ export type Ativo = {
   id: string;
   codigo: string;
   ticker: string;
-  nome: string;
-  tipo: "FIAT" | "CRIPTO";
+  nome: string | null;
+  tipo: "FIAT" | "CRIPTO" | null;
   casasDecimais: number;
   ativo: boolean;
 };

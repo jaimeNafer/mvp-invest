@@ -3,6 +3,23 @@ import { requisitarJson } from "./http";
 import type { Posicao } from "./operacoes";
 
 export type PeriodoVisaoGeral = { dataInicio: string; dataFim: string };
+export type PontoPatrimonioDiario = {
+  data: string;
+  valorTotalBrl: string | null;
+  valorConhecidoBrl: string;
+  ativosComPreco: number;
+  ativosSemPreco: number;
+  quantidadesCompletas: boolean;
+  aportesLiquidosBrl?: string | null;
+  aportesLiquidosConhecidosBrl?: string | null;
+};
+export type IndicadorDisponibilidade = {
+  valorConhecido: string | null;
+  status: "COMPLETO" | "PARCIAL" | "INDISPONIVEL";
+  componentesConhecidos: number;
+  componentesDesconhecidos: number;
+  motivo: string | null;
+};
 export type PosicaoVisaoGeral = Posicao & {
   ativoNome: string;
   participacaoPercentual: string | null;
@@ -13,6 +30,8 @@ export type ResultadoMensal = {
   resultadoBrl: string | null;
   acumuladoBrl: string | null;
   operacoes: number;
+  subtotalResultadoBrl?: string | null;
+  subtotalAcumuladoBrl?: string | null;
 };
 export type ResultadoAtivo = {
   ativoId: string;
@@ -22,7 +41,7 @@ export type ResultadoAtivo = {
   moedaBrl: string | null;
   taxaBrl: string | null;
   resultadoTotalBrl: string | null;
-  subtotalResultadoBrl?: string;
+  subtotalResultadoBrl?: string | null;
 };
 export type SaldoMoeda = Pick<
   PosicaoVisaoGeral,
@@ -78,12 +97,37 @@ export type VisaoGeral = PeriodoVisaoGeral & {
     subtotalCustoBrl: string;
     subtotalResultadoBrl: string;
     subtotalTaxasBrl: string;
+    custo?: IndicadorDisponibilidade;
+    resultado?: IndicadorDisponibilidade;
+    taxas?: IndicadorDisponibilidade;
+    aportesLiquidos?: IndicadorDisponibilidade;
   };
 };
 
-export function consultarVisaoGeral(periodo?: PeriodoVisaoGeral, signal?: AbortSignal) {
-  const parametros = periodo ? `?${new URLSearchParams(periodo)}` : "";
+function parametrosVisao(periodo?: PeriodoVisaoGeral, carteiraId?: string) {
+  const parametros = new URLSearchParams(periodo);
+  if (carteiraId) parametros.set("carteiraId", carteiraId);
+  return parametros.size ? `?${parametros}` : "";
+}
+
+export function consultarVisaoGeral(
+  periodo?: PeriodoVisaoGeral,
+  signal?: AbortSignal,
+  carteiraId?: string,
+) {
+  const parametros = parametrosVisao(periodo, carteiraId);
   return requisitarJson<VisaoGeral>(`/visao-geral${parametros}`, { signal });
+}
+
+export function consultarPatrimonioDiario(
+  periodo?: PeriodoVisaoGeral,
+  signal?: AbortSignal,
+  carteiraId?: string,
+) {
+  const parametros = parametrosVisao(periodo, carteiraId);
+  return requisitarJson<PontoPatrimonioDiario[]>(`/visao-geral/patrimonio-diario${parametros}`, {
+    signal,
+  });
 }
 
 export function consultarAvisos(
@@ -91,7 +135,9 @@ export function consultarAvisos(
   tipo: TipoAviso,
   pagina: number,
   signal: AbortSignal,
+  carteiraId?: string,
 ) {
   const parametros = new URLSearchParams({ dataFim, tipo, pagina: String(pagina), tamanho: "10" });
+  if (carteiraId) parametros.set("carteiraId", carteiraId);
   return requisitarJson<AvisosConferencia>(`/visao-geral/avisos?${parametros}`, { signal });
 }

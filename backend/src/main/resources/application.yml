@@ -39,3 +39,7 @@ lastro:
 
   conciliacao:
     janela-associacao: ${LASTRO_JANELA_ASSOCIACAO:2s}
+
+  valoracao:
+    processamento-ativo: ${LASTRO_VALORACAO_ATIVA:true}
+    intervalo-processamento: ${LASTRO_VALORACAO_INTERVALO:PT10S}
