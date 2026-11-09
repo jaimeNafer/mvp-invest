@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import Historico from "./Historico";
-import Operacoes from "./Operacoes";
 import PreviaConciliacao from "./PreviaConciliacao";
 import RegistroHistorico from "./RegistroHistorico";
+import type { ValoracaoTimeline } from "./services/conciliacao";
 
 const registro = {
   id: "registro:42",
@@ -29,6 +29,17 @@ const registro = {
   ],
   ancoraId: null,
   camposOriginais: { Change: "-0.030000000000000001", Remark: "registro sintético" },
+};
+const valoracaoIndisponivel: ValoracaoTimeline = {
+  statusValoracao: "INDISPONIVEL",
+  valorTotalBrl: null,
+  cotacaoUtilizada: null,
+  dataHoraCotacao: null,
+  fonteCotacao: null,
+  metodoConversao: null,
+  aproximado: false,
+  motivoIndisponibilidade: "Dados financeiros ainda indisponíveis",
+  permiteCorrecaoManual: true,
 };
 const resumo = {
   total: 3,
@@ -63,10 +74,15 @@ function servidor(
     agrupar?: boolean;
     grupoAutomatico?: boolean;
     conversao?: boolean;
+    saldoAnteriorManual?: boolean;
+    falhaExclusao?: number;
+    bloquearExcluidos?: boolean;
+    valoracao?: ValoracaoTimeline;
     mutacao?: (url: string, init: RequestInit) => Response | Promise<Response>;
   } = {},
 ) {
   const escritas: { url: string; init: RequestInit }[] = [];
+  const excluidos: string[] = [];
   let tentativas = 0;
   const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
     if (url.endsWith("/ativos")) return json([ativo]);
@@ -77,6 +93,7 @@ function servidor(
         const chave = opcoes.grupoAutomatico ? "grupo:registro:42" : "OP-42";
         const primeira = {
           ...registro,
+          ...(opcoes.valoracao ? { valoracao: opcoes.valoracao } : {}),
           ...(opcoes.conversao
             ? {
                 tipo: "Binance Convert",
@@ -104,7 +121,22 @@ function servidor(
       }
       return json({
         itens: [
-          registro,
+          ...(opcoes.bloquearExcluidos && excluidos.includes("registro:42")
+            ? []
+            : [
+                {
+                  ...registro,
+                  ...(opcoes.saldoAnteriorManual
+                    ? {
+                        origem: "MANUAL",
+                        natureza: "SALDO_ANTERIOR",
+                        descricao: "Saldo anterior declarado",
+                        quantidade: "0.03",
+                      }
+                    : {}),
+                  ...(opcoes.valoracao ? { valoracao: opcoes.valoracao } : {}),
+                },
+              ]),
           {
             ...registro,
             id: "operacao:1",
@@ -130,6 +162,13 @@ function servidor(
         resumo,
         proximaPendenciaId: "registro:42",
       });
+    }
+    if (init.method === "DELETE") {
+      escritas.push({ url, init });
+      if (opcoes.falhaExclusao)
+        return json({ detail: "A revisão do histórico mudou." }, opcoes.falhaExclusao);
+      if (opcoes.bloquearExcluidos) excluidos.push("registro:42");
+      return new Response(null, { status: 204 });
     }
     if (url.endsWith("/previa"))
       return json({
@@ -176,6 +215,7 @@ function servidor(
         ],
         resumo,
       });
+    if (url.endsWith("/conciliacao/associacoes/OP-42")) return json({ versao: "5" });
     if (init.method === "POST" || init.method === "PUT") {
       escritas.push({ url, init });
       if (opcoes.mutacao) return opcoes.mutacao(url, init);
@@ -215,6 +255,66 @@ function servidor(
   vi.stubGlobal("fetch", fetchMock);
   return { escritas, fetchMock };
 }
+
+it("confirma exclusão permanente do saldo anterior manual e atualiza a timeline", async () => {
+  const { escritas } = servidor({ saldoAnteriorManual: true, bloquearExcluidos: true });
+  render(<Historico modoConferencia />);
+  fireEvent.click(await screen.findByRole("button", { name: "Detalhar Saldo anterior declarado" }));
+  fireEvent.click(screen.getByRole("button", { name: "Excluir saldo anterior" }));
+  const dialog = await screen.findByRole("dialog", { name: "Excluir saldo anterior" });
+  expect(dialog).toBeVisible();
+  expect(within(dialog).getByText(/0,03 BTC/)).toBeVisible();
+  expect(within(dialog).getByRole("button", { name: "Excluir permanentemente" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Voltar" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(escritas).toHaveLength(0);
+  fireEvent.click(screen.getByRole("button", { name: "Excluir saldo anterior" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Excluir permanentemente" }));
+  await waitFor(() => expect(escritas).toHaveLength(1));
+  expect(escritas[0].url).toBe("/api/v1/conciliacao/registros/registro%3A42?revisao=7");
+  await waitFor(() => expect(screen.queryByText("Saldo anterior declarado")).toBeNull());
+});
+
+it("preserva a confirmação aberta quando a revisão do saldo anterior entra em conflito", async () => {
+  servidor({ saldoAnteriorManual: true, falhaExclusao: 409 });
+  render(<Historico modoConferencia />);
+  fireEvent.click(await screen.findByRole("button", { name: "Detalhar Saldo anterior declarado" }));
+  fireEvent.click(screen.getByRole("button", { name: "Excluir saldo anterior" }));
+  const dialog = await screen.findByRole("dialog", { name: "Excluir saldo anterior" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Excluir permanentemente" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("A revisão do histórico mudou.");
+  expect(dialog).toBeVisible();
+  expect(within(dialog).getByText(/0,03 BTC/)).toBeVisible();
+});
+
+it("orienta atualizar o histórico após resultado incerto sem repetir chave DELETE", async () => {
+  const { escritas, fetchMock } = servidor({ saldoAnteriorManual: true, falhaExclusao: 503 });
+  render(<Historico modoConferencia />);
+  fireEvent.click(await screen.findByRole("button", { name: "Detalhar Saldo anterior declarado" }));
+  fireEvent.click(screen.getByRole("button", { name: "Excluir saldo anterior" }));
+  const dialog = await screen.findByRole("dialog", { name: "Excluir saldo anterior" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Excluir permanentemente" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Atualize o histórico para verificar");
+  expect(new Headers(escritas[0].init.headers).get("Idempotency-Key")).toBeNull();
+  const consultasAntes = fetchMock.mock.calls.filter(([url]) =>
+    String(url).includes("/timeline?"),
+  ).length;
+  fireEvent.click(within(dialog).getByRole("button", { name: "Atualizar histórico" }));
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).includes("/timeline?")).length,
+    ).toBeGreaterThan(consultasAntes),
+  );
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(escritas).toHaveLength(1);
+});
+
+it("não oferece exclusão para saldo anterior importado", async () => {
+  servidor();
+  render(<Historico modoConferencia />);
+  fireEvent.click(await screen.findByRole("button", { name: "Detalhar Saída observada" }));
+  expect(screen.queryByRole("button", { name: "Excluir saldo anterior" })).toBeNull();
+});
 it("mostra a operação agrupada uma vez e mantém as linhas originais nos detalhes", async () => {
   servidor({ agrupar: true });
   render(<Historico />);
@@ -250,11 +350,7 @@ it("mostra o vínculo automático antes da confirmação sem oferecer associaç�
 });
 it("abre o histórico por padrão com estados textuais e revisão manual independente", async () => {
   servidor();
-  render(<Operacoes />);
-  expect(screen.getByRole("button", { name: "Importações" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  render(<Historico />);
   expect(screen.getByLabelText("Arquivos do histórico")).toHaveAttribute("accept", ".csv,.xlsx");
   expect(screen.queryByRole("button", { name: "Importar arquivo" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Histórico" })).not.toBeInTheDocument();
@@ -529,17 +625,18 @@ it("bloqueia saída enquanto o primeiro comando ainda aguarda resposta", async (
     responder = resolve;
   });
   servidor({ mutacao: () => pendente });
-  render(<Operacoes />);
+  const bloquear = vi.fn();
+  render(<Historico modoConferencia onBloqueio={bloquear} />);
   await screen.findByText("Saída observada");
   fireEvent.click(screen.getByRole("button", { name: "Conferir histórico" }));
   await screen.findByRole("region", { name: "Prévia da conciliação" });
   fireEvent.click(screen.getByRole("checkbox", { name: /Criar ajuste/ }));
   fireEvent.click(screen.getByRole("button", { name: "Aplicar registros e conciliação" }));
-  expect(screen.getByRole("button", { name: "Negociações" })).toBeDisabled();
+  expect(bloquear).toHaveBeenLastCalledWith(true);
   expect(screen.getByRole("button", { name: "Repetir confirmação" })).toBeDisabled();
   responder(json({ revisao: "8" }));
   await screen.findByText("Conciliação confirmada.");
-  expect(screen.getByRole("button", { name: "Negociações" })).toBeEnabled();
+  expect(bloquear).toHaveBeenLastCalledWith(false);
 });
 it("atualiza revisão após conflito antes de pedir uma nova prévia", async () => {
   let revisao = "7";
@@ -563,7 +660,7 @@ it("atualiza revisão após conflito antes de pedir uma nova prévia", async () 
   fireEvent.click(screen.getByRole("button", { name: "Corrigir dados" }));
   fireEvent.change(screen.getByLabelText("Motivo"), { target: { value: "Correção explícita" } });
   fireEvent.click(screen.getByRole("button", { name: "Salvar dados" }));
-  await screen.findByText("Carregando histórico…");
+  await screen.findByRole("region", { name: "Registros do histórico", busy: true });
   expect(screen.getByLabelText("Motivo")).toHaveValue("Correção explícita");
   liberarConsulta();
   await screen.findByText("O histórico mudou. Confira novamente.");
@@ -652,4 +749,71 @@ it("preserva formulario apos conflito seguido de falha ao atualizar o historico"
   expect(screen.getByLabelText("Motivo")).toHaveValue("Preservar rascunho");
   expect(screen.getByRole("button", { name: "Conferir histórico" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Tentar novamente" })).toBeEnabled();
+});
+
+it("informa valor manual na operação agrupada com recálculo avisado", async () => {
+  const { escritas, fetchMock } = servidor({ agrupar: true, valoracao: valoracaoIndisponivel });
+  render(<Historico />);
+  fireEvent.click(await screen.findByRole("button", { name: "Operação OP-42" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Informar valor em reais" }));
+  expect(screen.getByLabelText("Valor total em reais")).toBeVisible();
+  expect(
+    screen.getByText("Ao salvar, o histórico será recalculado automaticamente."),
+  ).toBeVisible();
+  fireEvent.change(screen.getByLabelText("Valor total em reais"), {
+    target: { value: "1.234,56" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Salvar valor" }));
+  await waitFor(() => expect(escritas).toHaveLength(1));
+  expect(
+    fetchMock.mock.calls.some(([url]) => String(url).endsWith("/conciliacao/associacoes/OP-42")),
+  ).toBe(true);
+  expect(escritas[0].url).toContain("/conciliacao/associacoes/OP-42/valoracao");
+  expect(JSON.parse(String(escritas[0].init.body))).toEqual({
+    revisao: "7",
+    versao: "5",
+    valorTotalBrl: "1234.56",
+  });
+  expect(new Headers(escritas[0].init.headers).get("Idempotency-Key")).toBeTruthy();
+});
+
+it("informa valor manual em registro individual e exibe a valoração fora da coerência", async () => {
+  const { escritas } = servidor({ valoracao: valoracaoIndisponivel });
+  render(<Historico />);
+  fireEvent.click(await screen.findByRole("button", { name: "Detalhar Saída observada" }));
+  expect(screen.getByText("Valor indisponível")).toBeVisible();
+  expect(screen.getByText("Com pendência")).toBeVisible();
+  expect(screen.getByText("Dados financeiros ainda indisponíveis")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Informar valor em reais" }));
+  fireEvent.change(screen.getByLabelText("Valor total em reais"), { target: { value: "25,00" } });
+  fireEvent.click(screen.getByRole("button", { name: "Salvar valor" }));
+  await waitFor(() => expect(escritas).toHaveLength(1));
+  expect(escritas[0].url).toContain("/conciliacao/registros/registro%3A42/valoracao");
+  expect(JSON.parse(String(escritas[0].init.body))).toEqual({
+    revisao: "7",
+    versao: "1",
+    valorTotalBrl: "25.00",
+  });
+});
+
+it("solicita atualização de cotações sem payload e permite recarregar o histórico", async () => {
+  const { escritas, fetchMock } = servidor();
+  render(<Historico />);
+  await screen.findByText("Saída observada");
+  fireEvent.click(screen.getByRole("button", { name: "Atualizar cotações" }));
+  expect(
+    await screen.findByText("Solicitação recebida. O histórico será recalculado automaticamente."),
+  ).toBeVisible();
+  await waitFor(() => expect(escritas).toHaveLength(1));
+  expect(escritas[0].url).toBe("/api/v1/conciliacao/cotacoes/atualizacoes");
+  expect(escritas[0].init.body).toBeUndefined();
+  const consultasAntes = fetchMock.mock.calls.filter(([url]) =>
+    String(url).includes("/timeline?"),
+  ).length;
+  fireEvent.click(screen.getByRole("button", { name: "Recarregar histórico" }));
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).includes("/timeline?")).length,
+    ).toBeGreaterThan(consultasAntes),
+  );
 });

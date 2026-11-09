@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.github.jaimenafer.lastro.operacoes.domain.exception.OperacaoConflitanteException;
 import io.github.jaimenafer.lastro.operacoes.domain.model.CalculoOperacao;
 import io.github.jaimenafer.lastro.operacoes.domain.model.FatoLivro;
+import io.github.jaimenafer.lastro.operacoes.domain.model.ParcelaResultadoAtivo;
 import io.github.jaimenafer.lastro.operacoes.domain.model.PosicaoLivro;
 import io.github.jaimenafer.lastro.operacoes.domain.model.ResultadoLivro;
 import io.github.jaimenafer.lastro.operacoes.domain.model.TipoOperacao;
@@ -24,6 +25,55 @@ class MotorLivroTests {
   private static final Map<Long, String> CODIGOS =
       Map.of(BRL, "fiat:BRL", BTC, "BTC", USDT, "USDT");
   private static final Instant INICIO = Instant.parse("2026-11-01T12:00:00Z");
+
+  @Test
+  void vendaComTaxaExternaSeparaDespesaDaVendaEGanhoDoAtivoUsadoNaTaxa() {
+    FatoLivro venda = new FatoLivro(3L, TipoOperacao.VENDA, 1L, BTC, INICIO.plusSeconds(3), 3,
+        BigDecimal.ONE, null, BRL, new BigDecimal("500"), BigDecimal.ONE, USDT,
+        new BigDecimal("2"), null, new BigDecimal("200"));
+    ResultadoLivro livro = calcular(abertura(1, 1, BTC, "1", "300"),
+        abertura(2, 1, USDT, "4", "200"), venda);
+    var resultado = calculo(livro, 3);
+    var parcelas = ParcelaResultadoAtivo.de(venda, resultado, true);
+    assertThat(resultado.resultadoTotalBrl()).isEqualByComparingTo("100");
+    assertThat(parcelas.get(0).negociacao()).isEqualByComparingTo("200");
+    assertThat(parcelas.get(0).taxa()).isEqualByComparingTo("-200");
+    assertThat(parcelas.get(1).ativoId()).isEqualTo(USDT);
+    assertThat(parcelas.get(1).taxa()).isEqualByComparingTo("100");
+    assertPosicao(livro, USDT, "2", "100");
+
+    FatoLivro semCusto = new FatoLivro(2L, TipoOperacao.SALDO_INICIAL, 1L, USDT,
+        INICIO.plusSeconds(2), 2, new BigDecimal("4"), null, null, null, null, null, null);
+    var desconhecido = calculo(calcular(abertura(1, 1, BTC, "1", "300"), semCusto, venda), 3);
+    assertThat(desconhecido.resultadoTotalBrl()).isNull();
+    assertThat(ParcelaResultadoAtivo.de(venda, desconhecido, true).get(1).taxa()).isNull();
+  }
+
+  @Test
+  void baixasParciaisConsomemOCustoResidualSemAlterarCustoTotal() {
+    FatoLivro entrada = abertura(1, 1, BTC, "3", "100");
+    ResultadoLivro parcial = calcular(entrada,
+        venda(2, BRL, "1", "40", "1", null, null),
+        venda(3, BRL, "1", "40", "1", null, null),
+        venda(4, BRL, "1", "40", "1", null, null));
+    assertThat(calculo(parcial, 2).custoBaixadoBrl()).isEqualByComparingTo("33.33333333");
+    assertThat(calculo(parcial, 3).custoBaixadoBrl()).isEqualByComparingTo("33.33333334");
+    assertThat(calculo(parcial, 4).custoBaixadoBrl()).isEqualByComparingTo("33.33333333");
+    assertThat(parcial.posicoes()).noneMatch(p -> p.ativoId().equals(BTC));
+    assertPosicao(parcial, BRL, "120", "120");
+  }
+
+  @Test
+  void taxaEmTerceiroAtivoValoradaBaixaAtivoECompoeCustoDaCompra() {
+    FatoLivro compra = new FatoLivro(3L, TipoOperacao.COMPRA, 1L, BTC, INICIO.plusSeconds(3), 3,
+        new BigDecimal("2"), null, BRL, new BigDecimal("600"), BigDecimal.ONE, USDT,
+        new BigDecimal("2"), null, new BigDecimal("10"));
+    ResultadoLivro livro = calcular(abertura(1, 1, USDT, "10", "40"), aporte(2, "1000"), compra);
+    assertPosicao(livro, BTC, "2", "610");
+    assertPosicao(livro, USDT, "8", "32");
+    assertThat(calculo(livro, 3).taxaBrl()).isEqualByComparingTo("10");
+    assertThat(calculo(livro, 3).resultadoTaxaBrl()).isEqualByComparingTo("2");
+  }
 
   @Test
   void aportePermiteCompraEVendaComCustosEResultados() {

@@ -45,8 +45,8 @@ Catálogo de moedas e criptoativos.
 | `id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | Identificador do ativo. |
 | `codigo` | `VARCHAR(80) COLLATE utf8mb4_bin NOT NULL` | Código único do ativo. |
 | `ticker` | `VARCHAR(32) NOT NULL` | Símbolo de exibição do ativo. |
-| `nome` | `VARCHAR(160) NOT NULL` | Nome do ativo. |
-| `tipo` | `VARCHAR(6) NOT NULL` | Tipo do ativo: FIAT ou CRIPTO. |
+| `nome` | `VARCHAR(160) NULL` | Nome do ativo, quando conhecido. |
+| `tipo` | `VARCHAR(6) NULL` | Tipo do ativo: FIAT ou CRIPTO, quando conhecido. |
 | `casas_decimais` | `TINYINT UNSIGNED NOT NULL` | Número de casas decimais da quantidade, de 0 a 18. |
 | `ativo` | `BOOLEAN NOT NULL DEFAULT TRUE` | Situação do ativo: 1 = ativo; 0 = inativo. |
 
@@ -251,3 +251,87 @@ A PK impede reservar a mesma linha para dois grupos. A reserva cobre a união da
 | alterado_em | DATETIME(6), NOT NULL | Instante da decisão em UTC. |
 
 A confirmação não elimina propostas anteriores. Desfazer mantém grupo e histórico, liberando reservas somente ao aplicar. [Regras e contrato](22-associacao-registros-binance.md).
+
+## Cotações históricas — V16
+
+### pares_cotacao
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| id | BIGINT UNSIGNED, PK | Identificador do par. |
+| ativo_base_id | BIGINT UNSIGNED, FK | Ativo precificado. |
+| ativo_cotacao_id | BIGINT UNSIGNED, FK | Unidade do preço. |
+| fonte | VARCHAR(32) | Fonte do par. |
+| simbolo | VARCHAR(80), utf8mb4_bin | Símbolo na fonte. |
+
+Há unicidade por fonte e símbolo e por fonte e ativos; ativos devem ser distintos.
+
+### cotacoes_historicas
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| id | BIGINT UNSIGNED, PK | Identificador da cotação. |
+| par_id | BIGINT UNSIGNED, FK | Par de ativos. |
+| granularidade | VARCHAR(8) | Intervalo: HORA ou DIA. |
+| instante | DATETIME(6) | Início do candle em UTC. |
+| preco | DECIMAL(38,18) | Preço positivo de abertura. |
+| versao | BIGINT UNSIGNED | Versão atual da cotação. |
+| checksum | CHAR(64), NULL | SHA-256 do arquivo de origem. |
+| obtido_em | DATETIME(6) | Obtenção em UTC. |
+
+Há uma cotação por par, granularidade e instante; fonte e ativos são determinados pelo par.
+
+### historico_cotacoes
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| cotacao_id | BIGINT UNSIGNED, FK, parte da PK | Cotação alterada. |
+| versao | BIGINT UNSIGNED, parte da PK | Versão anterior. |
+| preco | DECIMAL(38,18) | Preço preservado. |
+| checksum | CHAR(64), NULL | SHA-256 do arquivo de origem. |
+| obtido_em | DATETIME(6) | Obtenção em UTC. |
+
+### cargas_cotacao
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| id | BIGINT UNSIGNED, PK | Identificador da carga. |
+| par_id | BIGINT UNSIGNED, FK | Par consultado. |
+| granularidade | VARCHAR(8) | Intervalo: HORA ou DIA. |
+| inicio_em | DATETIME(6) | Início do período em UTC. |
+| fim_em | DATETIME(6) | Fim exclusivo do período em UTC. |
+| estado | VARCHAR(16) | PENDENTE, EXECUTANDO, PARCIAL, CONCLUIDA, SEM_DADOS, FALHA ou FALHA_ESGOTADA. |
+| tentativas | INT | Tentativas de obtenção. |
+| proxima_tentativa_em | DATETIME(6), NULL | Próxima tentativa permitida em UTC. |
+| reserva_ate | DATETIME(6), NULL | Prazo da reserva em UTC. |
+| reserva_token | VARCHAR(64), NULL | Identificador da reserva da carga. |
+| atualizada_em | DATETIME(6) | Última atualização em UTC. |
+
+O período é único por par e granularidade. As tabelas são globais e não contêm dados de operações dos usuários.
+
+### valoracoes_manuais
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| id | BIGINT UNSIGNED, PK | Identificador da valoração. |
+| perfil_ref | VARCHAR(120), utf8mb4_bin | Usuário proprietário. |
+| registro_id | BIGINT UNSIGNED, FK, NULL | Registro valorado. |
+| grupo_id | BIGINT UNSIGNED, FK, NULL | Operação agrupada valorada. |
+| identidade | VARCHAR(64), utf8mb4_bin, NULL | Identidade econômica da operação valorada. |
+| valor_brl | DECIMAL(38,8) | Valor positivo informado em reais. |
+| versao | BIGINT UNSIGNED | Versão atual da valoração. |
+| alterado_por | VARCHAR(120), utf8mb4_bin | Autor da última alteração. |
+| alterado_em | DATETIME(6) | Última alteração em UTC. |
+
+A valoração referencia exatamente um registro ou grupo; cada referência possui no máximo uma valoração vigente.
+
+### historico_valoracoes_manuais
+
+| Campo | Definição | Finalidade |
+| --- | --- | --- |
+| valoracao_id | BIGINT UNSIGNED, FK, parte da PK | Valoração alterada. |
+| versao | BIGINT UNSIGNED, parte da PK | Versão preservada. |
+| valor_brl | DECIMAL(38,8) | Valor preservado. |
+| identidade | VARCHAR(64), utf8mb4_bin, NULL | Identidade econômica da versão preservada. |
+| alterado_por | VARCHAR(120), utf8mb4_bin | Autor da versão preservada. |
+| alterado_em | DATETIME(6) | Alteração em UTC. |

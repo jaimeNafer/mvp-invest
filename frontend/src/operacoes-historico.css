@@ -1,0 +1,99 @@
+.layout > main:has(> .operacoes-historico) {
+  min-width: 0;
+}
+
+.operacoes-historico > .intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 24px 0 20px;
+}
+
+.operacoes-historico .intro h1 {
+  margin: 0;
+  font-size: clamp(1.65rem, 3vw, 2rem);
+}
+
+.operacoes-historico .operacoes-filtros {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  margin: 12px 0;
+}
+
+.operacoes-filtros select {
+  width: 100%;
+}
+
+.operacoes-limpar {
+  margin-bottom: 12px;
+}
+
+.operacoes-tabela table {
+  min-width: 820px;
+}
+
+.operacoes-tabela td {
+  vertical-align: top;
+}
+
+.operacoes-tabela .field-hint,
+.operacao-parcela {
+  display: block;
+}
+
+.operacoes-tabela .field-hint {
+  margin-top: 3px;
+}
+
+.operacoes-tabela .operacoes-numero {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.operacao-aberta,
+.operacao-detalhe {
+  background: #f2f7f6;
+}
+
+.operacao-detalhe-painel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 10px 4px;
+  overflow-wrap: anywhere;
+}
+
+.operacao-detalhe-painel h3,
+.operacao-detalhe-painel dl {
+  margin: 0 0 8px;
+}
+
+.operacao-detalhe-painel dd {
+  margin: 0 0 6px;
+}
+
+.operacao-detalhe-painel summary {
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .operacoes-historico .operacoes-filtros,
+  .operacao-detalhe-painel {
+    grid-template-columns: 1fr;
+  }
+
+  .operacao-detalhe-painel {
+    max-width: min(340px, calc(100vw - 90px));
+  }
+}
+
+.operacoes-historico .operacao-acoes {
+  display: grid;
+  grid-template-columns: 90px 34px 34px;
+  align-items: center;
+}
+
+.operacao-acoes .operacao-excluir {
+  grid-column: 3;
+}

@@ -60,4 +60,30 @@ describe("Evolução do resultado realizado", () => {
     );
     expect(screen.getByRole("img").querySelector("line")).toHaveAttribute("y1", "80");
   });
+
+  it("mostra subtotais mensais conhecidos sem apresentar o acumulado parcial como completo", () => {
+    render(
+      <EvolucaoResultado
+        evolucao={{
+          acumuladoInicialBrl: "0",
+          meses: [
+            {
+              dataInicio: "2026-09-01",
+              dataFim: "2026-09-30",
+              resultadoBrl: null,
+              acumuladoBrl: null,
+              subtotalResultadoBrl: "18.50",
+              subtotalAcumuladoBrl: "18.50",
+              operacoes: 2,
+            },
+          ],
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByText("Valores por mês"));
+    expect(screen.getByText("Subtotal conhecido:")).toBeVisible();
+    expect(screen.getByText("Acumulado conhecido:")).toBeVisible();
+    expect(screen.getAllByText("R$ 18,50")).toHaveLength(2);
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
 });

@@ -2,9 +2,12 @@ package io.github.jaimenafer.lastro.operacoes.api.controller;
 
 import io.github.jaimenafer.lastro.operacoes.application.dto.*;
 import io.github.jaimenafer.lastro.operacoes.application.usecase.IConferenciaUseCase;
+import io.github.jaimenafer.lastro.operacoes.application.usecase.IAgendamentoCotacoesUseCase;
+import io.github.jaimenafer.lastro.operacoes.application.usecase.IValoracaoManualUseCase;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -12,6 +15,25 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ConferenciaController {
   private final IConferenciaUseCase usecase;
+  private final IAgendamentoCotacoesUseCase cotacoes;
+  private final IValoracaoManualUseCase valoracoes;
+
+  @PutMapping("/registros/{id}/valoracao")
+  public RevisaoConferenciaResponse valorarRegistro(
+      @PathVariable String id, @Valid @RequestBody ValoracaoManualRequest request,
+      @RequestHeader("Idempotency-Key") String chave) {
+    return valoracoes.registrarLinha(id, request, chave);
+  }
+
+  @PostMapping("/cotacoes/atualizacoes")
+  public AgendamentoCotacoesResponse atualizarCotacoes() {
+    return new AgendamentoCotacoesResponse(cotacoes.solicitar());
+  }
+
+  @GetMapping("/cotacoes/atualizacao")
+  public AtualizacaoCotacoesResponse ultimaAtualizacaoCotacoes() {
+    return new AtualizacaoCotacoesResponse(cotacoes.ultimaAtualizacao());
+  }
 
   @GetMapping("/timeline")
   public TimelineConferenciaResponse listar(
@@ -19,8 +41,9 @@ public class ConferenciaController {
       @RequestParam(defaultValue = "50") int tamanho,
       @RequestParam(required = false) String estado,
       @RequestParam(required = false) Long ativoId,
-      @RequestParam(required = false) Long contaId) {
-    return usecase.listar(pagina, tamanho, estado, ativoId, contaId);
+      @RequestParam(required = false) Long contaId,
+      @RequestParam(required = false) String registroId) {
+    return usecase.listar(pagina, tamanho, estado, ativoId, contaId, registroId);
   }
 
   @GetMapping("/contas")
@@ -54,6 +77,12 @@ public class ConferenciaController {
       @Valid @RequestBody RevisaoRegistroRequest r,
       @RequestHeader("Idempotency-Key") String chave) {
     return usecase.revisar(id, r, chave);
+  }
+
+  @DeleteMapping("/registros/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void excluirSaldoAnterior(@PathVariable String id, @RequestParam String revisao) {
+    usecase.excluirSaldoAnterior(id, revisao);
   }
 
   @PostMapping("/saldos-anteriores")

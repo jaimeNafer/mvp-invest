@@ -5,10 +5,12 @@ import io.github.jaimenafer.lastro.importacoes.application.dto.*;
 import io.github.jaimenafer.lastro.importacoes.application.port.ILeitorMovimentacoes;
 import io.github.jaimenafer.lastro.importacoes.application.usecase.IRecebimentoUseCase;
 import io.github.jaimenafer.lastro.importacoes.domain.exception.ImportacaoInvalidaException;
+import io.github.jaimenafer.lastro.importacoes.domain.exception.ImportacaoNaoEncontradaException;
 import io.github.jaimenafer.lastro.importacoes.domain.model.ArquivoRecebido;
 import io.github.jaimenafer.lastro.importacoes.domain.repository.IArquivoRecebidoRepository;
 import io.github.jaimenafer.lastro.importacoes.domain.repository.IImportacaoRepository;
 import io.github.jaimenafer.lastro.operacoes.application.contract.IRecebimentoConferencia;
+import io.github.jaimenafer.lastro.operacoes.application.contract.IImportacaoOperacoes;
 import io.github.jaimenafer.lastro.operacoes.application.contract.LinhaConferenciaRecebida;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,6 +29,39 @@ public class RecebimentoUseCaseImpl implements IRecebimentoUseCase {
   private final IArquivoRecebidoRepository recebidos;
   private final IImportacaoRepository importacoes;
   private final IRecebimentoConferencia conferencia;
+  private final IImportacaoOperacoes livro;
+
+  @Override
+  @Transactional(isolation = Isolation.READ_COMMITTED)
+  public void excluir(String id) {
+    conferencia.bloquearHistorico();
+    if (id.startsWith("importacao:")) {
+      excluirLegado(identificador(id.substring("importacao:".length())));
+      return;
+    }
+    ArquivoRecebido arquivo = recebidos.buscar(usuario.id(), identificador(id));
+    conferencia.excluirArquivo(id);
+    recebidos.excluir(arquivo);
+  }
+
+  private long identificador(String texto) {
+    try {
+      long id = Long.parseLong(texto);
+      if (id <= 0 || !Long.toString(id).equals(texto)) throw new NumberFormatException();
+      return id;
+    } catch (NumberFormatException erro) {
+      throw new ImportacaoNaoEncontradaException("Arquivo não encontrado.");
+    }
+  }
+
+  private void excluirLegado(long id) {
+    var importacao = importacoes.buscarObrigatoria(usuario.id(), id);
+    List<Long> raizes = importacao.eventosRegistrados().stream().map(e -> e.getOperacaoId()).distinct().toList();
+    List<Long> versoes = livro.versoesImportadas(raizes);
+    List<Long> compartilhadas = importacoes.operacoesCompartilhadas(usuario.id(), id, versoes);
+    importacoes.excluir(importacao);
+    livro.excluirVersoesImportadas(versoes, compartilhadas);
+  }
 
   @Value("${lastro.importacoes.recebimento.max-arquivos:20}")
   private int maxArquivos;
@@ -36,6 +71,17 @@ public class RecebimentoUseCaseImpl implements IRecebimentoUseCase {
 
   @Value("${lastro.importacoes.recebimento.max-registros:10000}")
   private int maxRegistros;
+
+  @Override
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+  public HistoricoRecebimentosResponse listar(int pagina, int tamanho) {
+    String perfil = usuario.id();
+    var itens = recebidos.listar(perfil, pagina, tamanho).stream()
+        .map(a -> new ArquivoNoHistoricoResponse(
+            a.id().toString(), a.nomeArquivo(), a.criadoEm(), a.registros()))
+        .toList();
+    return new HistoricoRecebimentosResponse(itens, pagina, tamanho, recebidos.contar(perfil));
+  }
 
   @Override
   @Transactional(isolation = Isolation.READ_COMMITTED)

@@ -89,6 +89,9 @@ final class LeitorCsvMovimentacoes {
     var erros = new ArrayList<String>();
     if (malformado) erros.add("O registro CSV contém aspas sem fechamento.");
     List<String> valores = campos(texto, erros);
+    if (!malformado && erros.isEmpty()
+        && (valores.stream().allMatch(String::isBlank)
+            || ValoresMovimentacao.mensagemSemResultados(valores))) return;
     if (valores.size() != CABECALHO.size())
       erros.add("O registro não contém todas as colunas do cabeçalho.");
     var originais = new LinkedHashMap<String, String>();

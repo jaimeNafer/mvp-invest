@@ -104,7 +104,10 @@ class SaldosIniciaisIntegrationTests {
     mvc.perform(get("/api/v1/ativos")).andExpect(status().isUnauthorized());
     mvc.perform(get("/api/v1/ativos").header("Authorization", bearer("a")))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(14))
+        .andExpect(jsonPath("$.length()").value(17))
+        .andExpect(jsonPath("$[?(@.ticker == 'BNB')].id").isNotEmpty())
+        .andExpect(jsonPath("$[?(@.ticker == 'LISTA')].id").isNotEmpty())
+        .andExpect(jsonPath("$[?(@.ticker == 'IO')].id").isNotEmpty())
         .andExpect(jsonPath("$[0].id").isString())
         .andExpect(jsonPath("$[0].ticker").value("ARKM"));
     mvc.perform(post("/api/v1/ativos").header("Authorization", bearer("a")))

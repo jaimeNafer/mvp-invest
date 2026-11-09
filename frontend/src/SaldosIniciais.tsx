@@ -197,9 +197,8 @@ export default function SaldosIniciais() {
           {erro}
         </p>
       )}
-      {carregando ? (
-        <p role="status">Carregando operações…</p>
-      ) : erroLista ? (
+      {carregando && !dados ? <p role="status">Carregando operações…</p> : null}
+      {erroLista && (
         <div>
           <p role="alert" className="message-error">
             {erroLista}
@@ -208,137 +207,140 @@ export default function SaldosIniciais() {
             Tentar novamente
           </button>
         </div>
-      ) : (
-        dados && (
-          <>
-            <section className="operations-panel" aria-label="Saldos iniciais">
-              <div className="list-heading">
-                <div>
-                  <h2>Saldos iniciais</h2>
-                  <p className="field-hint">
-                    {dados.saldos.dataReferencia
-                      ? `Início do acompanhamento: ${dataPtBr(dados.saldos.dataReferencia)}`
-                      : "Informe sua posição na data de início do acompanhamento."}
-                  </p>
-                </div>
-                <button
-                  className="primary-button add-button"
-                  type="button"
-                  disabled={salvando || !!tentativa}
-                  onClick={() => abrir({ tipo: "form", saldo: null })}
-                >
-                  <Icone nome="adicionar" /> Adicionar saldo inicial
-                </button>
+      )}
+      {dados && (
+        <>
+          <section className="operations-panel" aria-label="Saldos iniciais" aria-busy={carregando}>
+            <div className="list-heading">
+              <div>
+                <h2>Saldos iniciais</h2>
+                <p className="field-hint">
+                  {dados.saldos.dataReferencia
+                    ? `Início do acompanhamento: ${dataPtBr(dados.saldos.dataReferencia)}`
+                    : "Informe sua posição na data de início do acompanhamento."}
+                </p>
               </div>
-              <FiltrosSaldos
-                instituicoes={dados.instituicoes}
-                ativos={dados.ativos}
-                carteiras={dados.carteiras}
-                filtros={filtros}
-                onFiltrar={filtrar}
-              />
-              {dados.saldos.itens.length === 0 ? (
-                <p className="empty-state">Nenhum saldo inicial encontrado.</p>
-              ) : (
-                <div className="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Data</th>
-                        <th>Instituição</th>
-                        <th>Ativo</th>
-                        <th>Quantidade</th>
-                        <th>Custo inicial informado</th>
-                        <th>Situação</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dados.saldos.itens.map((s) => (
-                        <tr
-                          key={s.id}
-                          className={s.situacao !== "CONFIRMADA" ? "carteira-arquivada" : undefined}
-                        >
-                          <td>{dataPtBr(s.dataReferencia)}</td>
-                          <td>{s.instituicaoNome}</td>
-                          <td>{s.ativoTicker}</td>
-                          <td>{decimalPtBr(s.quantidade)}</td>
-                          <td title={`Valor completo: R$ ${decimalPtBr(s.custoTotalBrl)}`}>
-                            {moeda(s.custoTotalBrl)}
-                          </td>
-                          <td>
-                            <span
-                              className={`badge ${s.situacao === "CONFIRMADA" ? "" : "badge-archived"}`}
+              <button
+                className="primary-button add-button"
+                type="button"
+                disabled={salvando || !!tentativa}
+                onClick={() => abrir({ tipo: "form", saldo: null })}
+              >
+                <Icone nome="adicionar" /> Adicionar saldo inicial
+              </button>
+            </div>
+            <FiltrosSaldos
+              instituicoes={dados.instituicoes}
+              ativos={dados.ativos}
+              carteiras={dados.carteiras}
+              filtros={filtros}
+              onFiltrar={filtrar}
+            />
+            {dados.saldos.itens.length === 0 ? (
+              <p className="empty-state">Nenhum saldo inicial encontrado.</p>
+            ) : (
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Instituição</th>
+                      <th>Ativo</th>
+                      <th>Quantidade</th>
+                      <th>Custo inicial informado</th>
+                      <th>Situação</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dados.saldos.itens.map((s) => (
+                      <tr
+                        key={s.id}
+                        className={s.situacao !== "CONFIRMADA" ? "carteira-arquivada" : undefined}
+                      >
+                        <td>{dataPtBr(s.dataReferencia)}</td>
+                        <td>{s.instituicaoNome}</td>
+                        <td>{s.ativoTicker}</td>
+                        <td>{decimalPtBr(s.quantidade)}</td>
+                        <td title={`Valor completo: R$ ${decimalPtBr(s.custoTotalBrl)}`}>
+                          {moeda(s.custoTotalBrl)}
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${s.situacao === "CONFIRMADA" ? "" : "badge-archived"}`}
+                          >
+                            {situacao[s.situacao]}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="row-actions">
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              aria-label={`Detalhes do saldo ${s.id}`}
+                              onClick={() => abrir({ tipo: "detalhe", saldo: s })}
                             >
-                              {situacao[s.situacao]}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="row-actions">
-                              <button
-                                type="button"
-                                className="secondary-button"
-                                aria-label={`Detalhes do saldo ${s.id}`}
-                                onClick={() => abrir({ tipo: "detalhe", saldo: s })}
-                              >
-                                Detalhes
-                              </button>
-                              {s.situacao === "CONFIRMADA" && (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="icon-button"
-                                    title="Corrigir saldo inicial"
-                                    aria-label={`Corrigir saldo ${s.id}`}
-                                    disabled={salvando || !!tentativa}
-                                    onClick={() => abrir({ tipo: "form", saldo: s })}
-                                  >
-                                    <Icone nome="editar" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="icon-button"
-                                    title="Cancelar saldo inicial"
-                                    aria-label={`Cancelar saldo ${s.id}`}
-                                    disabled={salvando || !!tentativa}
-                                    onClick={() => abrir({ tipo: "cancelar", saldo: s })}
-                                  >
-                                    <Icone nome="fechar" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              <div className="pagination">
-                <span>{dados.saldos.total} registro(s)</span>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={filtros.pagina === 0}
-                  onClick={() => filtrar({ pagina: filtros.pagina - 1 })}
-                >
-                  Página anterior
-                </button>
-                <span>Página {filtros.pagina + 1}</span>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={(filtros.pagina + 1) * dados.saldos.tamanho >= dados.saldos.total}
-                  onClick={() => filtrar({ pagina: filtros.pagina + 1 })}
-                >
-                  Próxima página
-                </button>
+                              Detalhes
+                            </button>
+                            {s.situacao === "CONFIRMADA" && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="icon-button"
+                                  title="Corrigir saldo inicial"
+                                  aria-label={`Corrigir saldo ${s.id}`}
+                                  disabled={salvando || !!tentativa}
+                                  onClick={() => abrir({ tipo: "form", saldo: s })}
+                                >
+                                  <Icone nome="editar" />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="icon-button"
+                                  title="Cancelar saldo inicial"
+                                  aria-label={`Cancelar saldo ${s.id}`}
+                                  disabled={salvando || !!tentativa}
+                                  onClick={() => abrir({ tipo: "cancelar", saldo: s })}
+                                >
+                                  <Icone nome="fechar" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </section>
-            <PosicoesIniciais posicoes={dados.posicoes} />
-          </>
-        )
+            )}
+            <div className="pagination">
+              <span>{dados.saldos.total} registro(s)</span>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={carregando || !!erroLista || dados.saldos.pagina === 0}
+                onClick={() => filtrar({ pagina: filtros.pagina - 1 })}
+              >
+                Página anterior
+              </button>
+              <span>Página {dados.saldos.pagina + 1}</span>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={
+                  carregando ||
+                  !!erroLista ||
+                  (dados.saldos.pagina + 1) * dados.saldos.tamanho >= dados.saldos.total
+                }
+                onClick={() => filtrar({ pagina: filtros.pagina + 1 })}
+              >
+                Próxima página
+              </button>
+            </div>
+          </section>
+          <PosicoesIniciais posicoes={dados.posicoes} />
+        </>
       )}
       {janela && dados && (
         <Modal

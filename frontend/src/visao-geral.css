@@ -22,13 +22,20 @@
 }
 .overview-filters {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 .overview-filters label {
   font-size: 12px;
 }
-.overview-filters input {
+.overview-wallet-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.overview-filters input,
+.overview-filters select {
   min-height: 36px;
   width: 142px;
   padding: 6px 8px;
@@ -52,7 +59,7 @@
 .overview-indicators {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 .overview-indicators > div,
@@ -72,6 +79,13 @@
   font-weight: 600;
   margin: 4px 0 0;
   overflow-wrap: anywhere;
+}
+.overview-indicator-note {
+  display: block;
+  margin-top: 3px;
+  color: #607984;
+  font-size: 11px;
+  line-height: 1.35;
 }
 .overview-main {
   display: grid;
@@ -269,6 +283,47 @@
 .chart-point {
   fill: #12866e;
 }
+.patrimony-chart {
+  margin: 12px 0 16px;
+}
+.patrimony-chart svg {
+  display: block;
+  width: 100%;
+  height: 180px;
+  overflow: visible;
+}
+.chart-patrimony,
+.chart-contributions {
+  fill: none;
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+.chart-patrimony {
+  stroke: #12866e;
+}
+.chart-contributions {
+  stroke: #6478a6;
+  stroke-dasharray: 5 3;
+}
+.patrimony-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: #607984;
+  font-size: 11px;
+}
+.patrimony-chart-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  margin-right: 5px;
+  border-top: 2px solid #12866e;
+  vertical-align: middle;
+}
+.patrimony-chart-legend span + span::before {
+  border-color: #6478a6;
+  border-top-style: dashed;
+}
 .overview-evolution summary,
 .overview-asset-results summary {
   cursor: pointer;
@@ -277,7 +332,8 @@
   align-content: center;
 }
 .overview-evolution table,
-.overview-asset-results table {
+.overview-asset-results table,
+.overview-patrimony table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
@@ -285,14 +341,17 @@
 .overview-evolution th,
 .overview-evolution td,
 .overview-asset-results th,
-.overview-asset-results td {
+.overview-asset-results td,
+.overview-patrimony th,
+.overview-patrimony td {
   padding: 7px 6px;
   border-bottom: 1px solid #e7edef;
   text-align: left;
   vertical-align: top;
 }
 .overview-evolution th,
-.overview-asset-results th {
+.overview-asset-results th,
+.overview-patrimony th {
   font-weight: 500;
   color: #607984;
 }
@@ -430,9 +489,21 @@
 @media (pointer: coarse) {
   .overview-page button,
   .overview-filters input,
+  .overview-filters select,
   .overview-balances summary,
   .overview-evolution summary,
   .overview-asset-results summary {
     min-height: 44px;
   }
+}
+.patrimony-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.overview-patrimony summary {
+  cursor: pointer;
+  font-weight: 600;
 }

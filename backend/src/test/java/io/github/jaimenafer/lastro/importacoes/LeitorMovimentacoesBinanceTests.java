@@ -178,6 +178,80 @@ class LeitorMovimentacoesBinanceTests {
   }
 
   @Test
+  void rejeitaCsvSomenteComCabecalho() {
+    assertThatThrownBy(() -> leitor.ler("vazio.csv", (CABECALHO + "\n").getBytes(StandardCharsets.UTF_8)))
+        .isInstanceOf(ImportacaoInvalidaException.class)
+        .hasMessageContaining("não contém movimentações");
+  }
+
+  @Test
+  void rejeitaCsvComLinhaDeCamposVazios() {
+    assertThatThrownBy(() -> leitor.ler("vazio.csv", (CABECALHO + "\n,,,,,,,,,,,,,,,,\n")
+        .getBytes(StandardCharsets.UTF_8)))
+        .isInstanceOf(ImportacaoInvalidaException.class)
+        .hasMessageContaining("não contém movimentações");
+  }
+
+  @Test
+  void csvIgnoraMensagemSemResultadosEPreservaLinhasReais() {
+    String mensagem = "Nenhum dado corresponde aos critérios.,,,,,,,,,,,,,,,,";
+    String deposito = "d1,2024-05-01-10:20:30,Deposit,,FIAT,,,,,,100,BRL,,,0,,";
+    assertThatThrownBy(() -> leitor.ler("vazio.csv", (CABECALHO + "\n" + mensagem).getBytes(StandardCharsets.UTF_8)))
+        .isInstanceOf(ImportacaoInvalidaException.class)
+        .hasMessageContaining("não contém movimentações");
+    assertThat(leitor.ler("extrato.csv", (CABECALHO + "\n" + mensagem + "\n" + deposito)
+        .getBytes(StandardCharsets.UTF_8)).registros()).hasSize(1);
+  }
+
+  @Test
+  void rejeitaPlanilhaDeRelatorioSomenteComCabecalho() throws Exception {
+    byte[] bytes;
+    try (var workbook = new XSSFWorkbook(); var output = new ByteArrayOutputStream()) {
+      var header = workbook.createSheet("Relatório").createRow(0);
+      String[] colunas = CABECALHO.split(",");
+      for (int i = 0; i < colunas.length; i++) header.createCell(i).setCellValue(colunas[i]);
+      workbook.write(output);
+      bytes = output.toByteArray();
+    }
+    assertThatThrownBy(() -> leitor.ler("vazio.xlsx", bytes))
+        .isInstanceOf(ImportacaoInvalidaException.class)
+        .hasMessageContaining("não contém movimentações");
+  }
+
+  @Test
+  void rejeitaPlanilhaSemMovimentacoesOuComMensagemDeSemResultados() throws Exception {
+    for (boolean mensagem : new boolean[] {false, true}) {
+      byte[] bytes;
+      try (var workbook = new XSSFWorkbook(new java.io.ByteArrayInputStream(planilha(false)));
+          var output = new ByteArrayOutputStream()) {
+        var sheet = workbook.getSheetAt(0);
+        for (int i = sheet.getLastRowNum(); i >= 2; i--) {
+          var linha = sheet.getRow(i);
+          if (linha != null) sheet.removeRow(linha);
+        }
+        if (mensagem) sheet.createRow(14).createCell(0).setCellValue("Nenhum dado corresponde aos critérios.");
+        workbook.write(output);
+        bytes = output.toByteArray();
+      }
+      assertThatThrownBy(() -> leitor.ler("vazio.xlsx", bytes))
+          .isInstanceOf(ImportacaoInvalidaException.class)
+          .hasMessageContaining("não contém movimentações");
+    }
+  }
+
+  @Test
+  void ignoraMensagemDeSemResultadosMasPreservaMovimentacoes() throws Exception {
+    byte[] bytes;
+    try (var workbook = new XSSFWorkbook(new java.io.ByteArrayInputStream(planilha(false)));
+        var output = new ByteArrayOutputStream()) {
+      workbook.getSheetAt(0).createRow(14).createCell(0).setCellValue("Nenhum dado corresponde aos critérios.");
+      workbook.write(output);
+      bytes = output.toByteArray();
+    }
+    assertThat(leitor.ler("extrato.xlsx", bytes).registros()).hasSize(3);
+  }
+
+  @Test
   void recusaPlanilhaSemCabecalhoMesmoQuandoVazia() throws Exception {
     try (var workbook = new XSSFWorkbook();
         var output = new ByteArrayOutputStream()) {
@@ -277,8 +351,9 @@ class LeitorMovimentacoesBinanceTests {
           assertThat(r.quantidade()).isEqualByComparingTo("-0.2");
           assertThat(r.camposOriginais().get("label")).contains("aspas", "\nlinha");
         });
-    assertThat(leitor.ler("cabecalho.csv", CABECALHO.getBytes(StandardCharsets.UTF_8)).registros())
-        .isEmpty();
+    assertThatThrownBy(() -> leitor.ler("cabecalho.csv", CABECALHO.getBytes(StandardCharsets.UTF_8)))
+        .isInstanceOf(ImportacaoInvalidaException.class)
+        .hasMessageContaining("não contém movimentações");
   }
 
   @Test

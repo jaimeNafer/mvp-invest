@@ -126,8 +126,8 @@ public class AssociacaoUseCaseImpl implements IAssociacaoUseCase {
         .anyMatch(l ->
             !Objects.equals(l.data(), origem.data() == null ? null : origem.data().toString())))
       avisos.add(
-          "Os horários são diferentes. A associação exige revisão manual e intervalo total de até"
-              + " dois segundos.");
+          "Confira os horários. O intervalo entre a primeira e a última linha deve ser de até "
+              + propriedades.janelaAssociacao().toMillis() + " ms.");
     if (candidatas.size() > 2)
       avisos.add(
           "Há várias linhas candidatas. Confira referências e papéis; o mesmo segundo não"
@@ -145,7 +145,7 @@ public class AssociacaoUseCaseImpl implements IAssociacaoUseCase {
         revisao(),
         candidatas,
         grupoAtual == null ? null : livro.response(detalhes(grupoAtual), revisao()),
-        List.copyOf(avisos));
+        List.copyOf(avisos), propriedades.janelaAssociacao().toMillis());
   }
 
   public GrupoAssociacaoResponse prever(AssociacaoRequest request) {
@@ -198,6 +198,12 @@ public class AssociacaoUseCaseImpl implements IAssociacaoUseCase {
         && (cotacao.signum() <= 0 || Math.max(0, cotacao.stripTrailingZeros().scale()) > 18))
       throw new OperacaoInvalidaException(
           "Informe cotação positiva em BRL com até dezoito casas decimais.");
+    BigDecimal efetiva = desfazer ? null : livro.cotacaoEfetiva(selecionadas);
+    if (efetiva != null) {
+      if (cotacao != null && cotacao.compareTo(efetiva) != 0)
+        throw new OperacaoInvalidaException("A cotação informada diverge do valor efetivo da operação.");
+      cotacao = efetiva;
+    }
     PropostaGrupo proposta =
         new PropostaGrupo(selecionadas, request.taxaZeroConfirmada(), cotacao, desfazer);
     ResumoGrupo resumo =
@@ -290,13 +296,14 @@ public class AssociacaoUseCaseImpl implements IAssociacaoUseCase {
               atual.operacao(),
               atual.referencia(),
               l.papel(),
-              atual.taxaZeroDeclarada()));
+              atual.taxaZeroDeclarada(),
+              atual.origemFisica()));
     }
     PropostaGrupo proposta =
         new PropostaGrupo(
             linhas,
             request.taxaZeroConfirmada(),
-            numero(textoDecimal(request.cotacaoBrl(), "cotação em reais")),
+            numero(previa.cotacaoBrl()),
             previa.desfazer());
     GrupoAssociacao grupo;
     if (request.numero() == null)

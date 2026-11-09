@@ -13,5 +13,7 @@ public interface IRegistroConferenciaRepository {
 
   RegistroConferencia salvar(RegistroConferencia registro);
 
+  void excluir(RegistroConferencia registro);
+
   void flush();
 }

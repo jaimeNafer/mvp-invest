@@ -105,8 +105,21 @@ h2 {
   align-items: center;
 }
 .account-footer {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+.sidebar-footer:has(.account-footer) {
+  display: grid;
+  gap: 12px;
+}
+button.brand {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
 }
 .account-footer button {
   border: 1px solid #45676b;
@@ -283,7 +296,7 @@ h2 {
 }
 .primary-button:disabled {
   opacity: 0.6;
-  cursor: wait;
+  cursor: default;
 }
 .login-card .primary-button {
   margin: 28px 0 0;
@@ -354,6 +367,7 @@ h2 {
   .sidebar {
     padding: 18px 22px;
     flex-direction: row;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 18px;
@@ -361,9 +375,20 @@ h2 {
   .brand {
     font-size: 28px;
   }
-  .sidebar .tagline,
-  .sidebar nav {
+  .sidebar .tagline {
     display: none;
+  }
+  .sidebar nav {
+    order: 1;
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    overflow-x: auto;
+  }
+  .sidebar nav .sidebar-link {
+    width: auto;
+    flex: none;
+    white-space: nowrap;
   }
   .sidebar-footer {
     margin: 0;
@@ -443,7 +468,7 @@ h2 {
 }
 .secondary-button:disabled {
   opacity: 0.6;
-  cursor: wait;
+  cursor: default;
 }
 .list-heading {
   display: flex;
@@ -674,6 +699,7 @@ h2 {
 }
 .saldo-form input:disabled,
 .saldo-form select:disabled,
+.saldo-filtros select:disabled,
 .saldo-form textarea:disabled {
   background: #f3f6f7;
   color: #667d85;

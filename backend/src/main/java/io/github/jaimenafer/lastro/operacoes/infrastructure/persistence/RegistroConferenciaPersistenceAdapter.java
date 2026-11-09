@@ -17,6 +17,13 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class RegistroConferenciaPersistenceAdapter implements IRegistroConferenciaRepository {
   private final IRegistroConferenciaJpaRepository jpa;
+  private final LimpezaValoracoes limpezaValoracoes;
+
+  @Override
+  public void excluir(RegistroConferencia registro) {
+    limpezaValoracoes.excluirDoRegistro(registro.getPerfilRef(), registro.getId());
+    jpa.delete(registro);
+  }
 
   @Override
   public List<RegistroConferencia> listar(String perfilRef) {

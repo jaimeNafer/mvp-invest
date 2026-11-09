@@ -101,6 +101,10 @@ public class RegistroConferencia {
     aplicar(propostaJson);
   }
 
+  public void retirarAplicacao() {
+    aplicadaJson = null;
+  }
+
   public void aplicar(String propostaEfetivaJson) {
     aplicadaJson = propostaEfetivaJson;
   }

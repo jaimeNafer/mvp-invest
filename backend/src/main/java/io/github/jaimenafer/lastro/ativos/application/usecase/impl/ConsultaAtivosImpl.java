@@ -10,8 +10,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class ConsultaAtivosImpl implements IConsultaAtivos {
+public class ConsultaAtivosImpl implements IConsultaAtivos, IDescobertaAtivos {
   private final IAtivoRepository ativos;
+
+  @Override
+  @Transactional
+  public Optional<AtivoResumo> identificarNaBinance(String simbolo) {
+    if (simbolo == null) return Optional.empty();
+    String normalizado = simbolo.strip().toUpperCase(Locale.ROOT);
+    if (!normalizado.matches("[A-Z0-9]{1,32}")) return Optional.empty();
+    String codigo = (normalizado.equals("BRL") || normalizado.equals("USD") ? "fiat:" : "cripto:") + normalizado;
+    return Optional.of(
+        resumir(ativos.findByCodigo(codigo).orElseGet(() -> ativos.identificarNaBinance(normalizado))));
+  }
 
   @Override
   @Transactional(readOnly = true)

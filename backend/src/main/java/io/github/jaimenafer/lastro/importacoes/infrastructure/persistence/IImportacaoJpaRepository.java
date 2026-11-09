@@ -25,6 +25,10 @@ public interface IImportacaoJpaRepository extends JpaRepository<Importacao, Long
 
   long countByPerfilRef(String perfil);
 
+  @Query("select distinct e.operacaoId from EventoImportado e where e.importacao.perfilRef = :perfil and e.importacao.id <> :importacaoId and e.operacaoId in :operacaoIds")
+  List<Long> operacoesCompartilhadas(String perfil, long importacaoId, Collection<Long> operacaoIds);
+
+
   @Query(
       "select evento from EventoImportado evento where evento.importacao.perfilRef = :perfil and"
           + " evento.importacao.versaoLeitor = 'binance-brl-v1' and evento.referencia in"

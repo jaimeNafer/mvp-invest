@@ -1,5 +1,11 @@
 # Importação de operações Binance
 
+## Exclusão de arquivos recebidos
+
+A listagem inclui arquivos recebidos pelo fluxo progressivo e importações anteriores do usuário atual. A exclusão é definitiva e remove o conteúdo original e os registros do arquivo, permitindo receber o mesmo arquivo novamente. Registros e operações próprios de outros arquivos são preservados; operações legadas compartilhadas permanecem enquanto outro arquivo as referenciar.
+
+Associações afetadas são desfeitas e as linhas de outros arquivos voltam à conferência. Ajustes ancorados em registros ou grupos excluídos são encerrados. Valorações manuais e seu histórico são removidos quando vinculados aos registros ou grupos excluídos. A operação bloqueia o histórico do usuário, avança sua revisão e ocorre em uma transação.
+
 ## Escopo
 
 O fluxo visível do produto recebe arquivos CSV e XLSX pela mesma área **Operações → Importações**. Ambos seguem recebimento, timeline, associação, prévia global e confirmação. O parser específico do formato normaliza as linhas para o pipeline comum; para o relatório enriquecido, o CSV e o XLSX aceitam o mesmo cabeçalho e separam envio, recebimento e taxa em linhas de origem distintas. O arquivo original, a linha física, os campos e o componente permanecem rastreáveis. O XLSX de movimentações continua aceito no mesmo pipeline.
@@ -92,3 +98,15 @@ Aplicações e resgates Locked e Flexible são reconhecidos pelas quatro descri�
 ## Conversões entre ativos
 
 Conversões identificadas no relatório de movimentações ou no relatório enriquecido são vinculadas e apresentadas como uma única operação, com valores enviados, recebidos e originais acessíveis. Quantidades e valoração têm disponibilidades distintas; a confirmação global aplica as mudanças. [Critérios e limites](22-associacao-registros-binance.md#conversões-entre-ativos--07112026).
+
+
+### Remoção de saldo anterior declarado
+
+Saldos anteriores declarados manualmente podem ser excluídos individualmente em Operações e na Conferência, após confirmação. A exclusão é definitiva, respeita o usuário e a revisão do histórico e atualiza os efeitos da conferência na mesma transação. Não existe vínculo automático entre esses saldos e a operação utilizada como referência no cadastro. O cancelamento dos demais lançamentos manuais permanece inalterado.
+
+A API `DELETE /api/v1/conciliacao/registros/{id}?revisao={revisao}` aceita somente saldos anteriores de origem manual e responde `204` após a exclusão. Revisão desatualizada gera conflito e registros de outro usuário não são acessíveis.
+
+
+### Arquivos sem movimentações
+
+Arquivos CSV e XLSX com cabeçalho válido, mas sem movimentações, são informados como vazios e não geram recebimento nem registros de conferência. Uma linha que contenha somente a mensagem “Nenhum dado corresponde aos critérios.” é reconhecida como ausência de resultados; outras linhas incompletas continuam disponíveis para conferência.

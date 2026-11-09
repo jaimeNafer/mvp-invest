@@ -12,12 +12,14 @@ export default function ConferenciaVisaoGeral({
   revisao,
   onAtualizar,
   onOperacoes,
+  carteiraId,
 }: {
   conferencia: Conferencia;
   dataFim: string;
   revisao: string;
   onAtualizar: () => void;
   onOperacoes: () => void;
+  carteiraId?: string;
 }) {
   const [consulta, setConsulta] = useState<{ tipo: TipoAviso; pagina: number } | null>(null);
   const tipo = consulta?.tipo;
@@ -38,7 +40,7 @@ export default function ConferenciaVisaoGeral({
     setLista(null);
     setErro("");
     setCarregandoLista(true);
-    void consultarAvisos(dataFim, consulta.tipo, consulta.pagina, controller.signal)
+    void consultarAvisos(dataFim, consulta.tipo, consulta.pagina, controller.signal, carteiraId)
       .then((resposta) => {
         if (!controller.signal.aborted) setLista(resposta);
       })
@@ -50,7 +52,7 @@ export default function ConferenciaVisaoGeral({
         if (!controller.signal.aborted) setCarregandoLista(false);
       });
     return () => controller.abort();
-  }, [dataFim, consulta]);
+  }, [dataFim, consulta, carteiraId]);
 
   useEffect(() => {
     setOperacao(null);

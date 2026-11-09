@@ -44,6 +44,8 @@ public class LeitorMovimentacoesBinance implements ILeitorMovimentacoes {
         planilha
             ? planilha(conteudo)
             : new LeitorCsvMovimentacoes().ler(conteudo, maximoRegistros);
+    if (registros.isEmpty())
+      throw new ImportacaoInvalidaException("O arquivo não contém movimentações para importar.");
     return new DocumentoMovimentacoes(hash(conteudo), nome, "binance-movimentos-v1", registros);
   }
 

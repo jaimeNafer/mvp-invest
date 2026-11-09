@@ -11,12 +11,25 @@ import {
 } from "./services/carteiras";
 import type { Carteira, CadastroCarteira } from "./services/carteiras";
 
-export default function Carteiras() {
+export default function Carteiras({
+  iniciarCadastro = false,
+  onVisao,
+  onOperacoes,
+  onImportar,
+}: {
+  iniciarCadastro?: boolean;
+  onVisao?: (id: string) => void;
+  onOperacoes?: (id: string) => void;
+  onImportar?: (id: string) => void;
+} = {}) {
   const ultimaConsulta = useRef(0);
   const [carteiras, setCarteiras] = useState<Carteira[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [modal, setModal] = useState<{ carteira: Carteira | null } | null>(null);
+  const [modal, setModal] = useState<{ carteira: Carteira | null } | null>(
+    iniciarCadastro ? { carteira: null } : null,
+  );
+  const [detalhe, setDetalhe] = useState<Carteira | null>(null);
   const [erroLista, setErroLista] = useState("");
   const [erroAcao, setErroAcao] = useState("");
   const [aviso, setAviso] = useState("");
@@ -152,6 +165,17 @@ export default function Carteiras() {
                       </td>
                       <td>
                         <div className="row-actions">
+                          {onVisao && carteira.ativo && (
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              aria-label={`Abrir ${carteira.nome}`}
+                              disabled={salvando}
+                              onClick={() => setDetalhe(carteira)}
+                            >
+                              Abrir
+                            </button>
+                          )}
                           <button
                             className="icon-button"
                             type="button"
@@ -195,6 +219,47 @@ export default function Carteiras() {
             onSalvar={salvar}
             onCancelar={() => setModal(null)}
           />
+        </Modal>
+      )}
+      {detalhe && (
+        <Modal titulo={detalhe.nome} bloqueado={false} onFechar={() => setDetalhe(null)}>
+          <p>Instituições vinculadas</p>
+          <ul>
+            {detalhe.contas.map((conta) => (
+              <li key={conta.id}>{conta.instituicaoNome}</li>
+            ))}
+          </ul>
+          <div className="form-actions">
+            <button type="button" className="primary-button" onClick={() => onVisao?.(detalhe.id)}>
+              Ver visão financeira
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => onOperacoes?.(detalhe.id)}
+            >
+              Ver operações
+            </button>
+            {detalhe.contas.some((conta) => conta.instituicaoNome.toLowerCase() === "binance") && (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => onImportar?.(detalhe.id)}
+              >
+                Importar histórico
+              </button>
+            )}
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => {
+                setDetalhe(null);
+                abrirModal(detalhe);
+              }}
+            >
+              Editar vínculos
+            </button>
+          </div>
         </Modal>
       )}
     </section>

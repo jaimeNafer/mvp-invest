@@ -5,10 +5,29 @@ import { armazenamentoLocal } from "./services/armazenamentoLocal";
 
 afterEach(() => {
   armazenamentoLocal.remover("lastro.token");
+  window.history.replaceState(null, "", "/");
   vi.unstubAllGlobals();
 });
 
 describe("login pelo serviço local do frontend", () => {
+  it("separa operações, importações e conferência no menu principal", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("backend indisponível")));
+    render(<App />);
+    fireEvent.change(screen.getByLabelText("Usuário"), { target: { value: "jaime" } });
+    fireEvent.click(screen.getByRole("button", { name: /Entrar/ }));
+    await screen.findByRole("heading", { name: "Visão geral" });
+    const menu = screen.getByRole("navigation", { name: "Navegação principal" });
+    expect(Array.from(menu.querySelectorAll("button")).map((item) => item.textContent)).toEqual([
+      "Visão geral",
+      "Carteiras",
+      "Operações",
+      "Importações",
+      "Conferência",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Conferência" }));
+    expect(await screen.findByRole("heading", { name: "Conferência" })).toBeVisible();
+  });
+
   it("entra com os dois usuários e sai sem depender do backend", async () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error("backend indisponível"));
     vi.stubGlobal("fetch", fetchMock);
@@ -42,7 +61,13 @@ describe("login pelo serviço local do frontend", () => {
       role: "acesso_total",
     });
     expect(screen.queryByRole("heading", { name: "Olá, Jaime." })).not.toBeInTheDocument();
-    expect(fetchMock.mock.calls.every(([url]) => url === "/api/v1/visao-geral")).toBe(true);
+    expect(new Set(fetchMock.mock.calls.map(([url]) => url))).toEqual(
+      new Set([
+        "/api/v1/visao-geral",
+        "/api/v1/conciliacao/cotacoes/atualizacao",
+        "/api/v1/carteiras",
+      ]),
+    );
   });
 
   it.each([

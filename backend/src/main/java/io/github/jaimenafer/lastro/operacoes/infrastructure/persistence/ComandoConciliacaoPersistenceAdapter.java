@@ -7,6 +7,7 @@ import io.github.jaimenafer.lastro.operacoes.domain.model.ComandoConciliacao;
 import io.github.jaimenafer.lastro.operacoes.domain.repository.IComandoConciliacaoRepository;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Collection;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,6 +17,14 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ComandoConciliacaoPersistenceAdapter implements IComandoConciliacaoRepository {
   private final IComandoConciliacaoJpaRepository jpa;
+
+  public void excluirRespostasDeRegistros(String perfilRef, Collection<String> ids) {
+    if (!ids.isEmpty()) jpa.excluirRespostasDeRegistros(perfilRef, ids);
+  }
+
+  public void excluirRespostasDeGrupos(String perfilRef, Collection<String> numeros) {
+    if (!numeros.isEmpty()) jpa.excluirRespostasDeGrupos(perfilRef, numeros);
+  }
 
   @Override
   public Optional<ComandoConciliacao> buscar(String perfilRef, UUID chave) {

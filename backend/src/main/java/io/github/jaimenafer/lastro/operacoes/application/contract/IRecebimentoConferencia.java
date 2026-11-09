@@ -5,6 +5,10 @@ import java.util.List;
 public interface IRecebimentoConferencia {
   void bloquearHistorico();
 
+  void excluirArquivo(String arquivoRef);
+
+  void excluirSaldoAnterior(String id, String revisao);
+
   void validarReferenciasDisponiveis(List<String> referencias);
 
   String revisao();

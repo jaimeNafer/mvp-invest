@@ -24,7 +24,7 @@ public class Ativo {
 
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.VARCHAR)
-  @Column(length = 6, nullable = false)
+  @Column(length = 6)
   private TipoAtivo tipo;
 
   @Column(name = "casas_decimais")

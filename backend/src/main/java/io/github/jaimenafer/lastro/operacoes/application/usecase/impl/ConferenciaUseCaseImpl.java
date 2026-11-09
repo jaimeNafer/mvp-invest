@@ -37,6 +37,7 @@ public class ConferenciaUseCaseImpl implements IConferenciaUseCase {
   private final IPreparacaoConciliacao preparacao;
   private final IConsultaAtivos ativos;
   private final IAssociacoesLivro associacoes;
+  private final IRecebimentoConferencia recebimento;
 
   private static final ZoneId FUSO = ZoneId.of("America/Fortaleza");
 
@@ -55,11 +56,12 @@ public class ConferenciaUseCaseImpl implements IConferenciaUseCase {
 
   @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
   public TimelineConferenciaResponse listar(
-      int pagina, int tamanho, String estado, Long ativoId, Long contaId) {
+      int pagina, int tamanho, String estado, Long ativoId, Long contaId, String registroId) {
     if (pagina < 0 || tamanho < 1 || tamanho > 100)
       throw new OperacaoInvalidaException("Informe página não negativa e tamanho entre 1 e 100.");
     EstadoConferencia filtro = null;
-    if (estado != null && !estado.isBlank())
+    boolean pendencias = "PENDENCIAS".equals(estado);
+    if (estado != null && !estado.isBlank() && !pendencias)
       try {
         filtro = EstadoConferencia.valueOf(estado);
       } catch (IllegalArgumentException e) {
@@ -69,6 +71,8 @@ public class ConferenciaUseCaseImpl implements IConferenciaUseCase {
     EstadoConferencia selecionado = filtro;
     List<RegistroTimelineResponse> filtradas =
         todas.stream()
+            .filter(r -> registroId == null || registroId.equals(r.id()))
+            .filter(r -> !pendencias || precisaAtencao(r))
             .filter(r -> selecionado == null || r.estado() == selecionado)
             .filter(r -> ativoId == null || ativoId.toString().equals(r.ativoId()))
             .filter(r -> contaId == null || contaId.toString().equals(r.contaId()))
@@ -90,7 +94,7 @@ public class ConferenciaUseCaseImpl implements IConferenciaUseCase {
     RegistroTimelineResponse proxima =
         filtradas.stream()
             .filter(
-                r -> r.estado() != EstadoConferencia.COERENTE && !r.origem().equals("SINTETICA"))
+                ConferenciaUseCaseImpl::precisaAtencao)
             .min(prioridade(todas))
             .orElse(null);
     return new TimelineConferenciaResponse(
@@ -103,6 +107,14 @@ public class ConferenciaUseCaseImpl implements IConferenciaUseCase {
         proxima == null ? null : proxima.id(),
         proxima == null ? null : filtradas.indexOf(proxima) / tamanho,
         linhasPorGrupo);
+  }
+
+  private static boolean precisaAtencao(RegistroTimelineResponse registro) {
+    return !registro.origem().equals("SINTETICA")
+        && (registro.estado() != EstadoConferencia.COERENTE
+            || registro.taxaDetalhamentoPendente() || registro.saldoAnteriorPendente()
+            || (registro.valoracao() != null
+                && registro.valoracao().statusValoracao() == EstadoValoracao.INDISPONIVEL));
   }
 
   private Comparator<RegistroTimelineResponse> prioridade(List<RegistroTimelineResponse> linhas) {
@@ -308,6 +320,11 @@ public class ConferenciaUseCaseImpl implements IConferenciaUseCase {
     RegistroTimelineResponse resposta = linha(id);
     salvarComando(chave, fingerprint, resposta);
     return resposta;
+  }
+
+  @Transactional(isolation = Isolation.READ_COMMITTED)
+  public void excluirSaldoAnterior(String id, String revisao) {
+    recebimento.excluirSaldoAnterior(id, revisao);
   }
 
   @Transactional(isolation = Isolation.READ_COMMITTED)

@@ -14,6 +14,10 @@ public interface IImportacaoRepository {
 
   List<ResumoImportacao> listar(String perfil, int pagina, int tamanho);
 
+  List<Long> operacoesCompartilhadas(String perfil, long importacaoId, java.util.Collection<Long> operacaoIds);
+
+  void excluir(Importacao importacao);
+
   long contar(String perfil);
 
   java.util.Map<String, Long> origensComprovadas(

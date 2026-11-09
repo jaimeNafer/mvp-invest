@@ -47,6 +47,42 @@ class ImportacoesIntegrationTests {
   @Autowired JsonMapper json;
   @MockitoSpyBean IImportacaoRepository repositorio;
 
+  @Test
+  void exclusaoLegadaPreservaOperacaoCompartilhadaComOutroArquivo() throws Exception {
+    byte[] arquivo = relatorio("1000", "0.001");
+    JsonNode recibo = corpo(confirmar("jaime", arquivo, previa("jaime", arquivo), UUID.randomUUID().toString())
+        .andExpect(status().isCreated()));
+    long id = Long.parseLong(recibo.path("id").asText());
+    jdbc.update("INSERT INTO importacoes(perfil_ref,chave_requisicao,hash,decisoes,nome_arquivo,versao_leitor,arquivo,criado_em,novos,reconhecidos) "
+        + "SELECT perfil_ref,UUID(),REPEAT('f',64),decisoes,'outro.csv',versao_leitor,arquivo,criado_em,0,2 FROM importacoes WHERE id=?", id);
+    long outro = jdbc.queryForObject("SELECT id FROM importacoes WHERE hash=REPEAT('f',64)", Long.class);
+    jdbc.update("INSERT INTO importacoes_eventos(importacao_id,linha,referencia,operacao_id) "
+        + "SELECT ?,linha,referencia,operacao_id FROM importacoes_eventos WHERE importacao_id=?", outro, id);
+    mvc.perform(delete("/api/v1/importacoes/recebimentos/importacao:" + id)
+        .header("Authorization", bearer("jaime"))).andExpect(status().isNoContent());
+    assertThat(contar("operacoes")).isEqualTo(2);
+    assertThat(contar("importacoes_eventos")).isEqualTo(2);
+    mvc.perform(delete("/api/v1/importacoes/recebimentos/importacao:" + outro)
+        .header("Authorization", bearer("jaime"))).andExpect(status().isNoContent());
+    assertThat(contar("operacoes")).isZero();
+  }
+
+  @Test
+  void excluiImportacaoLegadaERestauraPossibilidadeDeReimportar() throws Exception {
+    byte[] arquivo = relatorio("1000", "0.001");
+    JsonNode recibo = corpo(confirmar("jaime", arquivo, previa("jaime", arquivo), UUID.randomUUID().toString())
+        .andExpect(status().isCreated()));
+    String id = recibo.path("id").asText();
+    mvc.perform(delete("/api/v1/importacoes/recebimentos/importacao:" + id)
+            .header("Authorization", bearer("jaime")))
+        .andExpect(status().isNoContent());
+    assertThat(contar("importacoes")).isZero();
+    assertThat(contar("importacoes_eventos")).isZero();
+    assertThat(contar("operacoes")).isZero();
+    JsonNode nova = previa("jaime", arquivo);
+    assertThat(nova.path("novos").asInt()).isEqualTo(2);
+  }
+
   @BeforeEach
   void preparar() {
     jdbc.update("DELETE FROM importacoes_eventos");

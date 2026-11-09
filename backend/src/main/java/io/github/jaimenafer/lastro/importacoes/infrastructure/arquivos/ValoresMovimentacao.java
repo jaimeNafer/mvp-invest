@@ -8,6 +8,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import lombok.AccessLevel;
@@ -21,6 +22,12 @@ final class ValoresMovimentacao {
         .strip()
         .toLowerCase(Locale.ROOT)
         .replaceAll("\\s+", " ");
+  }
+
+  static boolean mensagemSemResultados(Collection<String> valores) {
+    List<String> preenchidos = valores.stream().filter(v -> !v.isBlank()).toList();
+    return preenchidos.size() == 1
+        && normalizar(preenchidos.getFirst()).equals("nenhum dado corresponde aos criterios.");
   }
 
   static BigDecimal quantidade(String texto, List<String> erros) {

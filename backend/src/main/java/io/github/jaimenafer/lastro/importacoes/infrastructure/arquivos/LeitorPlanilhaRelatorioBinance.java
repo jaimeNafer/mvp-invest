@@ -53,7 +53,8 @@ final class LeitorPlanilhaRelatorioBinance {
           XSSFRow row = sheet.getRow(indice);
           if (row == null) continue;
           Map<String, String> campos = campos(row);
-          if (campos.values().stream().allMatch(String::isBlank)) continue;
+          if (campos.values().stream().allMatch(String::isBlank)
+              || ValoresMovimentacao.mensagemSemResultados(campos.values())) continue;
           var erros = new ArrayList<String>();
           if (row.getLastCellNum() != CABECALHO.size())
             erros.add("O registro não contém todas as colunas do cabeçalho.");

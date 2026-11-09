@@ -16,6 +16,15 @@ import org.springframework.stereotype.Repository;
 public class GrupoAssociacaoPersistenceAdapter implements IGrupoAssociacaoRepository {
   private final IGrupoAssociacaoJpaRepository jpa;
   private final IVinculoGrupoAssociacaoJpaRepository vinculos;
+  private final LimpezaValoracoes limpezaValoracoes;
+
+  public void excluir(GrupoAssociacao grupo) {
+    limpezaValoracoes.excluirDoGrupo(grupo.getPerfilRef(), grupo.getId());
+    vinculos.deleteByGrupoId(grupo.getId());
+    vinculos.flush();
+    jpa.delete(grupo);
+    jpa.flush();
+  }
 
   public List<GrupoAssociacao> listar(String perfil) {
     return jpa.findByPerfilRefOrderByIdAsc(perfil);

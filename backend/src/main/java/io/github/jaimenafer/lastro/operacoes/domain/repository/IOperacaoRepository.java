@@ -23,6 +23,8 @@ public interface IOperacaoRepository {
 
   List<Operacao> historico(String perfilRef);
 
+  void excluir(Operacao operacao);
+
   void flush();
 
   PaginaOperacoes consultar(FiltroOperacoes filtro);

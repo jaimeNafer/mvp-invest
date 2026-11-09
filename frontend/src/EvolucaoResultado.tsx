@@ -13,7 +13,7 @@ export default function EvolucaoResultado({
 }) {
   const tituloId = useId();
   const descricaoId = useId();
-  const parcial = evolucao.meses.some((m) => m.acumuladoBrl === null);
+  const parcial = evolucao.meses.some((m) => m.acumuladoBrl === null || m.resultadoBrl === null);
   const valores = [
     evolucao.acumuladoInicialBrl,
     ...evolucao.meses.map((m) => m.acumuladoBrl ?? "0"),
@@ -127,10 +127,16 @@ export default function EvolucaoResultado({
                   </td>
                   <td>{m.operacoes}</td>
                   <td>
-                    <ResultadoMonetario valor={m.resultadoBrl} />
+                    {m.resultadoBrl === null && m.subtotalResultadoBrl !== undefined ? (
+                      <span>Subtotal conhecido: </span>
+                    ) : null}
+                    <ResultadoMonetario valor={m.resultadoBrl ?? m.subtotalResultadoBrl ?? null} />
                   </td>
                   <td>
-                    <ResultadoMonetario valor={m.acumuladoBrl} />
+                    {m.acumuladoBrl === null && m.subtotalAcumuladoBrl !== undefined ? (
+                      <span>Acumulado conhecido: </span>
+                    ) : null}
+                    <ResultadoMonetario valor={m.acumuladoBrl ?? m.subtotalAcumuladoBrl ?? null} />
                   </td>
                 </tr>
               ))}

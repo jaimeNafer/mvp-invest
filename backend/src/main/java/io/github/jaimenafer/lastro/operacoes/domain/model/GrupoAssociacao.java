@@ -72,4 +72,15 @@ public class GrupoAssociacao {
   public List<HistoricoProposta> versoesAnteriores() {
     return List.copyOf(historico);
   }
+
+  public void removerHistorico(java.util.function.Predicate<String> pertenceAoArquivo) {
+    historico.removeIf(versao -> pertenceAoArquivo.test(versao.getPropostaJson()));
+  }
+
+  public void restaurarAplicada(String autor, Instant agora) {
+    propostaJson = aplicadaJson;
+    versao = Math.addExact(versao, 1);
+    alteradoPor = autor;
+    alteradoEm = agora;
+  }
 }
